@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema Gestión Documental - Zona 268</title>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Inter',sans-serif;background:#f5f5f5}.card{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.1);padding:1.5rem}.btn{padding:.75rem 1.5rem;border-radius:8px;border:none;font-weight:500;cursor:pointer;transition:all .2s;font-size:.95rem}.btn-primary{background:#2563eb;color:#fff}.btn-primary:hover{background:#1d4ed8;transform:translateY(-1px)}.btn-primary:disabled{background:#93c5fd;cursor:not-allowed;transform:none}.btn-secondary{background:#e5e7eb;color:#374151}.btn-secondary:hover{background:#d1d5db}.btn-success{background:#10b981;color:#fff}.btn-danger{background:#ef4444;color:#fff}.btn-danger:hover{background:#dc2626}.btn-warning{background:#f59e0b;color:#fff}.spinner{border:3px solid #e5e7eb;border-top:3px solid #2563eb;border-radius:50%;width:40px;height:40px;animation:spin 1s linear infinite;margin:0 auto}@keyframes spin{to{transform:rotate(360deg)}}.pulse{animation:pulse 2s ease-in-out infinite}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}@media print{.no-print{display:none!important}}table{width:100%;border-collapse:collapse}th,td{padding:.75rem;text-align:left;border-bottom:1px solid #e5e7eb}th{background:#f9fafb;font-weight:600;font-size:.875rem;color:#6b7280;text-transform:uppercase}tr:hover{background:#f9fafb}input,textarea,select{width:100%;padding:.75rem;border:1px solid #d1d5db;border-radius:8px;font-size:1rem;font-family:inherit}input:focus,textarea:focus,select:focus{outline:none;border-color:#2563eb;ring:2px;ring-color:#93c5fd}label{display:block;margin-bottom:.5rem;font-weight:500;color:#374151;font-size:.875rem}.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:9999;padding:1rem}.modal{background:#fff;border-radius:12px;max-width:600px;width:100%;max-height:90vh;overflow-y:auto;padding:2rem}.progress-bar{height:8px;background:#e5e7eb;border-radius:4px;overflow:hidden}.progress-fill{height:100%;background:#2563eb;transition:width .3s}.badge{padding:.25rem .75rem;border-radius:12px;font-size:.75rem;font-weight:500}.badge-success{background:#d1fae5;color:#065f46}.badge-warning{background:#fed7aa;color:#92400e}.badge-danger{background:#fee2e2;color:#991b1b}.badge-info{background:#dbeafe;color:#1e40af}.stat-card{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;border-radius:12px;padding:1.5rem}.container{max-width:1400px;margin:0 auto;padding:0 1.5rem}.toggle-switch{position:relative;width:48px;height:24px;background:#d1d5db;border-radius:12px;cursor:pointer;transition:background .3s}.toggle-switch.active{background:#10b981}.toggle-switch::after{content:'';position:absolute;width:20px;height:20px;background:#fff;border-radius:50%;top:2px;left:2px;transition:transform .3s}.toggle-switch.active::after{transform:translateX(24px)}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect}=React;
+
+// ✅ CONFIGURACIÓN DE FIREBASE (YA INCLUIDA)
+const firebaseConfig={
+apiKey:"AIzaSyBIzZog_VDpTbnrTpehVRTnMsi7TvmSgSY",
+authDomain:"sistemazona268.firebaseapp.com",
+projectId:"sistemazona268",
+storageBucket:"sistemazona268.firebasestorage.app",
+messagingSenderId:"108501130433",
+appId:"1:108501130433:web:1d10ee28e7142169a18840"
+};
+
+let app,auth,db,storage;
+let firebaseInitialized=false;
+
+// Inicializar Firebase con reintentos
+const initFirebase=async()=>{
+if(firebaseInitialized)return true;
+try{
+if(!firebase.apps.length){
+app=firebase.initializeApp(firebaseConfig);
+}
+auth=firebase.auth();
+db=firebase.firestore();
+storage=firebase.storage();
+// Configurar persistencia
+await auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);	
+firebaseInitialized=true;
+return true;
+}catch(error){
+console.error("Error inicializando Firebase:",error);
+return false;
+}
+};
+
+// Inicializar Firebase inmediatamente
+initFirebase();
+
+const ADMIN_EMAIL='admin@sistema.local';
+const MAX_LOGIN_RETRIES=3;
+const RETRY_DELAY=2000;
+const INACTIVIDAD_MS=10*60*1000;
+let timerInactividad=null;
+
+const resetTimer=()=>{
+clearTimeout(timerInactividad);
+timerInactividad=setTimeout(()=>{
+auth.signOut();
+alert('⏱️ Sesión cerrada por inactividad.');
+},INACTIVIDAD_MS);
+};
+
+const iniciarMonitorInactividad=()=>{
+['click','keydown','mousemove','touchstart'].forEach(ev=>window.addEventListener(ev,resetTimer));
+resetTimer();
+};
+
+const detenerMonitorInactividad=()=>{
+clearTimeout(timerInactividad);
+['click','keydown','mousemove','touchstart'].forEach(ev=>window.removeEventListener(ev,resetTimer));
+};
+
+// Función de login con reintentos
+const loginWithRetry=async(email,password,attempt=1)=>{
+try{
+await initFirebase();
+const result=await auth.signInWithEmailAndPassword(email,password);
+return{success:true,user:result.user};
+}catch(error){
+if(attempt<MAX_LOGIN_RETRIES&&(error.code==='auth/network-request-failed'||error.code==='auth/timeout')){
+await new Promise(resolve=>setTimeout(resolve,RETRY_DELAY));
+return loginWithRetry(email,password,attempt+1);
+}
+return{success:false,error:error.code,message:error.message,attempt};
+}
+};
+
+const App=()=>{
+const[usuario,setUsuario]=useState(null);
+const[esAdmin,setEsAdmin]=useState(false);
+const[loading,setLoading]=useState(true);
+const[vista,setVista]=useState('login');
+const[config,setConfig]=useState({nombreZona:'',logoUrl:'',permitirBorradoEscuelas:false});
+const[escuelas,setEscuelas]=useState([]);
+const[programas,setProgramas]=useState([]);
+const[documentos,setDocumentos]=useState([]);
+const[compartidos,setCompartidos]=useState([]);
+const[escuelaActual,setEscuelaActual]=useState(null);
+const[error,setError]=useState(null);
+
+useEffect(()=>{
+let mounted=true;
+const initAuth=async()=>{
+await initFirebase();
+const unsubscribe=auth.onAuthStateChanged(async(user)=>{
+if(!mounted)return;
+if(user){
+setUsuario(user);
+const admin=user.email===ADMIN_EMAIL;
+setEsAdmin(admin);
+await cargarDatos(user,admin);
+setVista(admin?'admin':'escuela');
+iniciarMonitorInactividad();
+}else{
+setUsuario(null);
+setVista('login');
+detenerMonitorInactividad();
+}
+setLoading(false);
+});
+return unsubscribe;
+};
+const unsubscribePromise=initAuth();
+return()=>{
+mounted=false;
+unsubscribePromise.then(unsub=>unsub&&unsub());
+};
+},[]); 
+
+const cargarDatos=async(user,admin)=>{
+try{
+const configSnap=await db.collection('configuracion').doc('general').get();
+if(configSnap.exists)setConfig({nombreZona:'',logoUrl:'',permitirBorradoEscuelas:false,...configSnap.data()});
+
+const escuelasSnap=await db.collection('escuelas').orderBy('cct').get();
+const escuelasData=escuelasSnap.docs.map(d=>({id:d.id,...d.data()}));
+setEscuelas(escuelasData);
+
+if(!admin){
+const escuela=escuelasData.find(e=>`${e.cct.toLowerCase()}@escuela.local`===user.email);
+setEscuelaActual(escuela);
+}
+
+const programasSnap=await db.collection('programas').orderBy('fechaLimite','desc').get();
+setProgramas(programasSnap.docs.map(d=>({id:d.id,...d.data()})));
+
+const docsSnap=await db.collection('documentos').get();
+setDocumentos(docsSnap.docs.map(d=>({id:d.id,...d.data()})));
+
+const compSnap=await db.collection('compartidos').get();
+setCompartidos(compSnap.docs.map(d=>({id:d.id,...d.data()})));
+}catch(error){
+console.error('Error cargando:',error);
+setError('Error al cargar datos. Verifica tu conexión.');
+}
+};
+
+if(loading)return <Loading/>;
+if(error)return <Error mensaje={error}/>;
+
+return(
+<>
+{vista==='login'&&<Login config={config} escuelas={escuelas}/>}
+{vista==='admin'&&<Admin usuario={usuario} config={config} setConfig={setConfig} escuelas={escuelas} setEscuelas={setEscuelas} programas={programas} setProgramas={setProgramas} documentos={documentos} setDocumentos={setDocumentos} compartidos={compartidos} setCompartidos={setCompartidos} onLogout={()=>auth.signOut()}/>}
+{vista==='escuela'&&<Escuela usuario={usuario} escuela={escuelaActual} config={config} programas={programas} documentos={documentos} setDocumentos={setDocumentos} compartidos={compartidos} onLogout={()=>auth.signOut()}/>}
+</>
+);
+};
+
+const Loading=()=>(
+<div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center'}}>
+<div style={{textAlign:'center'}}>
+<div className="spinner"/>
+<p style={{marginTop:'1rem',color:'#6b7280'}} className="pulse">Inicializando sistema...</p>
+<p style={{marginTop:'.5rem',fontSize:'.875rem',color:'#9ca3af'}}>Por favor espera</p>
+</div>
+</div>
+);
+
+const Error=({mensaje})=>(
+<div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',padding:'2rem'}}>
+<div className="card" style={{maxWidth:'500px',textAlign:'center'}}>
+<div style={{fontSize:'3rem',marginBottom:'1rem'}}>⚠️</div>
+<h2 style={{marginBottom:'1rem',color:'#ef4444'}}>Error</h2>
+<p style={{color:'#6b7280'}}>{mensaje}</p>
+<button className="btn btn-primary" style={{marginTop:'1.5rem'}} onClick={()=>window.location.reload()}>Reintentar</button>
+</div>
+</div>
+);
+
+const Login=({config,escuelas})=>{
+const[cct,setCct]=useState('');
+const[password,setPassword]=useState('');
+const[modoAdmin,setModoAdmin]=useState(false);
+const[error,setError]=useState('');
+const[cargando,setCargando]=useState(false);
+const[intento,setIntento]=useState(0);
+const[conectando,setConectando]=useState(false);
+
+const handleLogin=async(e)=>{
+e?.preventDefault();
+setError('');
+setCargando(true);
+setConectando(true);
+setIntento(1);
+
+try{
+let email;
+if(modoAdmin){
+email=ADMIN_EMAIL;
+}else{
+if(!cct){
+setError('Ingresa tu CCT');
+setCargando(false);
+setConectando(false);
+return;
+}
+const escuelasSnap=await db.collection('escuelas').where('cct','==',cct.toUpperCase()).limit(1).get();
+if(escuelasSnap.empty){
+setError('CCT no encontrado. Verifica que esté registrado en el sistema.');
+setCargando(false);
+setConectando(false);
+return;
+}
+const escuela=escuelasSnap.docs[0].data();
+email=`${escuela.cct.toLowerCase()}@escuela.local`;
+}
+
+// Intentar login con reintentos
+const result=await loginWithRetry(email,password);
+
+if(result.success){
+setConectando(false);
+// Login exitoso
+}else{
+setConectando(false);
+setCargando(false);
+if(result.error==='auth/wrong-password'||result.error==='auth/user-not-found'){
+setError('CCT o contraseña incorrectos');
+}else if(result.error==='auth/network-request-failed'){
+setError('Error de conexión. Verifica tu internet e intenta de nuevo.');
+}else if(result.error==='auth/too-many-requests'){
+setError('Demasiados intentos. Espera un momento e intenta de nuevo.');
+}else{
+setError('Error al iniciar sesión. Intenta de nuevo.');
+}
+console.error('Error login:',result);
+}
+}catch(err){
+setConectando(false);
+setCargando(false);
+setError('Error inesperado. Intenta de nuevo.');
+console.error('Error login:',err);
+}
+};
+
+return(
+<div style={{minHeight:'100vh',background:'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',display:'flex',alignItems:'center',justifyContent:'center',padding:'1rem'}}>
+<div className="card" style={{maxWidth:'420px',width:'100%'}}>
+<div style={{textAlign:'center',marginBottom:'2rem'}}>
+{config.logoUrl&&<img src={config.logoUrl} alt="Logo" style={{height:'70px',marginBottom:'1rem',objectFit:'contain'}}/>}
+<h1 style={{fontSize:'1.5rem',fontWeight:'700',marginBottom:'.5rem'}}>{config.nombreZona||'Sistema de Gestión Documental'}</h1>
+<p style={{color:'#6b7280',fontSize:'.9rem'}}>Control de Documentación Escolar</p>
+</div>
+<div style={{display:'flex',gap:'.5rem',marginBottom:'1.5rem',background:'#f3f4f6',padding:'.25rem',borderRadius:'8px'}}>
+<button onClick={()=>setModoAdmin(false)} disabled={cargando} style={{flex:1,padding:'.65rem',borderRadius:'6px',border:'none',fontWeight:'500',cursor:cargando?'not-allowed':'pointer',background:!modoAdmin?'white':'transparent',color:!modoAdmin?'#2563eb':'#6b7280',boxShadow:!modoAdmin?'0 1px 3px rgba(0,0,0,.1)':'none'}}>Escuela</button>
+<button onClick={()=>setModoAdmin(true)} disabled={cargando} style={{flex:1,padding:'.65rem',borderRadius:'6px',border:'none',fontWeight:'500',cursor:cargando?'not-allowed':'pointer',background:modoAdmin?'white':'transparent',color:modoAdmin?'#2563eb':'#6b7280',boxShadow:modoAdmin?'0 1px 3px rgba(0,0,0,.1)':'none'}}>Administrador</button>
+</div>
+{error&&<div style={{padding:'.75rem',background:'#fee2e2',border:'1px solid #fecaca',borderRadius:'8px',color:'#991b1b',fontSize:'.875rem',marginBottom:'1rem'}}>{error}</div>}
+{conectando&&<div style={{padding:'.75rem',background:'#dbeafe',border:'1px solid #93c5fd',borderRadius:'8px',color:'#1e40af',fontSize:'.875rem',marginBottom:'1rem',textAlign:'center'}} className="pulse">🔄 Conectando con servidor... {intento>0&&`(intento ${intento}/${MAX_LOGIN_RETRIES})`}</div>}
+<form onSubmit={handleLogin}>
+{!modoAdmin&&<div style={{marginBottom:'1rem'}}><label>CCT de tu escuela</label><input type="text" value={cct} onChange={(e)=>setCct(e.target.value)} placeholder="30DPR0001A" required disabled={cargando}/></div>}
+<div style={{marginBottom:'1.5rem'}}><label>Contraseña</label><input type="password" value={password} onChange={(e)=>setPassword(e.target.value)} placeholder="••••••••" required disabled={cargando}/></div>
+<button type="submit" disabled={cargando} className="btn btn-primary" style={{width:'100%'}}>
+{cargando?(
+<span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'.5rem'}}>
+<div style={{width:'16px',height:'16px',border:'2px solid white',borderTop:'2px solid transparent',borderRadius:'50%',animation:'spin 1s linear infinite'}}/>
+{conectando?'Conectando...':'Ingresando...'}
+</span>
+):'Ingresar'}
+</button>
+</form>
+<div style={{marginTop:'1rem',padding:'.75rem',background:'#f9fafb',borderRadius:'8px',fontSize:'.75rem',color:'#6b7280',textAlign:'center'}}>
+<p>💡 Si el sistema tarda en conectar, es normal. Por favor espera.</p>
+</div>
+</div>
+</div>
+);
+};
+
+const Admin=({usuario,config,setConfig,escuelas,setEscuelas,programas,setProgramas,documentos,setDocumentos,compartidos,setCompartidos,onLogout})=>{
+const[tab,setTab]=useState('dashboard');
+const[modal,setModal]=useState(null);
+const[editData,setEditData]=useState(null);
+const[filtroEscuela,setFiltroEscuela]=useState('');
+const[filtroPrograma,setFiltroPrograma]=useState('');
+
+const stats=calcStats(escuelas,programas,documentos);
+
+const docsConDetalles=documentos.map(doc=>{
+const escuela=escuelas.find(e=>e.id===doc.escuelaId);
+const programa=programas.find(p=>p.id===doc.programaId);
+return{...doc,escuelaNombre:escuela?.nombre||'Desconocida',escuelaCCT:escuela?.cct||'N/A',programaNombre:programa?.nombre||'Desconocido'};
+});
+
+let docsFiltrados=docsConDetalles;
+if(filtroEscuela)docsFiltrados=docsFiltrados.filter(d=>d.escuelaId===filtroEscuela);
+if(filtroPrograma)docsFiltrados=docsFiltrados.filter(d=>d.programaId===filtroPrograma);
+
+return(
+<div style={{minHeight:'100vh',background:'#f5f5f5'}}>
+<header style={{background:'#fff',borderBottom:'1px solid #e5e7eb',position:'sticky',top:0,zIndex:100}}>
+<div className="container" style={{padding:'1rem 1.5rem',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+<div style={{display:'flex',alignItems:'center',gap:'1rem'}}>
+{config.logoUrl&&<img src={config.logoUrl} alt="Logo" style={{height:'45px'}}/>}
+<div><h1 style={{fontSize:'1.125rem',fontWeight:'600'}}>{config.nombreZona||'Panel Administrador'}</h1><p style={{fontSize:'.875rem',color:'#6b7280'}}>Gestión Documental</p></div>
+</div>
+<div style={{display:'flex',gap:'.75rem'}}>
+<button onClick={()=>setModal('config')} className="btn btn-secondary no-print">⚙️</button>
+<button onClick={onLogout} className="btn btn-secondary no-print">Salir</button>
+</div>
+</div>
+</header>
+<div className="container" style={{paddingTop:'2rem',paddingBottom:'3rem'}}>
+<div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))',gap:'1.5rem',marginBottom:'2rem'}}>
+<StatCard titulo="Escuelas" valor={stats.total} color="#2563eb"/>
+<StatCard titulo="Avance" valor={`${stats.avance}%`} color="#10b981"/>
+<StatCard titulo="Completas" valor={stats.completas} color="#10b981"/>
+<StatCard titulo="Pendientes" valor={stats.pendientes} color="#f59e0b"/>
+</div>
+<div style={{display:'flex',gap:'1rem',marginBottom:'2rem',flexWrap:'wrap'}} className="no-print">
+<button onClick={()=>{setEditData(null);setModal('escuela');}} className="btn btn-primary">+ Escuela</button>
+<button onClick={()=>{setEditData(null);setModal('programa');}} className="btn btn-success">+ Programa</button>
+<button onClick={()=>setModal('compartido')} className="btn btn-secondary">📤 Subir Archivo</button>
+<button onClick={()=>exportExcel(escuelas,programas,documentos)} className="btn btn-secondary">📥 Excel</button>
+<button onClick={()=>window.print()} className="btn btn-secondary">🖨️ Imprimir</button>
+</div>
+<div style={{marginBottom:'1.5rem',borderBottom:'2px solid #e5e7eb'}} className="no-print">
+<div style={{display:'flex',gap:'2rem',overflowX:'auto'}}>
+<Tab active={tab==='dashboard'} onClick={()=>setTab('dashboard')}>Dashboard</Tab>
+<Tab active={tab==='escuelas'} onClick={()=>setTab('escuelas')}>Escuelas ({escuelas.length})</Tab>
+<Tab active={tab==='programas'} onClick={()=>setTab('programas')}>Programas ({programas.length})</Tab>
+<Tab active={tab==='documentos'} onClick={()=>setTab('documentos')}>Documentos ({documentos.length})</Tab>
+<Tab active={tab==='compartidos'} onClick={()=>setTab('compartidos')}>Archivos ({compartidos.length})</Tab>
+<Tab active={tab==='reporte'} onClick={()=>setTab('reporte')}>📋 Rúbrica</Tab>
+</div>
+</div>
+{tab==='dashboard'&&<Dashboard escuelas={escuelas} programas={programas} documentos={documentos}/>}
+{tab==='escuelas'&&<TabEscuelas escuelas={escuelas} programas={programas} documentos={documentos} onEdit={(e)=>{setEditData(e);setModal('escuela');}} onPassword={(e)=>{setEditData(e);setModal('password');}} onDelete={(id)=>delEscuela(id,escuelas,setEscuelas)} onImport={(data)=>{data.forEach(async(e)=>{const ref=await db.collection('escuelas').add(e);setEscuelas(prev=>[...prev,{id:ref.id,...e}]);});}}  setEscuelas={setEscuelas}/>}
+{tab==='programas'&&<TabProgramas programas={programas} onEdit={(p)=>{setEditData(p);setModal('programa');}} onDelete={(id)=>delPrograma(id,programas,setProgramas)}/>}
+{tab==='documentos'&&<TabDocumentos documentos={docsFiltrados} escuelas={escuelas} programas={programas} filtroEscuela={filtroEscuela} setFiltroEscuela={setFiltroEscuela} filtroPrograma={filtroPrograma} setFiltroPrograma={setFiltroPrograma} onDelete={(id)=>delDocumento(id,documentos,setDocumentos)}/>}
+{tab==='reporte'&&<TabRubrica escuelas={escuelas} programas={programas} documentos={documentos} config={config}/>}
+{tab==='compartidos'&&<TabCompartidos compartidos={compartidos} onDelete={(id)=>delCompartido(id,compartidos,setCompartidos)}/>}
+</div>
+{modal==='escuela'&&<ModalEscuela data={editData} onClose={()=>setModal(null)} onSave={(d)=>saveEscuela(d,escuelas,setEscuelas,()=>setModal(null))}/>}
+{modal==='programa'&&<ModalPrograma data={editData} escuelas={escuelas} onClose={()=>setModal(null)} onSave={(d)=>savePrograma(d,programas,setProgramas,()=>setModal(null))}/>}
+{modal==='password'&&<ModalPassword escuela={editData} onClose={()=>setModal(null)}/>}
+{modal==='config'&&<ModalConfig config={config} onSave={(c)=>{saveConfig(c,setConfig);setModal(null);}} onClose={()=>setModal(null)}/>}
+{modal==='compartido'&&<ModalCompartido programas={programas} onClose={()=>setModal(null)} onSave={(d)=>saveCompartido(d,compartidos,setCompartidos,()=>setModal(null))}/>}
+</div>
+);
+};
+
+const Escuela=({usuario,escuela,config,programas,documentos,setDocumentos,compartidos,onLogout})=>{
+const[subiendo,setSubiendo]=useState(false);
+const[mostrarAviso,setMostrarAviso]=useState(true);
+if(!escuela)return <Error mensaje="No se encontró información de la escuela"/>;
+
+const progEscuela=programas.filter(p=>p.todasEscuelas||(p.escuelasAsignadas||[]).includes(escuela.id));
+const compEscuela=compartidos.filter(c=>!c.programaId||progEscuela.some(p=>p.id===c.programaId));
+const pendientes=progEscuela.flatMap(p=>{const docs=documentos.filter(d=>d.escuelaId===escuela.id&&d.programaId===p.id);const faltantes=p.documentosRequeridos.filter(d=>!docs.find(doc=>doc.nombreDocumento===d));return faltantes.length>0?[{programa:p.nombre,fechaLimite:p.fechaLimite,docs:faltantes}]:[];});
+const handleSubir=async(e,programa,doc)=>{
+const file=e.target.files[0];
+if(!file)return;
+setSubiendo(true);
+try{
+const ref=storage.ref(`docs/${escuela.id}/${programa.id}/${Date.now()}_${file.name}`);
+await ref.put(file);
+const url=await ref.getDownloadURL();
+const data={escuelaId:escuela.id,programaId:programa.id,nombreDocumento:doc,nombreArchivo:file.name,url,tipo:getTipo(file),fecha:new Date().toISOString(),por:escuela.nombre};
+const docRef=await db.collection('documentos').add(data);
+setDocumentos([...documentos,{id:docRef.id,...data}]);
+alert('✅ Archivo subido correctamente');
+}catch(error){
+console.error(error);
+alert('❌ Error al subir archivo. Verifica que activaste el Plan Blaze en Firebase.');
+}finally{
+setSubiendo(false);
+}
+};
+
+const handleBorrar=async(docId)=>{
+if(!confirm('¿Eliminar este archivo?'))return;
+try{
+const doc=documentos.find(d=>d.id===docId);
+if(doc.url){
+const ref=storage.refFromURL(doc.url);
+await ref.delete().catch(()=>{});
+}
+await db.collection('documentos').doc(docId).delete();
+setDocumentos(documentos.filter(d=>d.id!==docId));
+alert('✅ Archivo eliminado');
+}catch(error){
+console.error(error);
+alert('❌ Error al eliminar');
+}
+};
+
+return(
+<div style={{minHeight:'100vh',background:'#f5f5f5'}}>
+{mostrarAviso&&pendientes.length>0&&(<div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:'1rem'}}>
+<div style={{background:'#fff',borderRadius:'12px',maxWidth:'480px',width:'100%',overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,.3)'}}>
+<div style={{background:'#2d2d2d',padding:'.75rem 1rem',display:'flex',alignItems:'center',gap:'.5rem'}}><div style={{width:'12px',height:'12px',borderRadius:'50%',background:'#ef4444'}}/><div style={{width:'12px',height:'12px',borderRadius:'50%',background:'#10b981'}}/><div style={{width:'12px',height:'12px',borderRadius:'50%',background:'#f59e0b'}}/><span style={{color:'#fff',fontWeight:'600',fontSize:'.875rem',marginLeft:'.5rem'}}>⚠️ DOCUMENTOS PENDIENTES</span></div>
+<div style={{padding:'1.5rem'}}>
+<div style={{display:'flex',alignItems:'center',gap:'1rem',marginBottom:'1.5rem'}}><div style={{fontSize:'3rem'}}>⚠️</div><p style={{color:'#ef4444',fontWeight:'700',fontSize:'1.25rem'}}>¡Tienes documentos pendientes!</p></div>
+<div style={{display:'flex',flexDirection:'column',gap:'1rem',maxHeight:'250px',overflowY:'auto',marginBottom:'1.5rem'}}>
+{pendientes.map((p,i)=>(<div key={i} style={{padding:'1rem',background:'#f9fafb',borderRadius:'8px',borderLeft:'4px solid #ef4444'}}><p style={{fontWeight:'700',marginBottom:'.25rem'}}>{p.programa}</p><p style={{fontSize:'.8rem',color:'#ef4444',fontWeight:'700',marginBottom:'.5rem'}}>📅 Fecha límite: {new Date(p.fechaLimite).toLocaleDateString('es-MX',{year:'numeric',month:'long',day:'numeric'})}</p>{p.docs.map((d,j)=><p key={j} style={{fontSize:'.875rem',color:'#374151'}}>• {d}</p>)}</div>))}
+</div>
+<div style={{display:'flex',gap:'1rem',justifyContent:'flex-end'}}><button onClick={()=>setMostrarAviso(false)} style={{padding:'.65rem 1.5rem',borderRadius:'8px',border:'2px solid #d1d5db',background:'#fff',fontWeight:'600',cursor:'pointer',color:'#6b7280'}}>Después</button><button onClick={()=>setMostrarAviso(false)} style={{padding:'.65rem 1.5rem',borderRadius:'8px',border:'none',background:'#ef4444',color:'#fff',fontWeight:'600',cursor:'pointer'}}>Subir ahora</button></div>
+</div></div></div>)}
+<header style={{background:'#fff',borderBottom:'1px solid #e5e7eb'}}>
+<div className="container" style={{padding:'1rem 1.5rem',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+<div style={{display:'flex',alignItems:'center',gap:'1rem'}}>
+{config.logoUrl&&<img src={config.logoUrl} alt="Logo" style={{height:'45px'}}/>}
+<div><h1 style={{fontSize:'1.125rem',fontWeight:'600'}}>{escuela.nombre}</h1><p style={{fontSize:'.875rem',color:'#6b7280'}}>CCT: {escuela.cct}</p></div>
+</div>
+<button onClick={onLogout} className="btn btn-secondary">Salir</button>
+</div>
+</header>
+<div className="container" style={{padding:'2rem 1.5rem'}}>
+<div style={{background:'#dbeafe',padding:'1rem',borderRadius:'8px',marginBottom:'2rem',border:'1px solid #93c5fd'}}>
+<p style={{color:'#1e40af'}}><strong>Bienvenido/a.</strong> Sube los documentos requeridos para cada programa.</p>
+{config.permitirBorradoEscuelas&&<p style={{color:'#1e40af',marginTop:'.5rem',fontSize:'.875rem'}}>💡 Puedes eliminar archivos si te equivocas usando el botón 🗑️</p>}
+</div>
+{progEscuela.length===0?(
+<div className="card" style={{padding:'3rem',textAlign:'center',color:'#6b7280'}}>No tienes programas asignados</div>
+):(
+<div style={{display:'flex',flexDirection:'column',gap:'1.5rem'}}>
+{progEscuela.map(prog=>{
+const docs=documentos.filter(d=>d.escuelaId===escuela.id&&d.programaId===prog.id);
+return(
+<div key={prog.id} className="card">
+<div style={{padding:'1.5rem',borderBottom:'1px solid #e5e7eb',background:'#f9fafb'}}>
+<div style={{display:'flex',justifyContent:'space-between',alignItems:'start'}}>
+<div><h3 style={{fontSize:'1.125rem',fontWeight:'600',marginBottom:'.5rem'}}>{prog.nombre}</h3><p style={{fontSize:'.875rem',color:'#6b7280',marginBottom:'.5rem'}}>{prog.descripcion}</p><p style={{fontSize:'.875rem',color:'#6b7280'}}>📅 {new Date(prog.fechaLimite).toLocaleDateString()}</p></div>
+<span className={docs.length===prog.documentosRequeridos.length?'badge badge-success':'badge badge-warning'}>{docs.length}/{prog.documentosRequeridos.length}</span>
+</div>
+</div>
+<div style={{padding:'1.5rem'}}>
+<div style={{display:'flex',flexDirection:'column',gap:'1rem'}}>
+{prog.documentosRequeridos.map(doc=>{
+const entregado=docs.find(d=>d.nombreDocumento===doc);
+return(
+<div key={doc} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'1rem',border:entregado?'1px solid #e5e7eb':'2px solid #ef4444',borderRadius:'8px'}}><div style={{display:'flex',alignItems:'center',gap:'.75rem'}}>
+{entregado?<div style={{width:'24px',height:'24px',borderRadius:'50%',background:'#10b981',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:'14px'}}>✓</div>:<div style={{width:'24px',height:'24px',borderRadius:'50%',border:'2px solid #d1d5db'}}/>}
+<div><p style={{fontWeight:'500'}}>{doc}</p>{entregado&&<p style={{fontSize:'.75rem',color:'#6b7280'}}>{entregado.tipo} • {new Date(entregado.fecha).toLocaleString()}</p>}</div>
+</div>
+<div style={{display:'flex',gap:'.5rem'}}>
+{entregado?(
+<>
+<a href={entregado.url} target="_blank" className="btn btn-secondary" style={{padding:'.5rem 1rem',textDecoration:'none',fontSize:'.875rem'}}>Ver</a>
+{config.permitirBorradoEscuelas&&<button onClick={()=>handleBorrar(entregado.id)} className="btn btn-danger" style={{padding:'.5rem 1rem',fontSize:'.875rem'}}>🗑️</button>}
+</>
+):(
+<label className="btn btn-primary" style={{padding:'.5rem 1rem',cursor:'pointer',fontSize:'.875rem'}}>📤 Subir<input type="file" style={{display:'none'}} onChange={(e)=>handleSubir(e,prog,doc)} accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" disabled={subiendo}/></label>
+)}
+</div>
+</div>
+);
+})}
+</div>
+</div>
+</div>
+);
+})}
+</div>
+)}
+{compEscuela.length>0&&(
+<div className="card" style={{marginTop:'2rem'}}>
+<h3 style={{fontSize:'1.125rem',fontWeight:'600',marginBottom:'1rem'}}>📥 Archivos Compartidos</h3>
+<div style={{display:'flex',flexDirection:'column',gap:'.75rem'}}>
+{compEscuela.map(c=>(
+<div key={c.id} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'.75rem',border:'1px solid #e5e7eb',borderRadius:'8px'}}>
+<div><p style={{fontWeight:'500'}}>{c.nombre}</p><p style={{fontSize:'.75rem',color:'#6b7280'}}>{c.descripcion}</p></div>
+<a href={c.url} target="_blank" className="btn btn-secondary" style={{padding:'.5rem 1rem',textDecoration:'none',fontSize:'.875rem'}}>Descargar</a>
+</div>
+))}
+</div>
+</div>
+)}
+</div>
+{subiendo&&<div className="modal-overlay"><div className="card" style={{textAlign:'center'}}><div className="spinner"/><p style={{marginTop:'1rem'}}>Subiendo archivo...</p></div></div>}
+</div>
+);
+};
+
+const StatCard=({titulo,valor,color})=>(
+<div className="card" style={{background:color,color:'#fff'}}>
+<p style={{fontSize:'.875rem',opacity:.9,marginBottom:'.5rem'}}>{titulo}</p>
+<p style={{fontSize:'2rem',fontWeight:'700'}}>{valor}</p>
+</div>
+);
+
+const Tab=({active,onClick,children})=>(
+<button onClick={onClick} style={{padding:'.75rem 0',border:'none',background:'none',fontSize:'.9375rem',fontWeight:'500',color:active?'#2563eb':'#6b7280',borderBottom:active?'2px solid #2563eb':'none',cursor:'pointer',marginBottom:'-2px',whiteSpace:'nowrap'}}>{children}</button>
+);
+
+const Dashboard=({escuelas,programas,documentos})=>(
+<div className="card">
+<h2 style={{fontSize:'1.25rem',fontWeight:'600',marginBottom:'1.5rem'}}>Resumen General</h2>
+<table>
+<thead><tr><th>Escuela</th><th>CCT</th><th>Programas</th><th>Entregados</th><th>Total</th><th>Avance</th></tr></thead>
+<tbody>
+{escuelas.map(e=>{
+const progs=programas.filter(p=>p.todasEscuelas||(p.escuelasAsignadas||[]).includes(e.id));
+let total=0,entregados=0;
+progs.forEach(p=>{
+p.documentosRequeridos.forEach(d=>{
+total++;
+if(documentos.find(doc=>doc.escuelaId===e.id&&doc.programaId===p.id&&doc.nombreDocumento===d))entregados++;
+});
+});
+const pct=total>0?Math.round((entregados/total)*100):0;
+return(
+<tr key={e.id}>
+<td style={{fontWeight:'500'}}>{e.nombre}</td>
+<td style={{fontFamily:'monospace'}}>{e.cct}</td>
+<td>{progs.length}</td>
+<td>{entregados}</td>
+<td>{total}</td>
+<td><div style={{display:'flex',alignItems:'center',gap:'.5rem'}}><div style={{flex:1,maxWidth:'100px',height:'8px',background:'#e5e7eb',borderRadius:'4px',overflow:'hidden'}}><div style={{width:`${pct}%`,height:'100%',background:pct===100?'#10b981':'#2563eb'}}></div></div><span style={{fontSize:'.875rem',fontWeight:'500'}}>{pct}%</span></div></td>
+</tr>
+);
+})}
+</tbody>
+</table>
+</div>
+);
+
+const TabEscuelas=({escuelas,programas,documentos,onEdit,onPassword,onDelete,onImport,setEscuelas})=>{
+const importarExcel=async(e)=>{
+const file=e.target.files[0];
+if(!file)return;
+const data=await file.arrayBuffer();
+const wb=XLSX.read(data);
+const ws=wb.Sheets[wb.SheetNames[0]];
+const rows=XLSX.utils.sheet_to_json(ws);
+if(!confirm(`¿Importar ${rows.length} escuelas? Esto reemplazará las escuelas existentes.`))return;
+const snap=await db.collection('escuelas').get();
+for(const d of snap.docs)await d.ref.delete();
+const nuevas=[];
+for(const row of rows){
+const keys=Object.keys(row).map(k=>k.toLowerCase());
+const get=(terminos)=>{const k=Object.keys(row).find(k=>terminos.some(t=>k.toLowerCase().includes(t)));return k?String(row[k]||'').trim():'';}
+const escuela={nombre:get(['escuela','nombre']),cct:get(['clave','cct']).toUpperCase(),comunidad:get(['localidad','comunidad']),director:get(['director'])};
+if(!escuela.nombre||!escuela.cct)continue;
+const ref=await db.collection('escuelas').add(escuela);
+nuevas.push({id:ref.id,...escuela});
+}
+setEscuelas(nuevas);
+alert(`✅ ${nuevas.length} escuelas importadas correctamente`);
+e.target.value='';
+};
+return(<div className="card">
+<div style={{display:'flex',justifyContent:'flex-end',marginBottom:'1rem'}}><label className="btn btn-success" style={{cursor:'pointer'}}>📥 Importar Excel<input type="file" accept=".xlsx,.xls" style={{display:'none'}} onChange={importarExcel}/></label></div>
+<table><thead><tr><th>Escuela</th><th>CCT</th><th>Comunidad</th><th>Director</th><th>Avance</th><th>Acciones</th></tr></thead>
+<tbody>
+{escuelas.map(e=>{
+const progs=programas.filter(p=>p.todasEscuelas||(p.escuelasAsignadas||[]).includes(e.id));
+let total=0,entregados=0;
+progs.forEach(p=>{p.documentosRequeridos.forEach(d=>{total++;if(documentos.find(doc=>doc.escuelaId===e.id&&doc.programaId===p.id&&doc.nombreDocumento===d))entregados++;});});
+const pct=total>0?Math.round((entregados/total)*100):0;
+return(
+<tr key={e.id}>
+<td style={{fontWeight:'500'}}>{e.nombre}</td>
+<td style={{fontFamily:'monospace'}}>{e.cct}</td>
+<td>{e.comunidad}</td>
+<td>{e.director}</td>
+<td><div style={{display:'flex',alignItems:'center',gap:'.5rem'}}><div style={{flex:1,maxWidth:'80px',height:'8px',background:'#e5e7eb',borderRadius:'4px',overflow:'hidden'}}><div style={{width:`${pct}%`,height:'100%',background:pct===100?'#10b981':'#2563eb'}}></div></div><span style={{fontSize:'.875rem'}}>{pct}%</span></div></td>
+<td><div style={{display:'flex',gap:'.5rem'}}><button onClick={()=>onPassword(e)} className="btn btn-secondary" style={{padding:'.5rem',fontSize:'.875rem'}}>🔑</button><button onClick={()=>onEdit(e)} className="btn btn-secondary" style={{padding:'.5rem',fontSize:'.875rem'}}>✏️</button><button onClick={()=>onDelete(e.id)} className="btn btn-danger" style={{padding:'.5rem',fontSize:'.875rem'}}>🗑️</button></div></td>
+</tr>
+);
+})}
+</tbody>
+</table>
+</div>);};
+const TabProgramas=({programas,onEdit,onDelete})=>(
+<div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))',gap:'1.5rem'}}>
+{programas.map(p=>(
+<div key={p.id} className="card">
+<h3 style={{fontSize:'1.125rem',fontWeight:'600',marginBottom:'.5rem'}}>{p.nombre}</h3>
+<p style={{fontSize:'.875rem',color:'#6b7280',marginBottom:'1rem'}}>{p.descripcion}</p>
+<div style={{fontSize:'.875rem',color:'#6b7280',marginBottom:'1rem'}}>
+<p>📅 {new Date(p.fechaLimite).toLocaleDateString()}</p>
+<p>📄 {p.documentosRequeridos.length} documentos</p>
+<p>🏫 {p.todasEscuelas?'Todas las escuelas':`${(p.escuelasAsignadas||[]).length} escuelas`}</p>
+</div>
+<div style={{display:'flex',gap:'.5rem'}}>
+<button onClick={()=>onEdit(p)} className="btn btn-secondary" style={{flex:1,padding:'.5rem'}}>Editar</button>
+<button onClick={()=>onDelete(p.id)} className="btn btn-danger" style={{padding:'.5rem'}}>🗑️</button>
+</div>
+</div>
+))}
+</div>
+);
+
+const TabDocumentos=({documentos,escuelas,programas,filtroEscuela,setFiltroEscuela,filtroPrograma,setFiltroPrograma,onDelete})=>(
+<div>
+<div className="card" style={{marginBottom:'1.5rem'}}>
+<div style={{display:'flex',gap:'1rem',flexWrap:'wrap'}}>
+<div style={{flex:'1',minWidth:'200px'}}>
+<label>Filtrar por Escuela</label>
+<select value={filtroEscuela} onChange={(e)=>setFiltroEscuela(e.target.value)}>
+<option value="">Todas las escuelas</option>
+{escuelas.map(e=><option key={e.id} value={e.id}>{e.nombre}</option>)}
+</select>
+</div>
+<div style={{flex:'1',minWidth:'200px'}}>
+<label>Filtrar por Programa</label>
+<select value={filtroPrograma} onChange={(e)=>setFiltroPrograma(e.target.value)}>
+<option value="">Todos los programas</option>
+{programas.map(p=><option key={p.id} value={p.id}>{p.nombre}</option>)}
+</select>
+</div>
+</div>
+</div>
+{documentos.length===0?(
+<div className="card" style={{padding:'3rem',textAlign:'center',color:'#6b7280'}}>No hay documentos subidos</div>
+):(
+<div className="card">
+<table>
+<thead><tr><th>Escuela</th><th>Programa</th><th>Documento</th><th>Archivo</th><th>Tipo</th><th>Fecha</th><th>Acciones</th></tr></thead>
+<tbody>
+{documentos.map(d=>(
+<tr key={d.id}>
+<td><div><p style={{fontWeight:'500',fontSize:'.875rem'}}>{d.escuelaNombre}</p><p style={{fontSize:'.75rem',color:'#6b7280'}}>{d.escuelaCCT}</p></div></td>
+<td style={{fontSize:'.875rem'}}>{d.programaNombre}</td>
+<td style={{fontSize:'.875rem',fontWeight:'500'}}>{d.nombreDocumento}</td>
+<td style={{fontSize:'.875rem',color:'#6b7280'}}>{d.nombreArchivo}</td>
+<td><span className="badge badge-info">{d.tipo}</span></td>
+<td style={{fontSize:'.75rem',color:'#6b7280'}}>{new Date(d.fecha).toLocaleString()}</td>
+<td><div style={{display:'flex',gap:'.5rem'}}><a href={d.url} target="_blank" className="btn btn-secondary" style={{padding:'.5rem',fontSize:'.875rem',textDecoration:'none'}}>Ver</a><a href={d.url} download className="btn btn-secondary" style={{padding:'.5rem',fontSize:'.875rem',textDecoration:'none'}}>📥</a><button onClick={()=>onDelete(d.id)} className="btn btn-danger" style={{padding:'.5rem',fontSize:'.875rem'}}>🗑️</button></div></td>
+</tr>
+))}
+</tbody>
+</table>
+</div>
+)}
+</div>
+);
+
+const TabCompartidos=({compartidos,onDelete})=>(
+<div className="card">
+{compartidos.length===0?<p style={{textAlign:'center',color:'#6b7280',padding:'2rem'}}>No hay archivos compartidos</p>:(
+<div style={{display:'flex',flexDirection:'column',gap:'.75rem'}}>
+{compartidos.map(c=>(
+<div key={c.id} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'.75rem',border:'1px solid #e5e7eb',borderRadius:'8px'}}>
+<div><p style={{fontWeight:'500'}}>{c.nombre}</p><p style={{fontSize:'.75rem',color:'#6b7280'}}>{c.descripcion}</p></div>
+<div style={{display:'flex',gap:'.5rem'}}>
+<a href={c.url} target="_blank" className="btn btn-secondary" style={{padding:'.5rem 1rem',textDecoration:'none',fontSize:'.875rem'}}>Ver</a>
+<button onClick={()=>onDelete(c.id)} className="btn btn-danger" style={{padding:'.5rem 1rem',fontSize:'.875rem'}}>🗑️</button>
+</div>
+</div>
+))}
+</div>
+)}
+</div>
+);
+const TabRubrica=({escuelas,programas,documentos,config})=>{
+const fecha=new Date().toLocaleDateString('es-MX',{year:'numeric',month:'long',day:'numeric'});
+return(<div><div style={{marginBottom:'1rem',display:'flex',justifyContent:'flex-end'}} className="no-print"><button onClick={()=>{const w=window.open('','_blank');w.document.write('<html><head><title>Rúbrica</title><style>body{font-family:Arial,sans-serif}table{width:100%;border-collapse:collapse;font-size:.8rem}th,td{border:1px solid #000;padding:.4rem}@media print{button{display:none}}</style></head><body>'+document.getElementById('rubrica-contenido').innerHTML+'<script>window.print()<\/script></body></html>');w.document.close();}} className="btn btn-primary">🖨️ Imprimir Rúbrica</button></div>
+<div id="rubrica-contenido" style={{background:'#fff',padding:'1.5rem',borderRadius:'12px',overflowX:'auto'}}>
+<table style={{width:'100%',borderCollapse:'collapse',fontSize:'.8rem'}}>
+<thead>
+<tr><th colSpan={3+programas.length} style={{padding:'1rem',textAlign:'center',borderBottom:'2px solid #000',borderTop:'2px solid #000'}}><div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'1rem'}}>{config.logoUrl&&<img src={config.logoUrl} alt="Logo" style={{height:'40px',objectFit:'contain'}}/>}<div><div style={{fontSize:'1rem',fontWeight:'700'}}>{config.nombreZona||'ZONA ESCOLAR'}</div><div style={{fontSize:'.8rem'}}>{fecha}</div></div></div></th></tr>
+<tr>
+<th style={{border:'1px solid #000',padding:'.4rem',background:'#f3f4f6',textAlign:'center'}}>No.</th>
+<th style={{border:'1px solid #000',padding:'.4rem',background:'#f3f4f6'}}>CLAVE</th>
+<th style={{border:'1px solid #000',padding:'.4rem',background:'#f3f4f6'}}>ESCUELA</th>
+{programas.map(p=>(<th key={p.id} style={{border:'1px solid #000',padding:'.2rem',background:'#f3f4f6',textAlign:'center',maxWidth:'60px'}}><div style={{writingMode:'vertical-rl',transform:'rotate(180deg)',whiteSpace:'nowrap',fontSize:'.7rem',fontWeight:'600'}}>{p.nombre}</div></th>))}
+</tr>
+</thead>
+<tbody>
+{escuelas.map((e,i)=>(<tr key={e.id} style={{background:i%2===0?'#fff':'#f9fafb'}}>
+<td style={{border:'1px solid #d1d5db',padding:'.4rem',textAlign:'center',fontWeight:'600'}}>{i+1}</td>
+<td style={{border:'1px solid #d1d5db',padding:'.4rem',fontFamily:'monospace',fontSize:'.75rem'}}>{e.cct}</td>
+<td style={{border:'1px solid #d1d5db',padding:'.4rem',fontWeight:'500'}}>{e.nombre}</td>
+{programas.map(p=>{const asignado=p.todasEscuelas||(p.escuelasAsignadas||[]).includes(e.id);if(!asignado)return <td key={p.id} style={{border:'1px solid #d1d5db',background:'#e5e7eb'}}></td>;const completo=documentos.filter(d=>d.escuelaId===e.id&&d.programaId===p.id).length>=p.documentosRequeridos.length;return(<td key={p.id} style={{border:'1px solid #d1d5db',textAlign:'center',fontSize:'1rem',background:completo?'#d1fae5':'#fff'}}>{completo?'✓':''}</td>);})}
+</tr>))}
+</tbody>
+<tfoot>
+<tr><td colSpan={3} style={{border:'1px solid #000',padding:'.4rem',fontWeight:'600',background:'#f3f4f6'}}>TOTAL ENTREGARON</td>
+{programas.map(p=>{const asig=escuelas.filter(e=>p.todasEscuelas||(p.escuelasAsignadas||[]).includes(e.id));const ent=asig.filter(e=>documentos.filter(d=>d.escuelaId===e.id&&d.programaId===p.id).length>=p.documentosRequeridos.length).length;return<td key={p.id} style={{border:'1px solid #000',textAlign:'center',fontWeight:'700',background:'#f3f4f6'}}>{ent}/{asig.length}</td>;})}
+</tr>
+</tfoot>
+</table></div></div>);};
+const ModalEscuela=({data,onClose,onSave})=>{
+const[form,setForm]=useState(data||{nombre:'',cct:'',comunidad:'',director:''});
+const handleSubmit=(e)=>{
+e.preventDefault();
+if(!form.nombre||!form.cct){alert('Completa los campos requeridos');return;}
+onSave(form);
+};
+return(
+<div className="modal-overlay">
+<div className="modal">
+<div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'1.5rem'}}>
+<h2 style={{fontSize:'1.5rem',fontWeight:'600'}}>{data?'Editar':'Nueva'} Escuela</h2>
+<button onClick={onClose} style={{border:'none',background:'none',fontSize:'1.5rem',cursor:'pointer'}}>×</button>
+</div>
+<form onSubmit={handleSubmit}>
+<div style={{marginBottom:'1rem'}}><label>Nombre *</label><input type="text" value={form.nombre} onChange={(e)=>setForm({...form,nombre:e.target.value})} required/></div>
+<div style={{marginBottom:'1rem'}}><label>CCT *</label><input type="text" value={form.cct} onChange={(e)=>setForm({...form,cct:e.target.value.toUpperCase()})} required/></div>
+<div style={{marginBottom:'1rem'}}><label>Comunidad</label><input type="text" value={form.comunidad} onChange={(e)=>setForm({...form,comunidad:e.target.value})}/></div>
+<div style={{marginBottom:'1.5rem'}}><label>Director</label><input type="text" value={form.director} onChange={(e)=>setForm({...form,director:e.target.value})}/></div>
+<div style={{display:'flex',gap:'1rem'}}>
+<button type="button" onClick={onClose} className="btn btn-secondary" style={{flex:1}}>Cancelar</button>
+<button type="submit" className="btn btn-primary" style={{flex:1}}>Guardar</button>
+</div>
+</form>
+</div>
+</div>
+);
+};
+
+const ModalPrograma=({data,escuelas,onClose,onSave})=>{
+const[form,setForm]=useState(data||{nombre:'',descripcion:'',fechaLimite:'',documentosRequeridos:[],todasEscuelas:true,escuelasAsignadas:[]});
+const[nuevoDoc,setNuevoDoc]=useState('');
+const handleSubmit=(e)=>{
+e.preventDefault();
+if(!form.nombre||!form.fechaLimite||form.documentosRequeridos.length===0){alert('Completa todos los campos');return;}
+onSave(form);
+};
+return(
+<div className="modal-overlay">
+<div className="modal">
+<div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'1.5rem'}}>
+<h2 style={{fontSize:'1.5rem',fontWeight:'600'}}>{data?'Editar':'Nuevo'} Programa</h2>
+<button onClick={onClose} style={{border:'none',background:'none',fontSize:'1.5rem',cursor:'pointer'}}>×</button>
+</div>
+<form onSubmit={handleSubmit}>
+<div style={{marginBottom:'1rem'}}><label>Nombre *</label><input type="text" value={form.nombre} onChange={(e)=>setForm({...form,nombre:e.target.value})} required/></div>
+<div style={{marginBottom:'1rem'}}><label>Descripción</label><textarea value={form.descripcion} onChange={(e)=>setForm({...form,descripcion:e.target.value})} rows="3"/></div>
+<div style={{marginBottom:'1rem'}}><label>Fecha Límite *</label><input type="date" value={form.fechaLimite} onChange={(e)=>setForm({...form,fechaLimite:e.target.value})} required/></div>
+<div style={{marginBottom:'1rem'}}>
+<label>Documentos Requeridos *</label>
+<div style={{display:'flex',gap:'.5rem',marginBottom:'.5rem'}}>
+<input type="text" value={nuevoDoc} onChange={(e)=>setNuevoDoc(e.target.value)} onKeyPress={(e)=>{if(e.key==='Enter'){e.preventDefault();if(nuevoDoc.trim()){setForm({...form,documentosRequeridos:[...form.documentosRequeridos,nuevoDoc.trim()]});setNuevoDoc('');}}}} placeholder="Nombre del documento"/>
+<button type="button" onClick={()=>{if(nuevoDoc.trim()){setForm({...form,documentosRequeridos:[...form.documentosRequeridos,nuevoDoc.trim()]});setNuevoDoc('');}}} className="btn btn-secondary">+</button>
+</div>
+<div style={{display:'flex',flexDirection:'column',gap:'.5rem'}}>
+{form.documentosRequeridos.map((d,i)=>(
+<div key={i} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'.5rem',background:'#f9fafb',borderRadius:'6px'}}>
+<span style={{fontSize:'.875rem'}}>{d}</span>
+<button type="button" onClick={()=>setForm({...form,documentosRequeridos:form.documentosRequeridos.filter((_,idx)=>idx!==i)})} style={{border:'none',background:'none',cursor:'pointer',color:'#ef4444',fontSize:'1.25rem'}}>×</button>
+</div>
+))}
+</div>
+</div>
+<div style={{marginBottom:'1rem'}}>
+<label style={{display:'flex',alignItems:'center',gap:'.5rem',cursor:'pointer'}}>
+<input type="checkbox" checked={form.todasEscuelas} onChange={(e)=>setForm({...form,todasEscuelas:e.target.checked})}/>
+<span>Asignar a todas las escuelas</span>
+</label>
+</div>
+{!form.todasEscuelas&&(
+<div style={{marginBottom:'1rem',maxHeight:'150px',overflowY:'auto',border:'1px solid #e5e7eb',borderRadius:'8px',padding:'.75rem'}}>
+{escuelas.map(e=>(
+<label key={e.id} style={{display:'flex',alignItems:'center',gap:'.5rem',padding:'.25rem',cursor:'pointer'}}>
+<input type="checkbox" checked={(form.escuelasAsignadas||[]).includes(e.id)} onChange={(ev)=>{if(ev.target.checked){setForm({...form,escuelasAsignadas:[...(form.escuelasAsignadas||[]),e.id]});}else{setForm({...form,escuelasAsignadas:(form.escuelasAsignadas||[]).filter(id=>id!==e.id)});}}}/>
+<span style={{fontSize:'.875rem'}}>{e.nombre} ({e.cct})</span>
+</label>
+))}
+</div>
+)}
+<div style={{display:'flex',gap:'1rem'}}>
+<button type="button" onClick={onClose} className="btn btn-secondary" style={{flex:1}}>Cancelar</button>
+<button type="submit" className="btn btn-success" style={{flex:1}}>Guardar</button>
+</div>
+</form>
+</div>
+</div>
+);
+};
+
+const ModalPassword=({escuela,onClose})=>{
+const[pwd,setPwd]=useState('');
+const[conf,setConf]=useState('');
+const[loading,setLoading]=useState(false);
+const handleSubmit=async(e)=>{
+e.preventDefault();
+if(pwd!==conf){alert('Las contraseñas no coinciden');return;}
+if(pwd.length<6){alert('Mínimo 6 caracteres');return;}
+setLoading(true);
+try{
+const email=`${escuela.cct.toLowerCase()}@escuela.local`;
+try{
+await auth.createUserWithEmailAndPassword(email,pwd);
+alert('✅ Contraseña asignada correctamente');
+onClose();
+}catch(error){
+if(error.code==='auth/email-already-in-use'){
+alert('ℹ️ Usuario existe.\n\nPara cambiar contraseña:\n1. Ve a Firebase Console\n2. Authentication → Users\n3. Busca: '+email+'\n4. Actions → Reset password');
+}else{
+throw error;
+}
+}
+}catch(error){
+console.error(error);
+alert('❌ Error al asignar contraseña');
+}finally{
+setLoading(false);
+}
+};
+return(
+<div className="modal-overlay">
+<div className="modal">
+<div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'1.5rem'}}>
+<h2 style={{fontSize:'1.5rem',fontWeight:'600'}}>Asignar Contraseña</h2>
+<button onClick={onClose} style={{border:'none',background:'none',fontSize:'1.5rem',cursor:'pointer'}}>×</button>
+</div>
+<div style={{marginBottom:'1rem',padding:'1rem',background:'#dbeafe',borderRadius:'8px',fontSize:'.875rem'}}>
+<p><strong>Escuela:</strong> {escuela.nombre}</p>
+<p><strong>CCT:</strong> {escuela.cct}</p>
+<p><strong>Email:</strong> {escuela.cct.toLowerCase()}@escuela.local</p>
+</div>
+<form onSubmit={handleSubmit}>
+<div style={{marginBottom:'1rem'}}><label>Nueva Contraseña</label><input type="password" value={pwd} onChange={(e)=>setPwd(e.target.value)} required minLength="6"/></div>
+<div style={{marginBottom:'1.5rem'}}><label>Confirmar</label><input type="password" value={conf} onChange={(e)=>setConf(e.target.value)} required minLength="6"/></div>
+<div style={{display:'flex',gap:'1rem'}}>
+<button type="button" onClick={onClose} className="btn btn-secondary" style={{flex:1}}>Cancelar</button>
+<button type="submit" disabled={loading} className="btn btn-primary" style={{flex:1}}>{loading?'Guardando...':'Asignar'}</button>
+</div>
+</form>
+</div>
+</div>
+);
+};
+
+const ModalConfig=({config,onSave,onClose})=>{
+const[form,setForm]=useState(config);
+const[uploading,setUploading]=useState(false);
+const handleLogo=async(e)=>{
+const file=e.target.files[0];
+if(!file)return;
+setUploading(true);
+try{
+const ref=storage.ref(`config/logo_${Date.now()}`);
+await ref.put(file);
+const url=await ref.getDownloadURL();
+setForm({...form,logoUrl:url});
+}catch(error){
+console.error(error);
+alert('Error subiendo logo');
+}finally{
+setUploading(false);
+}
+};
+return(
+<div className="modal-overlay">
+<div className="modal">
+<div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'1.5rem'}}>
+<h2 style={{fontSize:'1.5rem',fontWeight:'600'}}>Configuración</h2>
+<button onClick={onClose} style={{border:'none',background:'none',fontSize:'1.5rem',cursor:'pointer'}}>×</button>
+</div>
+<div style={{marginBottom:'1rem'}}><label>Nombre de la Zona</label><input type="text" value={form.nombreZona} onChange={(e)=>setForm({...form,nombreZona:e.target.value})} placeholder="Ej: Zona Escolar 268"/></div>
+<div style={{marginBottom:'1rem'}}>
+<label>Logo</label>
+{form.logoUrl&&<div style={{marginBottom:'.75rem',padding:'1rem',background:'#f9fafb',borderRadius:'8px',textAlign:'center'}}><img src={form.logoUrl} alt="Logo" style={{height:'80px',objectFit:'contain'}}/></div>}
+<label className="btn btn-secondary" style={{cursor:'pointer',width:'100%',textAlign:'center'}}>{uploading?'Subiendo...':'Subir Logo'}<input type="file" style={{display:'none'}} accept="image/*" onChange={handleLogo} disabled={uploading}/></label>
+</div>
+<div style={{marginBottom:'1.5rem',padding:'1rem',background:'#fef3c7',borderRadius:'8px',border:'1px solid #fcd34d'}}>
+<div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'.5rem'}}>
+<label style={{margin:0,fontWeight:'600',color:'#92400e'}}>Permitir que escuelas borren archivos</label>
+<div className={`toggle-switch ${form.permitirBorradoEscuelas?'active':''}`} onClick={()=>setForm({...form,permitirBorradoEscuelas:!form.permitirBorradoEscuelas})}></div>
+</div>
+<p style={{fontSize:'.75rem',color:'#92400e'}}>Si activas esta opción, las escuelas podrán eliminar sus archivos subidos usando el botón 🗑️. Solo aplica para sus propios documentos.</p>
+</div>
+<div style={{display:'flex',gap:'1rem'}}>
+<button onClick={onClose} className="btn btn-secondary" style={{flex:1}}>Cancelar</button>
+<button onClick={()=>onSave(form)} className="btn btn-primary" style={{flex:1}}>Guardar</button>
+</div>
+</div>
+</div>
+);
+};
+
+const ModalCompartido=({programas,onClose,onSave})=>{
+const[form,setForm]=useState({nombre:'',descripcion:'',programaId:'',archivo:null});
+const[uploading,setUploading]=useState(false);
+const handleSubmit=async(e)=>{
+e.preventDefault();
+if(!form.nombre||!form.archivo){alert('Completa todos los campos');return;}
+setUploading(true);
+try{
+const ref=storage.ref(`compartidos/${Date.now()}_${form.archivo.name}`);
+await ref.put(form.archivo);
+const url=await ref.getDownloadURL();
+const data={nombre:form.nombre,descripcion:form.descripcion,programaId:form.programaId,url,fecha:new Date().toISOString()};
+await db.collection('compartidos').add(data);
+alert('✅ Archivo compartido subido');
+onClose();
+window.location.reload();
+}catch(error){
+console.error(error);
+alert('❌ Error al subir archivo');
+}finally{
+setUploading(false);
+}
+};
+return(
+<div className="modal-overlay">
+<div className="modal">
+<div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'1.5rem'}}>
+<h2 style={{fontSize:'1.5rem',fontWeight:'600'}}>Subir Archivo Compartido</h2>
+<button onClick={onClose} style={{border:'none',background:'none',fontSize:'1.5rem',cursor:'pointer'}}>×</button>
+</div>
+<form onSubmit={handleSubmit}>
+<div style={{marginBottom:'1rem'}}><label>Nombre *</label><input type="text" value={form.nombre} onChange={(e)=>setForm({...form,nombre:e.target.value})} required/></div>
+<div style={{marginBottom:'1rem'}}><label>Descripción</label><textarea value={form.descripcion} onChange={(e)=>setForm({...form,descripcion:e.target.value})} rows="2"/></div>
+<div style={{marginBottom:'1rem'}}>
+<label>Programa (opcional)</label>
+<select value={form.programaId} onChange={(e)=>setForm({...form,programaId:e.target.value})}>
+<option value="">Todos los programas</option>
+{programas.map(p=><option key={p.id} value={p.id}>{p.nombre}</option>)}
+</select>
+</div>
+<div style={{marginBottom:'1.5rem'}}><label>Archivo *</label><input type="file" onChange={(e)=>setForm({...form,archivo:e.target.files[0]})} required/></div>
+<div style={{display:'flex',gap:'1rem'}}>
+<button type="button" onClick={onClose} className="btn btn-secondary" style={{flex:1}}>Cancelar</button>
+<button type="submit" disabled={uploading} className="btn btn-primary" style={{flex:1}}>{uploading?'Subiendo...':'Subir'}</button>
+</div>
+</form>
+</div>
+</div>
+);
+};
+
+const calcStats=(escuelas,programas,documentos)=>{
+const total=escuelas.length;
+let completas=0,pendientes=0;
+escuelas.forEach(e=>{
+const progs=programas.filter(p=>p.todasEscuelas||(p.escuelasAsignadas||[]).includes(e.id));
+let req=0,ent=0;
+progs.forEach(p=>{p.documentosRequeridos.forEach(d=>{req++;if(documentos.find(doc=>doc.escuelaId===e.id&&doc.programaId===p.id&&doc.nombreDocumento===d))ent++;});});
+if(req>0&&ent===req)completas++;
+pendientes+=(req-ent);
+});
+return{total,completas,pendientes,avance:total>0?Math.round((completas/total)*100):0};
+};
+
+const getTipo=(file)=>{
+const ext=file.name.split('.').pop().toLowerCase();
+if(ext==='pdf')return'PDF';
+if(['xlsx','xls'].includes(ext))return'Excel';
+if(['docx','doc'].includes(ext))return'Word';
+if(['jpg','jpeg','png'].includes(ext))return'Imagen';
+return'Otro';
+};
+
+const saveEscuela=async(data,escuelas,setEscuelas,onClose)=>{
+try{
+if(data.id){
+await db.collection('escuelas').doc(data.id).update(data);
+setEscuelas(escuelas.map(e=>e.id===data.id?data:e));
+}else{
+const ref=await db.collection('escuelas').add(data);
+setEscuelas([...escuelas,{id:ref.id,...data}]);
+}
+onClose();
+}catch(error){
+console.error(error);
+alert('Error al guardar');
+}
+};
+
+const savePrograma=async(data,programas,setProgramas,onClose)=>{
+try{
+if(data.id){
+await db.collection('programas').doc(data.id).update(data);
+setProgramas(programas.map(p=>p.id===data.id?data:p));
+}else{
+const ref=await db.collection('programas').add(data);
+setProgramas([...programas,{id:ref.id,...data}]);
+}
+onClose();
+}catch(error){
+console.error(error);
+alert('Error al guardar');
+}
+};
+
+const saveConfig=async(data,setConfig)=>{
+try{
+await db.collection('configuracion').doc('general').set(data,{merge:true});
+setConfig(data);
+alert('✅ Configuración guardada');
+}catch(error){
+console.error(error);
+alert('Error al guardar');
+}
+};
+
+const saveCompartido=async(data,compartidos,setCompartidos,onClose)=>{
+try{
+const ref=await db.collection('compartidos').add(data);
+setCompartidos([...compartidos,{id:ref.id,...data}]);
+onClose();
+}catch(error){
+console.error(error);
+alert('Error al guardar');
+}
+};
+
+const delEscuela=async(id,escuelas,setEscuelas)=>{
+if(!confirm('¿Eliminar esta escuela? Se perderán todos sus documentos.'))return;
+try{
+await db.collection('escuelas').doc(id).delete();
+setEscuelas(escuelas.filter(e=>e.id!==id));
+}catch(error){
+console.error(error);
+alert('Error al eliminar');
+}
+};
+
+const delPrograma=async(id,programas,setProgramas)=>{
+if(!confirm('¿Eliminar este programa?'))return;
+try{
+await db.collection('programas').doc(id).delete();
+setProgramas(programas.filter(p=>p.id!==id));
+}catch(error){
+console.error(error);
+alert('Error al eliminar');
+}
+};
+
+const delDocumento=async(id,documentos,setDocumentos)=>{
+if(!confirm('¿Eliminar este documento?'))return;
+try{
+const doc=documentos.find(d=>d.id===id);
+if(doc.url){
+const ref=storage.refFromURL(doc.url);
+await ref.delete().catch(()=>{});
+}
+await db.collection('documentos').doc(id).delete();
+setDocumentos(documentos.filter(d=>d.id!==id));
+alert('✅ Documento eliminado');
+}catch(error){
+console.error(error);
+alert('❌ Error al eliminar');
+}
+};
+
+const delCompartido=async(id,compartidos,setCompartidos)=>{
+if(!confirm('¿Eliminar este archivo?'))return;
+try{
+const doc=compartidos.find(c=>c.id===id);
+if(doc.url){
+const ref=storage.refFromURL(doc.url);
+await ref.delete().catch(()=>{});
+}
+await db.collection('compartidos').doc(id).delete();
+setCompartidos(compartidos.filter(c=>c.id!==id));
+}catch(error){
+console.error(error);
+alert('Error al eliminar');
+}
+};
+
+const exportExcel=(escuelas,programas,documentos)=>{
+let csv='Escuela,CCT,Comunidad,Director,Programas,Entregados,Total,Avance\n';
+escuelas.forEach(e=>{
+const progs=programas.filter(p=>p.todasEscuelas||(p.escuelasAsignadas||[]).includes(e.id));
+let total=0,ent=0;
+progs.forEach(p=>{p.documentosRequeridos.forEach(d=>{total++;if(documentos.find(doc=>doc.escuelaId===e.id&&doc.programaId===p.id&&doc.nombreDocumento===d))ent++;});});
+const pct=total>0?Math.round((ent/total)*100):0;
+csv+=`"${e.nombre}","${e.cct}","${e.comunidad}","${e.director}",${progs.length},${ent},${total},${pct}%\n`;
+});
+const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+const url=URL.createObjectURL(blob);
+const a=document.createElement('a');
+a.href=url;
+a.download=`reporte_${new Date().toISOString().split('T')[0]}.csv`;
+a.click();
+};
+
+const root=ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App/>);
+</script>
+</body>
+</html>

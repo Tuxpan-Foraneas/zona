@@ -173,7 +173,7 @@ if(error)return <Error mensaje={error}/>;
 
 return(
 <>
-{vista==='login'&&<Login config={config} escuelas={escuelas}/>}
+{vista==='login'&&<Login config={config} escuelas={escuelas} configCargada={configCargada}/>}
 {vista==='admin'&&<Admin usuario={usuario} config={config} setConfig={setConfig} escuelas={escuelas} setEscuelas={setEscuelas} programas={programas} setProgramas={setProgramas} documentos={documentos} setDocumentos={setDocumentos} compartidos={compartidos} setCompartidos={setCompartidos} onLogout={()=>auth.signOut()}/>}
 {vista==='escuela'&&<Escuela usuario={usuario} escuela={escuelaActual} config={config} programas={programas} documentos={documentos} setDocumentos={setDocumentos} compartidos={compartidos} onLogout={()=>auth.signOut()}/>}
 </>
@@ -201,7 +201,7 @@ const Error=({mensaje})=>(
 </div>
 );
 
-const Login=({config,escuelas})=>{
+const Login=({config,escuelas,configCargada})=>{
 const[cct,setCct]=useState('');
 const[password,setPassword]=useState('');
 const[modoAdmin,setModoAdmin]=useState(false);

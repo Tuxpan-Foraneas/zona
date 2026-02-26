@@ -103,6 +103,7 @@ const[esAdmin,setEsAdmin]=useState(false);
 const[loading,setLoading]=useState(true);
 const[vista,setVista]=useState('login');
 const[config,setConfig]=useState({nombreZona:'',logoUrl:'',permitirBorradoEscuelas:false,cicloEscolar:''});
+const[configCargada,setConfigCargada]=useState(false);
 const[escuelas,setEscuelas]=useState([]);
 const[programas,setProgramas]=useState([]);
 const[documentos,setDocumentos]=useState([]);
@@ -114,7 +115,7 @@ useEffect(()=>{
 let mounted=true;
 const initAuth=async()=>{
 await initFirebase();
-const unsubscribe=auth.onAuthStateChanged(async(user)=>{
+try{const configSnap=await db.collection('configuracion').doc('general').get();if(configSnap.exists&&mounted){const c={nombreZona:'',logoUrl:'',permitirBorradoEscuelas:false,cicloEscolar:'',...configSnap.data()};setConfig(c);}setConfigCargada(true);}catch(e){setConfigCargada(true);}const unsubscribe=auth.onAuthStateChanged(async(user)=>{
 if(!mounted)return;
 if(user){
 setUsuario(user);
@@ -480,7 +481,7 @@ return(
 {entregado?(
 <>
 <a href={entregado.url} target="_blank" className="btn btn-secondary" style={{padding:'.5rem 1rem',textDecoration:'none',fontSize:'.875rem'}}>Ver</a>
-<button onClick={async()=>{const res=await fetch(entregado.url);const blob=await res.blob();const a=document.createElement('a');a.href=URL.createObjectURL(blob);const abrevProg=prog.nombre.replace(/\s+/g,'').substring(0,10);a.download=`${escuela.cct}_${abrevProg}_${doc}.${entregado.nombreArchivo.split('.').pop()}`;a.click();}} className="btn btn-secondary" style={{padding:'.5rem 1rem',fontSize:'.875rem'}}>📥</button>
+<button onClick={()=>{const abrevProg=prog.nombre.replace(/\s+/g,'').substring(0,10);const nombre=`${escuela.cct}_${abrevProg}_${doc}.${entregado.nombreArchivo.split('.').pop()}`;const url=entregado.url+'&response-content-disposition=attachment%3B%20filename%3D'+encodeURIComponent(nombre);window.open(url,'_blank');}} className="btn btn-secondary" style={{padding:'.5rem 1rem',fontSize:'.875rem'}}>📥</button>
 {config.permitirBorradoEscuelas&&<div style={{display:'flex',gap:'.5rem',alignItems:'center'}}><input type="checkbox" checked={seleccionados.includes(entregado.id)} onChange={(ev)=>{if(ev.target.checked){setSeleccionados([...seleccionados,entregado.id]);}else{setSeleccionados(seleccionados.filter(id=>id!==entregado.id));}}}/><button onClick={()=>setModalBorrar(entregado.id)} className="btn btn-danger" style={{padding:'.5rem 1rem',fontSize:'.875rem'}}>🗑️</button></div>}
 </>
 ):(
@@ -674,7 +675,7 @@ return(<div>
 <td style={{fontSize:'.875rem',color:'#6b7280'}}>{d.nombreArchivo}</td>
 <td><span className="badge badge-info">{d.tipo}</span></td>
 <td style={{fontSize:'.75rem',color:'#6b7280'}}>{new Date(d.fecha).toLocaleString()}</td>
-<td><div style={{display:'flex',gap:'.5rem'}}><a href={d.url} target="_blank" className="btn btn-secondary" style={{padding:'.5rem',fontSize:'.875rem',textDecoration:'none'}}>Ver</a><button onClick={async()=>{const res=await fetch(d.url);const blob=await res.blob();const a=document.createElement('a');a.href=URL.createObjectURL(blob);const prog=d.programaNombre.replace(/\s+/g,'').substring(0,10);a.download=`${d.escuelaCCT}_${prog}_${d.nombreDocumento}.${d.nombreArchivo.split('.').pop()}`;a.click();}} className="btn btn-secondary" style={{padding:'.5rem',fontSize:'.875rem'}}>📥</button><button onClick={()=>setModalAdmin(d.id)} className="btn btn-danger" style={{padding:'.5rem',fontSize:'.875rem'}}>🗑️</button></div></td>
+<td><div style={{display:'flex',gap:'.5rem'}}><a href={d.url} target="_blank" className="btn btn-secondary" style={{padding:'.5rem',fontSize:'.875rem',textDecoration:'none'}}>Ver</a><button onClick={()=>{const prog=d.programaNombre.replace(/\s+/g,'').substring(0,10);const nombre=`${d.escuelaCCT}_${prog}_${d.nombreDocumento}.${d.nombreArchivo.split('.').pop()}`;const url=d.url+'&response-content-disposition=attachment%3B%20filename%3D'+encodeURIComponent(nombre);window.open(url,'_blank');}} className="btn btn-secondary" style={{padding:'.5rem',fontSize:'.875rem'}}>📥</button><button onClick={()=>setModalAdmin(d.id)} className="btn btn-danger" style={{padding:'.5rem',fontSize:'.875rem'}}>🗑️</button></div></td>
 </tr>
 ))}
 </tbody>

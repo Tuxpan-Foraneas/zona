@@ -325,7 +325,7 @@ return(
 <div className="container" style={{padding:'1rem 1.5rem',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
 <div style={{display:'flex',alignItems:'center',gap:'1rem'}}>
 {config.logoUrl&&<img src={config.logoUrl} alt="Logo" style={{height:'45px'}}/>}
-<div><h1 style={{fontSize:'1.125rem',fontWeight:'600'}}>{config.nombreZona||'Panel Administrador'}</h1><p style={{fontSize:'.875rem',color:'#6b7280'}}>Gestión Documental</p></div>
+<div><h1 style={{fontSize:'1.125rem',fontWeight:'600'}}>{config.nombreZona||'Panel Administrador'}</h1><p style={{fontSize:'.875rem',color:'#6b7280'}}>Gestión Documental {config.cicloEscolar&&`• Ciclo ${config.cicloEscolar}`}</p></div>
 </div>
 <div style={{display:'flex',gap:'.75rem'}}>
 <button onClick={()=>setModal('config')} className="btn btn-secondary no-print">⚙️</button>
@@ -338,7 +338,7 @@ return(
 <StatCard titulo="Escuelas" valor={stats.total} color="#2563eb"/>
 <StatCard titulo="Avance" valor={`${stats.avance}%`} color="#10b981"/>
 <StatCard titulo="Completas" valor={stats.completas} color="#10b981"/>
-<StatCard titulo="Pendientes" valor={stats.pendientes} color="#f59e0b"/>onDelete={(id)=>delEscuela(id,escuelas,setEscuelas)}
+<StatCard titulo="Pendientes" valor={stats.pendientes} color="#f59e0b"/>
 </div>
 <div style={{display:'flex',gap:'1rem',marginBottom:'2rem',flexWrap:'wrap'}} className="no-print">
 <button onClick={()=>{setEditData(null);setModal('escuela');}} className="btn btn-primary">+ Escuela</button>
@@ -442,7 +442,7 @@ return(
 <div className="container" style={{padding:'1rem 1.5rem',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
 <div style={{display:'flex',alignItems:'center',gap:'1rem'}}>
 {config.logoUrl&&<img src={config.logoUrl} alt="Logo" style={{height:'45px'}}/>}
-<div><h1 style={{fontSize:'1.125rem',fontWeight:'600'}}>{escuela.nombre}</h1><p style={{fontSize:'.875rem',color:'#6b7280'}}>CCT: {escuela.cct} {escuela.comunidad&&`• ${escuela.comunidad}`} {escuela.director&&`• Dir: ${escuela.director}`}</p></div>
+<div><h1 style={{fontSize:'1.125rem',fontWeight:'600'}}>{escuela.nombre}</h1><p style={{fontSize:'.875rem',color:'#6b7280'}}>CCT: {escuela.cct} {escuela.comunidad&&`• ${escuela.comunidad}`} {escuela.director&&`• Dir: ${escuela.director}`} {config.cicloEscolar&&`• Ciclo ${config.cicloEscolar}`}</p></div>
 </div>
 <button onClick={onLogout} className="btn btn-secondary">Salir</button>
 </div>

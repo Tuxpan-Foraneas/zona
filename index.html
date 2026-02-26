@@ -435,7 +435,7 @@ setSeleccionados([]);
 return(
 <div style={{minHeight:'100vh',background:'#f5f5f5'}}>
 {verArchivo&&(<div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.85)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:'1rem'}} onClick={()=>setVerArchivo(null)}><div style={{background:'#fff',borderRadius:'12px',maxWidth:'860px',width:'100%',maxHeight:'90vh',overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,.5)'}} onClick={e=>e.stopPropagation()}><div style={{background:'#2d2d2d',padding:'.75rem 1rem',display:'flex',alignItems:'center',justifyContent:'space-between'}}><span style={{color:'#fff',fontWeight:'600',fontSize:'.875rem'}}>ARCHIVO: {verArchivo.nombre}</span><button onClick={()=>setVerArchivo(null)} style={{background:'none',border:'none',color:'#fff',fontSize:'1.5rem',cursor:'pointer'}}>x</button></div><div style={{padding:'1rem',display:'flex',alignItems:'center',justifyContent:'center',minHeight:'400px',background:'#f9fafb'}}>{verArchivo.tipo==='Imagen'?<img src={verArchivo.url} style={{maxWidth:'100%',maxHeight:'70vh',objectFit:'contain',borderRadius:'8px'}} alt="preview"/>:verArchivo.tipo==='PDF'?<iframe src={verArchivo.url} style={{width:'100%',height:'70vh',border:'none',borderRadius:'8px'}} title="preview"/>:<iframe
-  src={`https://docs.google.com/gview?url=${encodeURIComponent(verArchivo.url)}&embedded=true`}
+  src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(verArchivo.url)}`}
   style={{width:'100%',height:'70vh',border:'none',borderRadius:'8px'}}
   title="preview"
 />}</div></div></div>)}

@@ -281,7 +281,7 @@ return(
 {error&&<div style={{padding:'.75rem',background:'#fee2e2',border:'1px solid #fecaca',borderRadius:'8px',color:'#991b1b',fontSize:'.875rem',marginBottom:'1rem'}}>{error}</div>}
 {conectando&&<div style={{padding:'.75rem',background:'#dbeafe',border:'1px solid #93c5fd',borderRadius:'8px',color:'#1e40af',fontSize:'.875rem',marginBottom:'1rem',textAlign:'center'}} className="pulse">🔄 Conectando con servidor... {intento>0&&`(intento ${intento}/${MAX_LOGIN_RETRIES})`}</div>}
 <form onSubmit={handleLogin}>
-{!modoAdmin&&<div style={{marginBottom:'1rem'}}><label>CCT de tu escuela</label><input type="text" value={cct} onChange={(e)=>setCct(e.target.value)} placeholder="30EPR0000A" required disabled={cargando}/></div>}
+{!modoAdmin&&<div style={{marginBottom:'1rem'}}><label>CCT de tu escuela</label><input type="text" value={cct} onChange={(e)=>setCct(e.target.value)} placeholder="30DPR0001A" required disabled={cargando}/></div>}
 <div style={{marginBottom:'1.5rem'}}><label>Contraseña</label><input type="password" value={password} onChange={(e)=>setPassword(e.target.value)} placeholder="••••••••" required disabled={cargando}/></div>
 <button type="submit" disabled={cargando} className="btn btn-primary" style={{width:'100%'}}>
 {cargando?(
@@ -338,7 +338,7 @@ return(
 <StatCard titulo="Escuelas" valor={stats.total} color="#2563eb"/>
 <StatCard titulo="Avance" valor={`${stats.avance}%`} color="#10b981"/>
 <StatCard titulo="Completas" valor={stats.completas} color="#10b981"/>
-<StatCard titulo="Pendientes" valor={stats.pendientes} color="#f59e0b"/>
+<StatCard titulo="Pendientes" valor={stats.pendientes} color="#f59e0b"/>onDelete={(id)=>delEscuela(id,escuelas,setEscuelas)}
 </div>
 <div style={{display:'flex',gap:'1rem',marginBottom:'2rem',flexWrap:'wrap'}} className="no-print">
 <button onClick={()=>{setEditData(null);setModal('escuela');}} className="btn btn-primary">+ Escuela</button>
@@ -358,8 +358,8 @@ return(
 </div>
 </div>
 {tab==='dashboard'&&<Dashboard escuelas={escuelas} programas={programas} documentos={documentos}/>}
-{tab==='escuelas'&&<TabEscuelas escuelas={escuelas} programas={programas} documentos={documentos} onEdit={(e)=>{setEditData(e);setModal('escuela');}} onPassword={(e)=>{setEditData(e);setModal('password');}} onDelete={(id)=>delEscuela(id,escuelas,setEscuelas)} onImport={(data)=>{data.forEach(async(e)=>{const ref=await db.collection('escuelas').add(e);setEscuelas(prev=>[...prev,{id:ref.id,...e}]);});}}  setEscuelas={setEscuelas}/>}
-{tab==='programas'&&<TabProgramas programas={programas} onEdit={(p)=>{setEditData(p);setModal('programa');}} onDelete={(id)=>delPrograma(id,programas,setProgramas)}/>}
+{tab==='escuelas'&&<TabEscuelas escuelas={escuelas} programas={programas} documentos={documentos} onEdit={(e)=>{setEditData(e);setModal('escuela');}} onPassword={(e)=>{setEditData(e);setModal('password');}} onDelete={(id)=>delEscuela(id,escuelas,setEscuelas,documentos,setDocumentos)} onImport={(data)=>{data.forEach(async(e)=>{const ref=await db.collection('escuelas').add(e);setEscuelas(prev=>[...prev,{id:ref.id,...e}]);});}}  setEscuelas={setEscuelas}/>}
+{tab==='programas'&&<TabProgramas programas={programas} onEdit={(p)=>{setEditData(p);setModal('programa');}} onDelete={(id)=>delPrograma(id,programas,setProgramas,documentos,setDocumentos)}/>}
 {tab==='documentos'&&<TabDocumentos documentos={docsFiltrados} escuelas={escuelas} programas={programas} filtroEscuela={filtroEscuela} setFiltroEscuela={setFiltroEscuela} filtroPrograma={filtroPrograma} setFiltroPrograma={setFiltroPrograma} onDelete={(id)=>delDocumento(id,documentos,setDocumentos)}/>}
 {tab==='reporte'&&<TabRubrica escuelas={escuelas} programas={programas} documentos={documentos} config={config}/>}
 {tab==='compartidos'&&<TabCompartidos compartidos={compartidos} onDelete={(id)=>delCompartido(id,compartidos,setCompartidos)}/>}
@@ -384,10 +384,9 @@ const pendientes=progEscuela.flatMap(p=>{const docs=documentos.filter(d=>d.escue
 const handleSubir=async(e,programa,doc)=>{
 const file=e.target.files[0];
 if(!file)return;
-  if(file.size>3*1024*1024){alert('❌ El archivo es demasiado grande. El tamaño máximo permitido es 3 MB.');return;}
 setSubiendo(true);
 try{
-const ref=storage.ref(`docs/${escuela.id}/${programa.id}/${Date.now()}_${file.name}`);
+const ref=storage.ref(`docs/${escuela.cct}/${programa.nombre}/${Date.now()}_${file.name}`);
 await ref.put(file);
 const url=await ref.getDownloadURL();
 const data={escuelaId:escuela.id,programaId:programa.id,nombreDocumento:doc,nombreArchivo:file.name,url,tipo:getTipo(file),fecha:new Date().toISOString(),por:escuela.nombre};
@@ -1042,24 +1041,28 @@ alert('Error al guardar');
 }
 };
 
-const delEscuela=async(id,escuelas,setEscuelas)=>{
+const delEscuela=async(id,escuelas,setEscuelas,documentos,setDocumentos)=>{
 if(!confirm('¿Eliminar esta escuela? Se perderán todos sus documentos.'))return;
 try{
+const docsEscuela=documentos.filter(d=>d.escuelaId===id);
+for(const doc of docsEscuela){if(doc.url){try{await storage.refFromURL(doc.url).delete();}catch(e){}}await db.collection('documentos').doc(doc.id).delete();}
 await db.collection('escuelas').doc(id).delete();
+setDocumentos(documentos.filter(d=>d.escuelaId!==id));
 setEscuelas(escuelas.filter(e=>e.id!==id));
 }catch(error){
 console.error(error);
 alert('Error al eliminar');
 }
 };
-
-const delPrograma=async(id,programas,setProgramas)=>{
+const delPrograma=async(id,programas,setProgramas,documentos,setDocumentos)=>{
 if(!confirm('¿Eliminar este programa?'))return;
 try{
+const docsPrograma=documentos.filter(d=>d.programaId===id);
+for(const doc of docsPrograma){if(doc.url){try{await storage.refFromURL(doc.url).delete();}catch(e){}}await db.collection('documentos').doc(doc.id).delete();}
 await db.collection('programas').doc(id).delete();
+setDocumentos(documentos.filter(d=>d.programaId!==id));
 setProgramas(programas.filter(p=>p.id!==id));
-}catch(error){
-console.error(error);
+}catch(error){console.error(error);
 alert('Error al eliminar');
 }
 };

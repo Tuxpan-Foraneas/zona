@@ -105,18 +105,25 @@ const[cargando,setCargando]=useState(true);
 const[error,setError]=useState(false);
 useEffect(()=>{
 setCargando(true);setError(false);
-fetch(url).then(r=>r.arrayBuffer()).then(buf=>{
-const wb=XLSX.read(buf,{type:"array"});
+const xhr=new XMLHttpRequest();
+xhr.open('GET',url,true);
+xhr.responseType='arraybuffer';
+xhr.onload=()=>{
+try{
+const wb=XLSX.read(xhr.response,{type:'array'});
 const resultado=wb.SheetNames.map(nombre=>{
 const ws=wb.Sheets[nombre];
 const html=XLSX.utils.sheet_to_html(ws,{editable:false});
 return{nombre,html};
 });
 setHojas(resultado);setCargando(false);
-}).catch(()=>{setError(true);setCargando(false);});
+}catch(e){setError(true);setCargando(false);}
+};
+xhr.onerror=()=>{setError(true);setCargando(false);};
+xhr.send();
 },[url]);
 if(cargando)return React.createElement("div",{style:{display:"flex",alignItems:"center",justifyContent:"center",height:"70vh"}},React.createElement("div",{className:"spinner"}));
-if(error)return React.createElement("div",{style:{textAlign:"center",padding:"2rem",color:"#ef4444"}},"No se pudo cargar el archivo");
+if(error)return(<div style={{textAlign:"center",padding:"2rem"}}><div style={{fontSize:"3rem",marginBottom:"1rem"}}>📊</div><p style={{color:"#6b7280",marginBottom:"1.5rem"}}>No se pudo previsualizar el archivo</p><a href={url} target="_blank" className="btn btn-primary" style={{textDecoration:"none"}}>⬇️ Descargar Excel</a></div>);
 return(
 <div style={{width:"100%",height:"70vh",display:"flex",flexDirection:"column"}}>
 {hojas.length>1&&<div style={{display:"flex",gap:".5rem",padding:".5rem",background:"#f3f4f6",borderBottom:"1px solid #e5e7eb",overflowX:"auto"}}>

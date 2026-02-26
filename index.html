@@ -102,7 +102,7 @@ const[usuario,setUsuario]=useState(null);
 const[esAdmin,setEsAdmin]=useState(false);
 const[loading,setLoading]=useState(true);
 const[vista,setVista]=useState('login');
-const[config,setConfig]=useState({nombreZona:'',logoUrl:'',permitirBorradoEscuelas:false});
+const[config,setConfig]=useState({nombreZona:'',logoUrl:'',permitirBorradoEscuelas:false,cicloEscolar:''});
 const[escuelas,setEscuelas]=useState([]);
 const[programas,setProgramas]=useState([]);
 const[documentos,setDocumentos]=useState([]);
@@ -281,7 +281,7 @@ return(
 {error&&<div style={{padding:'.75rem',background:'#fee2e2',border:'1px solid #fecaca',borderRadius:'8px',color:'#991b1b',fontSize:'.875rem',marginBottom:'1rem'}}>{error}</div>}
 {conectando&&<div style={{padding:'.75rem',background:'#dbeafe',border:'1px solid #93c5fd',borderRadius:'8px',color:'#1e40af',fontSize:'.875rem',marginBottom:'1rem',textAlign:'center'}} className="pulse">🔄 Conectando con servidor... {intento>0&&`(intento ${intento}/${MAX_LOGIN_RETRIES})`}</div>}
 <form onSubmit={handleLogin}>
-{!modoAdmin&&<div style={{marginBottom:'1rem'}}><label>CCT de tu escuela</label><input type="text" value={cct} onChange={(e)=>setCct(e.target.value)} placeholder="30DPR0001A" required disabled={cargando}/></div>}
+{!modoAdmin&&<div style={{marginBottom:'1rem'}}><label>CCT de tu escuela</label><input type="text" value={cct} onChange={(e)=>setCct(e.target.value)} placeholder="30EPR0000A" required disabled={cargando}/></div>}
 <div style={{marginBottom:'1.5rem'}}><label>Contraseña</label><input type="password" value={password} onChange={(e)=>setPassword(e.target.value)} placeholder="••••••••" required disabled={cargando}/></div>
 <button type="submit" disabled={cargando} className="btn btn-primary" style={{width:'100%'}}>
 {cargando?(
@@ -442,7 +442,7 @@ return(
 <div className="container" style={{padding:'1rem 1.5rem',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
 <div style={{display:'flex',alignItems:'center',gap:'1rem'}}>
 {config.logoUrl&&<img src={config.logoUrl} alt="Logo" style={{height:'45px'}}/>}
-<div><h1 style={{fontSize:'1.125rem',fontWeight:'600'}}>{escuela.nombre}</h1><p style={{fontSize:'.875rem',color:'#6b7280'}}>CCT: {escuela.cct}</p></div>
+<div><h1 style={{fontSize:'1.125rem',fontWeight:'600'}}>{escuela.nombre}</h1><p style={{fontSize:'.875rem',color:'#6b7280'}}>CCT: {escuela.cct} {escuela.comunidad&&`• ${escuela.comunidad}`} {escuela.director&&`• Dir: ${escuela.director}`}</p></div>
 </div>
 <button onClick={onLogout} className="btn btn-secondary">Salir</button>
 </div>
@@ -450,9 +450,9 @@ return(
 <div className="container" style={{padding:'2rem 1.5rem'}}>
 <div style={{background:'#dbeafe',padding:'1rem',borderRadius:'8px',marginBottom:'2rem',border:'1px solid #93c5fd'}}>
 <p style={{color:'#1e40af'}}><strong>Bienvenido/a.</strong> Sube los documentos requeridos para cada programa.</p>
+<p style={{color:'#ef4444',fontWeight:'700',marginTop:'.5rem',fontSize:'.875rem'}}>⚠️ El tamaño máximo por archivo es de 3 MB. Archivos más grandes serán rechazados.</p>
 {config.permitirBorradoEscuelas&&<p style={{color:'#1e40af',marginTop:'.5rem',fontSize:'.875rem'}}>💡 Puedes eliminar archivos si te equivocas usando el botón 🗑️</p>}
-</div>
-{config.permitirBorradoEscuelas&&seleccionados.length>0&&<div style={{display:'flex',justifyContent:'flex-end',marginBottom:'1rem'}}><button onClick={borrarSeleccionados} className="btn btn-danger">🗑️ Eliminar {seleccionados.length} seleccionados</button></div>}
+</div>{config.permitirBorradoEscuelas&&seleccionados.length>0&&<div style={{display:'flex',justifyContent:'flex-end',marginBottom:'1rem'}}><button onClick={borrarSeleccionados} className="btn btn-danger">🗑️ Eliminar {seleccionados.length} seleccionados</button></div>}
 {progEscuela.length===0?(
 <div className="card" style={{padding:'3rem',textAlign:'center',color:'#6b7280'}}>No tienes programas asignados</div>
 ):(
@@ -656,7 +656,12 @@ return(<div>
 <div className="card" style={{padding:'3rem',textAlign:'center',color:'#6b7280'}}>No hay documentos subidos</div>
 ):(
 <div className="card">
-{selAdmin.length>0&&<div style={{display:'flex',justifyContent:'flex-end',marginBottom:'1rem'}}><button onClick={borrarSelAdmin} className="btn btn-danger">🗑️ Eliminar {selAdmin.length} seleccionados</button></div>}
+<div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'1rem'}}>
+<label style={{display:'flex',alignItems:'center',gap:'.5rem',cursor:'pointer',fontWeight:'500'}}><input type="checkbox" onChange={(ev)=>ev.target.checked?setSelAdmin(documentos.map(d=>d.id)):setSelAdmin([])}/> Seleccionar todos</label>
+<div style={{display:'flex',gap:'.5rem'}}>
+{selAdmin.length>0&&<><button onClick={()=>selAdmin.forEach(id=>{const d=documentos.find(x=>x.id===id);if(d){const a=document.createElement('a');a.href=d.url;a.download=d.nombreArchivo;a.target='_blank';a.click();}})} className="btn btn-secondary">📥 Descargar {selAdmin.length}</button><button onClick={borrarSelAdmin} className="btn btn-danger">🗑️ Eliminar {selAdmin.length}</button></>}
+</div>
+</div>
 <table><thead><tr><th></th><th>Escuela</th><th>Programa</th><th>Documento</th><th>Archivo</th><th>Tipo</th><th>Fecha</th><th>Acciones</th></tr></thead>
 <tbody>
 {documentos.map(d=>(
@@ -893,6 +898,7 @@ return(
 <button onClick={onClose} style={{border:'none',background:'none',fontSize:'1.5rem',cursor:'pointer'}}>×</button>
 </div>
 <div style={{marginBottom:'1rem'}}><label>Nombre de la Zona</label><input type="text" value={form.nombreZona} onChange={(e)=>setForm({...form,nombreZona:e.target.value})} placeholder="Ej: Zona Escolar 268"/></div>
+<div style={{marginBottom:'1rem'}}><label>Ciclo Escolar</label><input type="text" value={form.cicloEscolar||''} onChange={(e)=>setForm({...form,cicloEscolar:e.target.value})} placeholder="Ej: 2025-2026"/></div>
 <div style={{marginBottom:'1rem'}}>
 <label>Logo</label>
 {form.logoUrl&&<div style={{marginBottom:'.75rem',padding:'1rem',background:'#f9fafb',borderRadius:'8px',textAlign:'center'}}><img src={form.logoUrl} alt="Logo" style={{height:'80px',objectFit:'contain'}}/></div>}

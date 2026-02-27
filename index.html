@@ -469,7 +469,7 @@ setSeleccionados([]);
 };
 return(
 <div style={{minHeight:'100vh',background:'#f5f5f5'}}>
-{verArchivo&&(<div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.85)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:'1rem'}} onClick={()=>setVerArchivo(null)}><div style={{background:'#fff',borderRadius:'12px',maxWidth:'860px',width:'100%',maxHeight:'90vh',overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,.5)'}} onClick={e=>e.stopPropagation()}><div style={{background:'#2d2d2d',padding:'.75rem 1rem',display:'flex',alignItems:'center',justifyContent:'space-between'}}><span style={{color:'#fff',fontWeight:'600',fontSize:'.875rem'}}>ARCHIVO: {verArchivo.nombre}</span><button onClick={()=>setVerArchivo(null)} style={{background:'none',border:'none',color:'#fff',fontSize:'1.5rem',cursor:'pointer'}}>x</button></div><div style={{padding:'1rem',display:'flex',alignItems:'center',justifyContent:'center',minHeight:'400px',background:'#f9fafb'}}>{verArchivo.tipo==='Imagen'?<img src={verArchivo.url} style={{maxWidth:'100%',maxHeight:'70vh',objectFit:'contain',borderRadius:'8px'}} alt="preview"/>:verArchivo.tipo==='PDF'?<iframe src={verArchivo.url} style={{width:'100%',height:'70vh',border:'none',borderRadius:'8px'}} title="preview"/>:verArchivo.tipo==='Excel'?<VisorExcel url={verArchivo.url}/>:<iframe src={`https://docs.google.com/gview?url=${encodeURIComponent(verArchivo.url)}&embedded=true`} style={{width:'100%',height:'70vh',border:'none',borderRadius:'8px'}} title="preview"/>}</div></div></div>)}
+{verArchivo&&(<div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.85)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:'1rem'}} onClick={()=>setVerArchivo(null)}><div style={{background:'#fff',borderRadius:'12px',maxWidth:'860px',width:'100%',maxHeight:'90vh',overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,.5)'}} onClick={e=>e.stopPropagation()}><div style={{background:'#2d2d2d',padding:'.75rem 1rem',display:'flex',alignItems:'center',justifyContent:'space-between'}}><span style={{color:'#fff',fontWeight:'600',fontSize:'.875rem'}}>👁️ {verArchivo.nombre}</span><button onClick={()=>setVerArchivo(null)} style={{background:'none',border:'none',color:'#fff',fontSize:'1.5rem',cursor:'pointer'}}>×</button></div><div style={{padding:'1rem',display:'flex',alignItems:'center',justifyContent:'center',minHeight:'400px',background:'#f9fafb'}}>{verArchivo.tipo==='Imagen'?<img src={verArchivo.url} style={{maxWidth:'100%',maxHeight:'70vh',objectFit:'contain',borderRadius:'8px'}} alt={verArchivo.nombre}/>:verArchivo.tipo==='Excel'?<VisorExcel url={verArchivo.url}/>:<iframe src={`https://docs.google.com/gview?url=${encodeURIComponent(verArchivo.url)}&embedded=true`} style={{width:'100%',height:'70vh',border:'none',borderRadius:'8px'}} title={verArchivo.nombre}/>}</div></div></div>)}
 {previa&&(<div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.7)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:'1rem'}}><div style={{background:'#fff',borderRadius:'12px',maxWidth:'400px',width:'100%',overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,.3)'}}><div style={{background:'#2d2d2d',padding:'.75rem 1rem',display:'flex',alignItems:'center',gap:'.5rem'}}><span style={{color:'#fff',fontWeight:'600',fontSize:'.875rem'}}>Vista previa</span></div><div style={{padding:'1.5rem',textAlign:'center'}}>{previa.previstaUrl?<img src={previa.previstaUrl} style={{maxHeight:'180px',maxWidth:'100%',borderRadius:'8px',marginBottom:'1rem'}} alt="preview"/>:<div style={{fontSize:'3.5rem',marginBottom:'1rem'}}>{previa.tipo==='PDF'?'PDF':previa.tipo==='Word'?'WORD':previa.tipo==='Excel'?'EXCEL':'FILE'}</div>}<p style={{fontWeight:'600'}}>{previa.nombre}</p><p style={{fontSize:'.875rem',color:'#6b7280',marginBottom:'1rem'}}>{previa.tipo}</p>{subiendo&&<div style={{marginBottom:'1rem'}}><div style={{height:'8px',background:'#e5e7eb',borderRadius:'4px',overflow:'hidden'}}><div style={{width:progreso+'%',height:'100%',background:'#2563eb',transition:'width .3s'}}/></div></div>}<div style={{display:'flex',gap:'1rem'}}><button onClick={()=>setPrevia(null)} disabled={subiendo} style={{flex:1,padding:'.65rem',borderRadius:'8px',border:'2px solid #d1d5db',background:'#fff',fontWeight:'600',cursor:'pointer',color:'#6b7280'}}>Cancelar</button><button onClick={confirmarSubida} disabled={subiendo} style={{flex:1,padding:'.65rem',borderRadius:'8px',border:'none',background:'#2563eb',color:'#fff',fontWeight:'600',cursor:subiendo?'not-allowed':'pointer'}}>{subiendo?'Subiendo '+progreso+'%':'Confirmar'}</button></div></div></div></div>)}
 {modalBorrar&&(<div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:'1rem'}}><div style={{background:'#fff',borderRadius:'12px',maxWidth:'400px',width:'100%',overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,.3)'}}><div style={{background:'#2d2d2d',padding:'.75rem 1rem'}}><span style={{color:'#fff',fontWeight:'600',fontSize:'.875rem'}}>Confirmar eliminacion</span></div><div style={{padding:'1.5rem',textAlign:'center'}}><p style={{color:'#ef4444',fontWeight:'700',fontSize:'1.1rem',marginBottom:'1rem'}}>Eliminar archivo?</p><p style={{color:'#374151',marginBottom:'1.5rem',fontSize:'.9rem'}}>Esta accion no se puede deshacer.</p><div style={{display:'flex',gap:'1rem',justifyContent:'flex-end'}}><button onClick={()=>setModalBorrar(null)} style={{padding:'.65rem 1.5rem',borderRadius:'8px',border:'2px solid #d1d5db',background:'#fff',fontWeight:'600',cursor:'pointer',color:'#6b7280'}}>Cancelar</button><button onClick={()=>confirmarBorrar(modalBorrar)} style={{padding:'.65rem 1.5rem',borderRadius:'8px',border:'none',background:'#ef4444',color:'#fff',fontWeight:'600',cursor:'pointer'}}>Eliminar</button></div></div></div></div>)}
 {mostrarAviso&&pendientes.length>0&&(<div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:'1rem'}}><div style={{background:'#fff',borderRadius:'12px',maxWidth:'480px',width:'100%',overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,.3)'}}><div style={{background:'#2d2d2d',padding:'.75rem 1rem'}}><span style={{color:'#fff',fontWeight:'600',fontSize:'.875rem'}}>DOCUMENTOS PENDIENTES</span></div><div style={{padding:'1.5rem'}}><p style={{color:'#ef4444',fontWeight:'700',fontSize:'1.25rem',marginBottom:'1.5rem'}}>Tienes documentos pendientes!</p><div style={{display:'flex',flexDirection:'column',gap:'1rem',maxHeight:'250px',overflowY:'auto',marginBottom:'1.5rem'}}>{pendientes.map((p,i)=>(<div key={i} style={{padding:'1rem',background:'#f9fafb',borderRadius:'8px',borderLeft:'4px solid #ef4444'}}><p style={{fontWeight:'700',marginBottom:'.25rem'}}>{p.programa}</p>{p.docs.map((d,j)=><p key={j} style={{fontSize:'.875rem',color:'#374151'}}>- {d}</p>)}</div>))}</div><div style={{display:'flex',gap:'1rem',justifyContent:'flex-end'}}><button onClick={()=>setMostrarAviso(false)} style={{padding:'.65rem 1.5rem',borderRadius:'8px',border:'2px solid #d1d5db',background:'#fff',fontWeight:'600',cursor:'pointer',color:'#6b7280'}}>Despues</button><button onClick={()=>setMostrarAviso(false)} style={{padding:'.65rem 1.5rem',borderRadius:'8px',border:'none',background:'#ef4444',color:'#fff',fontWeight:'600',cursor:'pointer'}}>Subir ahora</button></div></div></div></div>)}
@@ -1347,29 +1347,32 @@ async function iniciarMovil(){
     <div id="m-login-err" style="display:none;padding:.75rem;background:#fee2e2;border-radius:8px;color:#dc2626;font-size:.8rem;margin-bottom:1rem"></div>
     ${modo==='escuela'?'<input id="m-cct" type="text" placeholder="CCT de tu escuela (30EPR0000A)" style="width:100%;padding:.75rem;border:1px solid #e2e8f0;border-radius:8px;font-size:.95rem;margin-bottom:.75rem;font-family:inherit;text-transform:uppercase">':''} 
     <input id="m-pwd" type="password" placeholder="Contraseña" style="width:100%;padding:.75rem;border:1px solid #e2e8f0;border-radius:8px;font-size:.95rem;margin-bottom:1rem;font-family:inherit">
-    <button onclick="mLogin('${modo}')" style="width:100%;padding:.75rem;border-radius:8px;border:none;background:#2563eb;color:#fff;font-weight:600;font-size:1rem;cursor:pointer;font-family:inherit">Ingresar</button>
+    <button onclick="mLogin()" style="width:100%;padding:.75rem;border-radius:8px;border:none;background:#2563eb;color:#fff;font-weight:600;font-size:1rem;cursor:pointer;font-family:inherit">Ingresar</button>
     <div style="margin-top:1rem;padding:.75rem;background:#f9fafb;border-radius:8px;font-size:.72rem;color:#94a3b8;text-align:center">💡 Si el sistema tarda en conectar, por favor espera.</div>
     </div></div>`;
-    window.mLogin=async(modo)=>{
-      const pwd=document.getElementById('m-pwd').value;
+    estado._modoLogin=modo;
+  }
+
+  window.mLogin=async()=>{
+    const modo=estado._modoLogin||'escuela';
+      const pwd=document.getElementById('m-pwd')?document.getElementById('m-pwd').value:'';
       const err=document.getElementById('m-login-err');
-      err.style.display='none';
+      if(err)err.style.display='none';
       try{
         if(modo==='admin'){
           await auth.signInWithEmailAndPassword(ADMIN_EMAIL,pwd);
         }else{
-          const cct=document.getElementById('m-cct').value.trim().toUpperCase();
-          if(!cct){err.style.display='block';err.textContent='Ingresa tu CCT';return;}
+          const cctEl=document.getElementById('m-cct');
+          const cct=cctEl?cctEl.value.trim().toUpperCase():'';
+          if(!cct){if(err){err.style.display='block';err.textContent='Ingresa tu CCT';}return;}
           const snap=await db.collection('escuelas').where('cct','==',cct).limit(1).get();
-          if(snap.empty){err.style.display='block';err.textContent='CCT no encontrado en el sistema';return;}
-          const email=`${cct.toLowerCase()}@escuela.local`;
+          if(snap.empty){if(err){err.style.display='block';err.textContent='CCT no encontrado en el sistema';}return;}
+          const email=cct.toLowerCase()+'@escuela.local';
           await auth.signInWithEmailAndPassword(email,pwd);
         }
       }catch(e){
-        err.style.display='block';
-        err.textContent=e.code==='auth/wrong-password'||e.code==='auth/user-not-found'?'CCT o contraseña incorrectos':'Error de conexión. Intenta de nuevo.';
+        if(err){err.style.display='block';err.textContent=e.code==='auth/wrong-password'||e.code==='auth/user-not-found'?'CCT o contraseña incorrectos':'Error de conexión. Intenta de nuevo.';}
       }
-    };
   }
 
   function renderAdmin(){
@@ -1494,7 +1497,7 @@ async function iniciarMovil(){
               ${docSub?`<div style="display:flex;gap:.35rem;flex-shrink:0;margin-left:.5rem">
                 <button onclick="mVerArchivo('${docSub.url}','${(docSub.nombreArchivo||'').replace(/'/g,"\\'")}','${docSub.tipo||''}')" style="padding:.25rem .5rem;border-radius:6px;border:1px solid #e2e8f0;background:#fff;font-size:.65rem;cursor:pointer;font-family:inherit;color:#3b82f6;font-weight:600">Ver</button>
                 <button onclick="mBorrarDocDetalle('${docSub.id}','${e.id}')" style="padding:.25rem .5rem;border-radius:6px;border:none;background:#fee2e2;color:#dc2626;font-size:.65rem;cursor:pointer;font-family:inherit">🗑️</button>
-              </div>`:''}
+              </div>`:`<label style="padding:.25rem .6rem;border-radius:6px;border:none;background:#dbeafe;color:#1d4ed8;font-size:.65rem;cursor:pointer;font-family:inherit;font-weight:600">📤 Subir<input type="file" style="display:none" onchange="mSubirDocMovil(event,'${e.id}','${p.id}','${docNom.replace(/'/g,"\\'")}','${p.nombre.replace(/'/g,"\\'")}','${e.cct}')" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"/></label>`}
             </div>`;
           }).join('')}
         </div>`;
@@ -1730,6 +1733,24 @@ async function iniciarMovil(){
       xhr.onerror=()=>{cont.innerHTML='<div style="text-align:center;padding:2rem;color:#ef4444;">Error al cargar</div>';};
       xhr.send();
     }
+  };
+
+  window.mSubirDocMovil=async(event,escuelaId,programaId,docNom,progNombre,cct)=>{
+    const file=event.target.files[0];
+    if(!file)return;
+    if(file.size>3*1024*1024){alert('El archivo supera 3 MB');event.target.value='';return;}
+    const btn=event.target.parentElement;
+    btn.textContent='Subiendo...';btn.style.pointerEvents='none';
+    try{
+      const ref=storage.ref('docs/'+cct+'/'+progNombre+'/'+Date.now()+'_'+file.name);
+      await ref.put(file);
+      const url=await ref.getDownloadURL();
+      const tipo=getTipoMovil(file.name);
+      const data={escuelaId,programaId,nombreDocumento:docNom,nombreArchivo:file.name,url,tipo,fecha:new Date().toISOString()};
+      const docRef=await db.collection('documentos').add(data);
+      estado.documentos.push({id:docRef.id,...data});
+      mVerEscuela(escuelaId);
+    }catch(e){alert('Error al subir archivo');btn.textContent='📤 Subir';btn.style.pointerEvents='';}
   };
 
   window.mBorrarDoc=async id=>{

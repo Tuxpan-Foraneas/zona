@@ -1492,7 +1492,7 @@ async function iniciarMovil(){
                 </div>
               </div>
               ${docSub?`<div style="display:flex;gap:.35rem;flex-shrink:0;margin-left:.5rem">
-                <button onclick="window.open('${docSub.url}','_blank')" style="padding:.25rem .5rem;border-radius:6px;border:1px solid #e2e8f0;background:#fff;font-size:.65rem;cursor:pointer;font-family:inherit;color:#3b82f6;font-weight:600">Ver</button>
+                <button onclick="mVerArchivo('${docSub.url}','${(docSub.nombreArchivo||'').replace(/'/g,"\\'")}','${docSub.tipo||''}')" style="padding:.25rem .5rem;border-radius:6px;border:1px solid #e2e8f0;background:#fff;font-size:.65rem;cursor:pointer;font-family:inherit;color:#3b82f6;font-weight:600">Ver</button>
                 <button onclick="mBorrarDocDetalle('${docSub.id}','${e.id}')" style="padding:.25rem .5rem;border-radius:6px;border:none;background:#fee2e2;color:#dc2626;font-size:.65rem;cursor:pointer;font-family:inherit">🗑️</button>
               </div>`:''}
             </div>`;
@@ -1604,7 +1604,7 @@ async function iniciarMovil(){
         ${c.descripcion?`<div style="font-size:.75rem;color:#64748b;margin:.25rem 0">${c.descripcion}</div>`:''}
         ${p?`<div style="font-size:.7rem;color:#3b82f6;margin:.25rem 0">📋 ${p.nombre}</div>`:''}
         <div class="m-card-btns">
-          <button class="m-btn" onclick="mVerArchivo('${c.url}','${(c.nombre||'').replace(/'/g,"\\'")}','${getTipoCompartido(c.nombre)}')">Ver</button>
+          <button class="m-btn" onclick="mVerArchivo('${c.url}','${(c.nombre||'').replace(/'/g,"\\'")}','${getTipoMovil(c.nombre)}')">Ver</button>
           <button class="m-btn-r" onclick="mBorrarCompartido('${c.id}')">🗑️</button>
         </div>
       </div>`;}).join('')}`;
@@ -1666,7 +1666,7 @@ async function iniciarMovil(){
   window.mFiltroEsc=id=>{estado.filtroEsc=id;renderTab();}
   window.mFiltroProg=id=>{estado.filtroProg=id;renderTab();}
 
-  function getTipoCompartido(nombre){
+  function getTipoMovil(nombre){
     if(!nombre)return'Otro';
     const ext=nombre.split('.').pop().toLowerCase();
     if(['jpg','jpeg','png','gif','webp'].includes(ext))return'Imagen';
@@ -1677,59 +1677,57 @@ async function iniciarMovil(){
   }
 
   window.mVerArchivo=(url,nombre,tipo)=>{
-    // Crear o reusar el modal
     let modal=document.getElementById('m-visor-modal');
     if(!modal){
       modal=document.createElement('div');
       modal.id='m-visor-modal';
-      modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.9);display:flex;flex-direction:column;z-index:99999;';
+      modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.92);display:flex;flex-direction:column;z-index:99999;';
       document.body.appendChild(modal);
     }
 
-    // Determinar contenido según tipo
+    // PDF y Word usan Google Docs viewer (funciona en Android)
+    // Imagen directo, Excel con SheetJS
     let contenido='';
     if(tipo==='Imagen'){
-      contenido=`<img src="${url}" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;" alt="${nombre}"/>`;
-    } else if(tipo==='PDF'){
-      contenido=`<iframe src="${url}" style="width:100%;flex:1;border:none;" title="${nombre}"></iframe>`;
+      contenido=`<img src="${url}" style="max-width:100%;max-height:100%;object-fit:contain;" alt="${nombre}"/>`;
     } else if(tipo==='Excel'){
-      contenido=`<div id="m-excel-container" style="width:100%;flex:1;overflow:auto;background:#fff;padding:.5rem;"></div>`;
+      contenido=`<div id="m-excel-cont" style="width:100%;height:100%;overflow:auto;background:#fff;padding:.5rem;"></div>`;
     } else {
-      // Word y otros - Google Docs viewer
-      contenido=`<iframe src="https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=true" style="width:100%;flex:1;border:none;" title="${nombre}"></iframe>`;
+      // PDF, Word y cualquier otro → Google Docs viewer
+      const gdocs='https://docs.google.com/gview?url='+encodeURIComponent(url)+'&embedded=true';
+      contenido=`<iframe src="${gdocs}" style="width:100%;height:100%;border:none;" title="${nombre}"></iframe>`;
     }
 
     modal.innerHTML=`
-      <div style="background:#1e293b;padding:.75rem 1rem;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
-        <span style="color:#fff;font-weight:600;font-size:.8rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;">${nombre}</span>
-        <button onclick="document.getElementById('m-visor-modal').style.display='none'" style="background:none;border:none;color:#fff;font-size:1.5rem;cursor:pointer;flex-shrink:0;margin-left:.5rem;">×</button>
+      <div style="background:#1e293b;padding:.85rem 1rem;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;min-height:52px;">
+        <span style="color:#fff;font-weight:600;font-size:.82rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;margin-right:.5rem;">${nombre}</span>
+        <button onclick="document.getElementById('m-visor-modal').style.display='none'" style="background:#ef4444;border:none;color:#fff;font-size:1.1rem;font-weight:700;cursor:pointer;width:32px;height:32px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;">✕</button>
       </div>
-      <div style="flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;background:${tipo==='Imagen'?'#000':'#fff'}">
         ${contenido}
       </div>`;
     modal.style.display='flex';
 
-    // Si es Excel, cargar con SheetJS
     if(tipo==='Excel'){
-      const container=document.getElementById('m-excel-container');
-      container.innerHTML='<div style="text-align:center;padding:2rem;color:#6b7280;">Cargando...</div>';
+      const cont=document.getElementById('m-excel-cont');
+      cont.innerHTML='<div style="text-align:center;padding:2rem;color:#6b7280;">Cargando...</div>';
       const xhr=new XMLHttpRequest();
       xhr.open('GET',url,true);
       xhr.responseType='arraybuffer';
       xhr.onload=()=>{
         try{
           const wb=XLSX.read(xhr.response,{type:'array'});
-          let tabs='';
-          let tablas='';
+          let tabs='',tablas='';
           wb.SheetNames.forEach((sn,i)=>{
             const html=XLSX.utils.sheet_to_html(wb.Sheets[sn],{editable:false});
-            tabs+=`<button onclick="document.querySelectorAll('.m-xls-sheet').forEach(el=>el.style.display='none');document.querySelectorAll('.m-xls-tab').forEach(el=>{el.style.background='#fff';el.style.color='#374151'});this.style.background='#2563eb';this.style.color='#fff';document.getElementById('mxls${i}').style.display='block'" class="m-xls-tab" style="padding:.3rem .7rem;border-radius:6px;border:none;background:${i===0?'#2563eb':'#fff'};color:${i===0?'#fff':'#374151'};font-size:.75rem;cursor:pointer;white-space:nowrap;">${sn}</button>`;
-            tablas+=`<div id="mxls${i}" class="m-xls-sheet" style="display:${i===0?'block':'none'};"><style>table{border-collapse:collapse;font-size:.75rem}td,th{border:1px solid #d1d5db;padding:.25rem .4rem;white-space:nowrap}</style>${html}</div>`;
+            const activo=i===0;
+            tabs+=`<button onclick="document.querySelectorAll('.mxls-s').forEach(el=>el.style.display='none');document.querySelectorAll('.mxls-t').forEach(el=>{el.style.background='#fff';el.style.color='#374151';});this.style.background='#2563eb';this.style.color='#fff';document.getElementById('mxls${i}').style.display='block'" class="mxls-t" style="padding:.3rem .75rem;border-radius:6px;border:none;background:${activo?'#2563eb':'#fff'};color:${activo?'#fff':'#374151'};font-size:.75rem;cursor:pointer;white-space:nowrap;font-family:inherit;">${sn}</button>`;
+            tablas+=`<div id="mxls${i}" class="mxls-s" style="display:${activo?'block':'none'};"><style>table{border-collapse:collapse;font-size:.75rem}td,th{border:1px solid #d1d5db;padding:.25rem .4rem;white-space:nowrap}</style>${html}</div>`;
           });
-          container.innerHTML=(wb.SheetNames.length>1?`<div style="display:flex;gap:.4rem;padding:.5rem;background:#f3f4f6;overflow-x:auto;">${tabs}</div>`:'')+'<div style="overflow:auto;padding:.5rem;">'+tablas+'</div>';
-        }catch(e){container.innerHTML='<div style="text-align:center;padding:2rem;color:#ef4444;">Error al leer el archivo</div>';}
+          cont.innerHTML=(wb.SheetNames.length>1?`<div style="display:flex;gap:.4rem;padding:.5rem;background:#f3f4f6;border-bottom:1px solid #e2e8f0;overflow-x:auto;flex-shrink:0;">${tabs}</div>`:'')+`<div style="overflow:auto;padding:.5rem;">${tablas}</div>`;
+        }catch(e){cont.innerHTML='<div style="text-align:center;padding:2rem;color:#ef4444;">No se pudo leer el archivo Excel</div>';}
       };
-      xhr.onerror=()=>{container.innerHTML='<div style="text-align:center;padding:2rem;color:#ef4444;">Error al cargar</div>';};
+      xhr.onerror=()=>{cont.innerHTML='<div style="text-align:center;padding:2rem;color:#ef4444;">Error al cargar</div>';};
       xhr.send();
     }
   };

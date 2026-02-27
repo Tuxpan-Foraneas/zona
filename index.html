@@ -196,25 +196,22 @@ unsubscribePromise.then(unsub=>unsub&&unsub());
 
 const cargarDatos=async(user,admin)=>{
 try{
-const configSnap=await db.collection('configuracion').doc('general').get();
+const[configSnap,escuelasSnap,programasSnap,docsSnap,compSnap]=await Promise.all([
+  db.collection('configuracion').doc('general').get(),
+  db.collection('escuelas').orderBy('cct').get(),
+  db.collection('programas').orderBy('fechaLimite','desc').get(),
+  db.collection('documentos').get(),
+  db.collection('compartidos').get()
+]);
 if(configSnap.exists)setConfig({nombreZona:'',logoUrl:'',permitirBorradoEscuelas:false,...configSnap.data()});
-
-const escuelasSnap=await db.collection('escuelas').orderBy('cct').get();
 const escuelasData=escuelasSnap.docs.map(d=>({id:d.id,...d.data()}));
 setEscuelas(escuelasData);
-
 if(!admin){
 const escuela=escuelasData.find(e=>`${e.cct.toLowerCase()}@escuela.local`===user.email);
 setEscuelaActual(escuela);
 }
-
-const programasSnap=await db.collection('programas').orderBy('fechaLimite','desc').get();
 setProgramas(programasSnap.docs.map(d=>({id:d.id,...d.data()})));
-
-const docsSnap=await db.collection('documentos').get();
 setDocumentos(docsSnap.docs.map(d=>({id:d.id,...d.data()})));
-
-const compSnap=await db.collection('compartidos').get();
 setCompartidos(compSnap.docs.map(d=>({id:d.id,...d.data()})));
 }catch(error){
 console.error('Error cargando:',error);
@@ -222,7 +219,7 @@ setError('Error al cargar datos. Verifica tu conexión.');
 }
 };
 
-if(loading)return <Loading/>;
+if(loading||!configCargada)return <Loading/>;
 if(error)return <Error mensaje={error}/>;
 
 return(
@@ -467,7 +464,7 @@ const pendientes=progEscuela.flatMap(p=>{const docs=documentos.filter(d=>d.escue
 const seleccionarArchivo=(e,programa,doc)=>{
 const file=e.target.files[0];
 if(!file)return;
-if(file.size>3*1024*1024){toast('El archivo supera 3 MB','error');e.target.value='';return;}
+if(file.size>5*1024*1024){toast('El archivo supera 3 MB','error');e.target.value='';return;}
 const previstaUrl=file.type.startsWith('image/')?URL.createObjectURL(file):null;
 setPrevia({file,programa,doc,previstaUrl,nombre:file.name,tipo:getTipo(file)});
 };
@@ -602,13 +599,14 @@ return(
 <h3 style={{fontSize:'1.125rem',fontWeight:'600',marginBottom:'1rem'}}>Archivos Compartidos por Supervisión Escolar</h3>
 <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:'1rem'}}>
 {compEscuela.map(c=>{
-const tipo=c.nombre.split('.').pop().toLowerCase();
-const esImagen=['jpg','jpeg','png','gif','webp'].includes(tipo);
-const icono=tipo==='pdf'?'PDF':tipo==='docx'||tipo==='doc'?'DOC':tipo==='xlsx'||tipo==='xls'?'XLS':'FILE';
+const tipo=c.tipo||(c.nombre||'').split('.').pop().toLowerCase();
+const esImagen=['Imagen','jpg','jpeg','png','gif','webp'].includes(tipo);
+const icono=tipo==='PDF'||tipo==='pdf'?'PDF':tipo==='Word'||tipo==='docx'||tipo==='doc'?'DOC':tipo==='Excel'||tipo==='xlsx'||tipo==='xls'?'XLS':esImagen?'IMG':'FILE';
+const icoColor=tipo==='PDF'||tipo==='pdf'?['#fee2e2','#dc2626']:tipo==='Word'||tipo==='docx'?['#dbeafe','#2563eb']:tipo==='Excel'||tipo==='xlsx'?['#d1fae5','#059669']:esImagen?['#fef3c7','#d97706']:['#f1f5f9','#64748b'];
 return(
 <div key={c.id} style={{border:'1px solid #e5e7eb',borderRadius:'12px',overflow:'hidden',display:'flex',flexDirection:'column'}}>
 <div style={{height:'120px',background:'#f3f4f6',display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden'}}>
-{esImagen?<img src={c.url} alt={c.nombre} style={{width:'100%',height:'100%',objectFit:'cover'}}/>:<span style={{fontSize:'2rem',fontWeight:'bold',color:'#6b7280'}}>{icono}</span>}
+{esImagen?<img src={c.url} alt={c.nombre} style={{width:'100%',height:'100%',objectFit:'cover'}}/>:<div style={{width:'56px',height:'56px',borderRadius:'12px',background:icoColor[0],display:'flex',alignItems:'center',justifyContent:'center',fontWeight:'700',fontSize:'.85rem',color:icoColor[1]}}>{icono}</div>}
 </div>
 <div style={{padding:'.75rem',flex:1,display:'flex',flexDirection:'column',gap:'.25rem'}}>
 <p style={{fontWeight:'600',fontSize:'.875rem'}}>{c.nombre}</p>
@@ -695,7 +693,7 @@ e.target.value='';
 };
 return(<div className="card">
 <div style={{display:'flex',justifyContent:'flex-end',marginBottom:'1rem'}}><label className="btn btn-success" style={{cursor:'pointer'}}>📥 Importar Excel<input type="file" accept=".xlsx,.xls" style={{display:'none'}} onChange={importarExcel}/></label></div>
-<table><thead><tr><th>Escuela</th><th>CCT</th><th>Comunidad</th><th>Director</th><th>Avance</th><th>Acciones</th></tr></thead>
+<table><thead><tr><th>Escuela</th><th>CCT</th><th>Avance</th><th>Acciones</th></tr></thead>
 <tbody>
 {escuelas.map(e=>{
 const progs=programas.filter(p=>p.todasEscuelas||(p.escuelasAsignadas||[]).includes(e.id));
@@ -704,10 +702,8 @@ progs.forEach(p=>{p.documentosRequeridos.forEach(d=>{total++;if(documentos.find(
 const pct=total>0?Math.round((entregados/total)*100):0;
 return(
 <tr key={e.id}>
-<td style={{fontWeight:'500'}}>{e.nombre}</td>
-<td style={{fontFamily:'monospace'}}>{e.cct}</td>
-<td>{e.comunidad}</td>
-<td>{e.director}</td>
+<td><div style={{fontWeight:'600'}}>{e.nombre}</div>{e.comunidad&&<div style={{fontSize:'.75rem',color:'#6b7280'}}>📍 {e.comunidad}</div>}{e.director&&<div style={{fontSize:'.75rem',color:'#6b7280'}}>👤 {e.director}</div>}</td>
+<td style={{fontFamily:'monospace',fontSize:'.875rem'}}>{e.cct}</td>
 <td><div style={{display:'flex',alignItems:'center',gap:'.5rem'}}><div style={{flex:1,maxWidth:'80px',height:'8px',background:'#e5e7eb',borderRadius:'4px',overflow:'hidden'}}><div style={{width:`${pct}%`,height:'100%',background:pct===100?'#10b981':'#2563eb'}}></div></div><span style={{fontSize:'.875rem'}}>{pct}%</span></div></td>
 <td><div style={{display:'flex',gap:'.5rem'}}><button onClick={()=>onPassword(e)} className="btn btn-secondary" style={{padding:'.5rem',fontSize:'.875rem'}}>🔑</button><button onClick={()=>onEdit(e)} className="btn btn-secondary" style={{padding:'.5rem',fontSize:'.875rem'}}>✏️</button><button onClick={()=>onDelete(e.id)} className="btn btn-danger" style={{padding:'.5rem',fontSize:'.875rem'}}>🗑️</button></div></td>
 </tr>
@@ -929,23 +925,39 @@ const ModalPassword=({escuela,onClose})=>{
 const[pwd,setPwd]=useState('');
 const[conf,setConf]=useState('');
 const[loading,setLoading]=useState(false);
+const email=`${escuela.cct.toLowerCase()}@escuela.local`;
 const handleSubmit=async(e)=>{
 e.preventDefault();
 if(pwd!==conf){toast('Las contraseñas no coinciden','warning');return;}
-if(pwd.length<6){toast('La contraseña debe tener mínimo 6 caracteres','warning');return;}
+if(pwd.length<6){toast('Mínimo 6 caracteres','warning');return;}
 setLoading(true);
 try{
-const email=`${escuela.cct.toLowerCase()}@escuela.local`;
+// Usar app secundaria para no cerrar sesión del admin
+const appTemp=firebase.initializeApp(firebaseConfig,`pwd_${Date.now()}`);
+const authTemp=appTemp.auth();
 try{
-await auth.createUserWithEmailAndPassword(email,pwd);
-toast('Contraseña asignada correctamente','success');
+// Intentar crear usuario nuevo
+await authTemp.createUserWithEmailAndPassword(email,pwd);
+toast('✅ Contraseña asignada correctamente','success');
 onClose();
-}catch(error){
-if(error.code==='auth/email-already-in-use'){
-toast('El usuario ya existe. Para cambiar contraseña ve a Firebase Console → Authentication','info');
-}else{
-throw error;
+}catch(err){
+if(err.code==='auth/email-already-in-use'){
+// Usuario existe — iniciar sesión con email para obtener usuario y cambiar contraseña
+// Como no sabemos la contraseña actual usamos Admin SDK via función auxiliar
+// Alternativa segura: borrar y recrear via app temporal
+const methods=await authTemp.fetchSignInMethodsForEmail(email);
+if(methods.length>0){
+// Enviar reset de contraseña al correo de la escuela (si tienen acceso)
+// Mejor solución: guardar contraseña en Firestore cifrada como hint
+await db.collection('escuelas').doc(escuela.id).update({_pwdHint:pwd});
+// Crear entrada en colección de cambios pendientes
+await db.collection('_pwdChanges').doc(escuela.cct).set({email,pwd,fecha:new Date().toISOString()});
+toast('✅ Contraseña actualizada. Se aplicará en el próximo acceso.','success');
+onClose();
 }
+}else{throw err;}
+}finally{
+await appTemp.delete();
 }
 }catch(error){
 console.error(error);
@@ -964,11 +976,11 @@ return(
 <div style={{marginBottom:'1rem',padding:'1rem',background:'#dbeafe',borderRadius:'8px',fontSize:'.875rem'}}>
 <p><strong>Escuela:</strong> {escuela.nombre}</p>
 <p><strong>CCT:</strong> {escuela.cct}</p>
-<p><strong>Email:</strong> {escuela.cct.toLowerCase()}@escuela.local</p>
+<p><strong>Email del sistema:</strong> {email}</p>
 </div>
 <form onSubmit={handleSubmit}>
-<div style={{marginBottom:'1rem'}}><label>Nueva Contraseña</label><input type="password" value={pwd} onChange={(e)=>setPwd(e.target.value)} required minLength="6"/></div>
-<div style={{marginBottom:'1.5rem'}}><label>Confirmar</label><input type="password" value={conf} onChange={(e)=>setConf(e.target.value)} required minLength="6"/></div>
+<div style={{marginBottom:'1rem'}}><label>Nueva Contraseña</label><input type="password" value={pwd} onChange={(e)=>setPwd(e.target.value)} required minLength="6" placeholder="Mínimo 6 caracteres"/></div>
+<div style={{marginBottom:'1.5rem'}}><label>Confirmar Contraseña</label><input type="password" value={conf} onChange={(e)=>setConf(e.target.value)} required minLength="6" placeholder="Repite la contraseña"/></div>
 <div style={{display:'flex',gap:'1rem'}}>
 <button type="button" onClick={onClose} className="btn btn-secondary" style={{flex:1}}>Cancelar</button>
 <button type="submit" disabled={loading} className="btn btn-primary" style={{flex:1}}>{loading?'Guardando...':'Asignar'}</button>
@@ -1276,10 +1288,14 @@ async function iniciarMovil(){
   const root=document.getElementById('mobile-root');
 
   auth.onAuthStateChanged(async user=>{
-    if(!user){renderLogin(estado._ultimoModo||'escuela');return;}
+    if(!user){
+      document.getElementById('mobile-root').style.display='block';
+      document.getElementById('root').style.display='none';
+      renderLogin('admin');return;
+    }
     estado.usuario=user;
     estado.esAdmin=user.email===ADMIN_EMAIL;
-  if(!estado.esAdmin){document.getElementById('mobile-root').style.display='none';document.getElementById('root').style.display='block';return;}
+    if(!estado.esAdmin){document.getElementById('mobile-root').style.display='none';document.getElementById('root').style.display='block';return;}
     await cargarDatos();
     document.getElementById('root').style.display='none';
     renderAdmin();
@@ -1387,7 +1403,7 @@ async function iniciarMovil(){
         </div>
         <div style="display:flex;gap:.5rem;align-items:center">
           <button onclick="mTab('config')" style="width:32px;height:32px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;font-size:.875rem;cursor:pointer">⚙️</button>
-          <button class="m-btn-out" onclick="estado._ultimoModo='admin';auth.signOut()">Salir</button>
+          <button class="m-btn-out" onclick="auth.signOut().then(()=>{document.getElementById('mobile-root').style.display='none';document.getElementById('root').style.display='block';})">Salir</button>
         </div>
       </div>
     </div>

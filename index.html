@@ -1173,3 +1173,628 @@ root.render(<App/>);
 </script>
 </body>
 </html>
+<!-- ==================== VERSIÓN MÓVIL ADMIN ==================== -->
+<div id="mobile-root" style="display:none"></div>
+<style>
+#mobile-root{font-family:'Inter',sans-serif;background:#f1f5f9;min-height:100vh}
+.m-header{background:#fff;padding:48px 16px 12px;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:50}
+.m-header-row{display:flex;align-items:center;justify-content:space-between}
+.m-logo{width:38px;height:38px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:.8rem;flex-shrink:0}
+.m-title{font-size:.95rem;font-weight:700;color:#0f172a}
+.m-sub{font-size:.7rem;color:#64748b}
+.m-btn-out{padding:.35rem .75rem;border-radius:8px;border:1px solid #e2e8f0;background:#fff;font-size:.7rem;color:#64748b;cursor:pointer;font-family:inherit}
+.m-tabs{display:flex;overflow-x:auto;background:#fff;border-bottom:2px solid #e2e8f0;scrollbar-width:none}
+.m-tabs::-webkit-scrollbar{display:none}
+.m-tab{padding:.6rem 1rem;font-size:.75rem;font-weight:600;color:#94a3b8;border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;cursor:pointer;font-family:inherit;background:none;border-top:none;border-left:none;border-right:none}
+.m-tab.on{color:#3b82f6;border-bottom-color:#3b82f6}
+.m-content{padding:1rem;padding-bottom:80px;min-height:calc(100vh - 120px)}
+.m-stats{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1.25rem}
+.m-stat{border-radius:14px;padding:1rem;color:#fff}
+.m-stat-lbl{font-size:.7rem;opacity:.85;margin-bottom:.2rem}
+.m-stat-val{font-size:1.75rem;font-weight:700}
+.m-card{background:#fff;border-radius:14px;padding:1rem;margin-bottom:.75rem;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid #f1f5f9}
+.m-card-hd{display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem}
+.m-avatar{width:40px;height:40px;border-radius:12px;background:#dbeafe;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:#1d4ed8;flex-shrink:0}
+.m-name{font-size:.875rem;font-weight:700;color:#0f172a}
+.m-cct{font-size:.7rem;color:#94a3b8;font-family:monospace}
+.m-dir{font-size:.7rem;color:#64748b;margin-top:.1rem}
+.m-card-ft{display:flex;align-items:center;gap:.5rem}
+.m-prog-b{font-size:.7rem;color:#64748b;background:#f1f5f9;padding:.2rem .5rem;border-radius:6px;white-space:nowrap}
+.m-pbar-w{flex:1}
+.m-pbar{height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden}
+.m-pfill{height:100%;border-radius:3px;background:linear-gradient(90deg,#10b981,#3b82f6)}
+.m-pct{font-size:.7rem;font-weight:700;white-space:nowrap}
+.m-card-btns{display:flex;gap:.4rem;margin-top:.75rem;border-top:1px solid #f1f5f9;padding-top:.75rem}
+.m-btn{padding:.35rem .65rem;border-radius:7px;border:1px solid #e2e8f0;background:#fff;font-size:.7rem;cursor:pointer;font-family:inherit;font-weight:500}
+.m-btn-r{padding:.35rem .65rem;border-radius:7px;border:none;background:#fee2e2;color:#dc2626;font-size:.7rem;cursor:pointer;font-family:inherit}
+.m-btn-p{background:#2563eb;color:#fff;border-color:#2563eb}
+.m-filters{display:flex;gap:.5rem;overflow-x:auto;margin-bottom:1rem;scrollbar-width:none;padding-bottom:.25rem}
+.m-filters::-webkit-scrollbar{display:none}
+.m-chip{padding:.35rem .75rem;border-radius:20px;border:1px solid #e2e8f0;background:#fff;font-size:.7rem;color:#64748b;white-space:nowrap;cursor:pointer;font-family:inherit}
+.m-chip.on{background:#3b82f6;color:#fff;border-color:#3b82f6}
+.m-doc-card{background:#fff;border-radius:14px;padding:.875rem;margin-bottom:.75rem;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid #f1f5f9}
+.m-doc-hd{display:flex;gap:.75rem;margin-bottom:.75rem}
+.m-doc-ico{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex-shrink:0}
+.m-doc-name{font-size:.8rem;font-weight:600;color:#0f172a;margin-bottom:.15rem;word-break:break-all}
+.m-doc-esc{font-size:.7rem;color:#64748b}
+.m-doc-prog{font-size:.65rem;color:#94a3b8}
+.m-doc-ft{display:flex;align-items:center;justify-content:space-between}
+.m-doc-date{font-size:.65rem;color:#94a3b8}
+.m-prog-card{background:#fff;border-radius:14px;padding:1rem;margin-bottom:.75rem;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid #f1f5f9}
+.m-prog-name{font-size:.9rem;font-weight:700;color:#0f172a;margin-bottom:.25rem}
+.m-prog-date{font-size:.7rem;color:#f59e0b;font-weight:600;margin-bottom:.5rem}
+.m-prog-docs{display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:.75rem}
+.m-prog-doc{font-size:.65rem;background:#f1f5f9;color:#374151;padding:.2rem .5rem;border-radius:6px}
+.m-section{font-size:.8rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.75rem}
+.m-action-row{display:flex;gap:.5rem;margin-bottom:1rem}
+.m-action-btn{flex:1;padding:.65rem;border-radius:10px;border:none;font-weight:600;font-size:.8rem;cursor:pointer;font-family:inherit}
+.m-bnav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e2e8f0;display:flex;padding:.5rem 0 1rem;z-index:50}
+.m-bnav-i{flex:1;display:flex;flex-direction:column;align-items:center;gap:.2rem;cursor:pointer;border:none;background:none;font-family:inherit}
+.m-bnav-ic{font-size:1.1rem}
+.m-bnav-lb{font-size:.6rem;color:#94a3b8;font-weight:500}
+.m-bnav-i.on .m-bnav-lb{color:#3b82f6}
+.m-rubrica{background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.m-rubrica table{width:100%;border-collapse:collapse;font-size:.7rem}
+.m-rubrica th{background:#f8fafc;padding:.5rem .4rem;text-align:center;border:1px solid #e2e8f0;font-weight:600;color:#64748b}
+.m-rubrica td{padding:.5rem .4rem;border:1px solid #e2e8f0;text-align:center}
+.m-empty{text-align:center;padding:3rem 1rem;color:#94a3b8}
+.m-badge{padding:.2rem .5rem;border-radius:6px;font-size:.65rem;font-weight:600}
+</style>
+
+<script>
+// Detectar móvil
+const esCelular=()=>window.innerWidth<=768||/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+if(esCelular()){
+  document.getElementById('root').style.display='none';
+  document.getElementById('mobile-root').style.display='block';
+
+  // Esperar a que React cargue los datos
+  const esperarDatos=setInterval(()=>{
+    // Acceder a datos de Firebase directamente
+    if(typeof firebase!=='undefined'&&firebase.apps.length){
+      clearInterval(esperarDatos);
+      iniciarMovil();
+    }
+  },500);
+}
+
+async function iniciarMovil(){
+  const auth=firebase.auth();
+  const db=firebase.firestore();
+  const storage=firebase.storage();
+  const ADMIN_EMAIL='admin@sistema.local';
+
+  let estado={
+    usuario:null,esAdmin:false,
+    config:{nombreZona:'',logoUrl:'',cicloEscolar:''},
+    escuelas:[],programas:[],documentos:[],compartidos:[],
+    tab:'dashboard',
+    filtroEsc:'',filtroProg:'',
+    modal:null,modalData:null
+  };
+
+  const root=document.getElementById('mobile-root');
+
+  auth.onAuthStateChanged(async user=>{
+    if(!user){renderLogin();return;}
+    estado.usuario=user;
+    estado.esAdmin=user.email===ADMIN_EMAIL;
+    if(!estado.esAdmin){root.innerHTML='<div style="padding:2rem;text-align:center;color:#ef4444">Solo acceso para administrador</div>';return;}
+    await cargarDatos();
+    renderAdmin();
+  });
+
+  async function cargarDatos(){
+    try{
+      const[cfgSnap,escSnap,progSnap,docSnap,compSnap]=await Promise.all([
+        db.collection('configuracion').doc('general').get(),
+        db.collection('escuelas').orderBy('cct').get(),
+        db.collection('programas').orderBy('fechaLimite','desc').get(),
+        db.collection('documentos').get(),
+        db.collection('compartidos').get()
+      ]);
+      if(cfgSnap.exists)estado.config={...estado.config,...cfgSnap.data()};
+      estado.escuelas=escSnap.docs.map(d=>({id:d.id,...d.data()}));
+      estado.programas=progSnap.docs.map(d=>({id:d.id,...d.data()}));
+      estado.documentos=docSnap.docs.map(d=>({id:d.id,...d.data()}));
+      estado.compartidos=compSnap.docs.map(d=>({id:d.id,...d.data()}));
+    }catch(e){console.error(e);}
+  }
+
+  function calcStats(){
+    const{escuelas,programas,documentos}=estado;
+    let completas=0,pendientes=0;
+    escuelas.forEach(e=>{
+      const progs=programas.filter(p=>p.todasEscuelas||(p.escuelasAsignadas||[]).includes(e.id));
+      let req=0,ent=0;
+      progs.forEach(p=>{p.documentosRequeridos.forEach(d=>{req++;if(documentos.find(doc=>doc.escuelaId===e.id&&doc.programaId===p.id&&doc.nombreDocumento===d))ent++;});});
+      if(req>0&&ent===req)completas++;
+      pendientes+=(req-ent);
+    });
+    return{total:escuelas.length,completas,pendientes,avance:escuelas.length>0?Math.round((completas/escuelas.length)*100):0};
+  }
+
+  function getIniciales(nombre){return nombre.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();}
+  function getColor(i){const c=[['#dbeafe','#1d4ed8'],['#d1fae5','#059669'],['#fef3c7','#d97706'],['#ede9fe','#7c3aed'],['#fee2e2','#dc2626']];return c[i%c.length];}
+  function getPct(escuela){
+    const progs=estado.programas.filter(p=>p.todasEscuelas||(p.escuelasAsignadas||[]).includes(escuela.id));
+    let req=0,ent=0;
+    progs.forEach(p=>{p.documentosRequeridos.forEach(d=>{req++;if(estado.documentos.find(doc=>doc.escuelaId===escuela.id&&doc.programaId===p.id&&doc.nombreDocumento===d))ent++;});});
+    return req>0?Math.round((ent/req)*100):0;
+  }
+  function getPctColor(p){return p>=75?'#10b981':p>=50?'#f59e0b':'#ef4444';}
+  function getDocIco(tipo){
+    if(tipo==='PDF')return['#fee2e2','#dc2626','PDF'];
+    if(tipo==='Word')return['#dbeafe','#2563eb','DOC'];
+    if(tipo==='Excel')return['#d1fae5','#059669','XLS'];
+    if(tipo==='Imagen')return['#fef3c7','#d97706','IMG'];
+    return['#f1f5f9','#64748b','FILE'];
+  }
+  function fmtFecha(iso){if(!iso)return'';return new Date(iso).toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit',year:'2-digit'});}
+
+  function renderLogin(){
+    root.innerHTML=`<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem;background:linear-gradient(135deg,#667eea,#764ba2)">
+    <div style="background:#fff;border-radius:16px;padding:2rem;width:100%;max-width:360px;text-align:center">
+    <div style="font-size:1.25rem;font-weight:700;margin-bottom:.5rem">${estado.config.nombreZona||'DocuEscuela'}</div>
+    <p style="color:#64748b;font-size:.875rem;margin-bottom:1.5rem">Acceso de Administrador</p>
+    <div id="m-login-err" style="display:none;padding:.75rem;background:#fee2e2;border-radius:8px;color:#dc2626;font-size:.8rem;margin-bottom:1rem"></div>
+    <input id="m-pwd" type="password" placeholder="Contraseña" style="width:100%;padding:.75rem;border:1px solid #e2e8f0;border-radius:8px;font-size:1rem;margin-bottom:1rem;font-family:inherit">
+    <button onclick="mLogin()" style="width:100%;padding:.75rem;border-radius:8px;border:none;background:#2563eb;color:#fff;font-weight:600;font-size:1rem;cursor:pointer;font-family:inherit">Ingresar</button>
+    </div></div>`;
+    window.mLogin=async()=>{
+      const pwd=document.getElementById('m-pwd').value;
+      try{await auth.signInWithEmailAndPassword(ADMIN_EMAIL,pwd);}
+      catch(e){const err=document.getElementById('m-login-err');err.style.display='block';err.textContent='Contraseña incorrecta';}
+    };
+  }
+
+  function renderAdmin(){
+    const{config,tab}=estado;
+    const stats=calcStats();
+    root.innerHTML=`
+    <div class="m-header">
+      <div class="m-header-row">
+        <div style="display:flex;align-items:center;gap:.625rem">
+          ${config.logoUrl?`<img src="${config.logoUrl}" style="height:36px;border-radius:8px;object-fit:contain">`:'<div class="m-logo">Z268</div>'}
+          <div><div class="m-title">${config.nombreZona||'Panel Admin'}</div><div class="m-sub">Gestión Documental${config.cicloEscolar?' · '+config.cicloEscolar:''}</div></div>
+        </div>
+        <div style="display:flex;gap:.5rem;align-items:center">
+          <button onclick="mTab('config')" style="width:32px;height:32px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;font-size:.875rem;cursor:pointer">⚙️</button>
+          <button class="m-btn-out" onclick="auth.signOut()">Salir</button>
+        </div>
+      </div>
+    </div>
+    <div class="m-tabs">
+      <button class="m-tab ${tab==='dashboard'?'on':''}" onclick="mTab('dashboard')">Dashboard</button>
+      <button class="m-tab ${tab==='escuelas'?'on':''}" onclick="mTab('escuelas')">Escuelas (${estado.escuelas.length})</button>
+      <button class="m-tab ${tab==='programas'?'on':''}" onclick="mTab('programas')">Programas (${estado.programas.length})</button>
+      <button class="m-tab ${tab==='documentos'?'on':''}" onclick="mTab('documentos')">Documentos (${estado.documentos.length})</button>
+      <button class="m-tab ${tab==='compartidos'?'on':''}" onclick="mTab('compartidos')">Archivos (${estado.compartidos.length})</button>
+      <button class="m-tab ${tab==='rubrica'?'on':''}" onclick="mTab('rubrica')">📋 Rúbrica</button>
+    </div>
+    <div class="m-content" id="m-content"></div>
+    <div class="m-bnav">
+      <button class="m-bnav-i ${tab==='dashboard'?'on':''}" onclick="mTab('dashboard')"><span class="m-bnav-ic">🏠</span><span class="m-bnav-lb">Inicio</span></button>
+      <button class="m-bnav-i ${tab==='escuelas'?'on':''}" onclick="mTab('escuelas')"><span class="m-bnav-ic">🏫</span><span class="m-bnav-lb">Escuelas</span></button>
+      <button class="m-bnav-i ${tab==='documentos'?'on':''}" onclick="mTab('documentos')"><span class="m-bnav-ic">📁</span><span class="m-bnav-lb">Docs</span></button>
+      <button class="m-bnav-i ${tab==='rubrica'?'on':''}" onclick="mTab('rubrica')"><span class="m-bnav-ic">📋</span><span class="m-bnav-lb">Rúbrica</span></button>
+    </div>`;
+    renderTab();
+  }
+
+  function renderTab(){
+    const c=document.getElementById('m-content');
+    if(!c)return;
+    const{tab}=estado;
+    if(tab==='dashboard')c.innerHTML=htmlDashboard();
+    else if(tab==='escuelas')c.innerHTML=htmlEscuelas();
+    else if(tab==='programas')c.innerHTML=htmlProgramas();
+    else if(tab==='documentos')c.innerHTML=htmlDocumentos();
+    else if(tab==='compartidos')c.innerHTML=htmlCompartidos();
+    else if(tab==='rubrica')c.innerHTML=htmlRubrica();
+    else if(tab==='config')c.innerHTML=htmlConfig();
+  }
+
+  window.mTab=t=>{estado.tab=t;renderAdmin();}
+
+  function htmlDashboard(){
+    const s=calcStats();
+    const esc=estado.escuelas.slice(0,10);
+    return`<div class="m-stats">
+      <div class="m-stat" style="background:linear-gradient(135deg,#3b82f6,#1d4ed8)"><div class="m-stat-lbl">Escuelas</div><div class="m-stat-val">${s.total}</div></div>
+      <div class="m-stat" style="background:linear-gradient(135deg,#10b981,#059669)"><div class="m-stat-lbl">Avance</div><div class="m-stat-val">${s.avance}%</div></div>
+      <div class="m-stat" style="background:linear-gradient(135deg,#059669,#047857)"><div class="m-stat-lbl">Completas</div><div class="m-stat-val">${s.completas}</div></div>
+      <div class="m-stat" style="background:linear-gradient(135deg,#f59e0b,#d97706)"><div class="m-stat-lbl">Pendientes</div><div class="m-stat-val">${s.pendientes}</div></div>
+    </div>
+    <div class="m-section">Resumen por escuela</div>
+    ${esc.map((e,i)=>{const pct=getPct(e);const c=getColor(i);return`
+    <div class="m-card">
+      <div class="m-card-hd">
+        <div class="m-avatar" style="background:${c[0]};color:${c[1]}">${getIniciales(e.nombre)}</div>
+        <div><div class="m-name">${e.nombre}</div><div class="m-cct">${e.cct}</div></div>
+      </div>
+      <div class="m-card-ft">
+        <div class="m-prog-b">${estado.programas.filter(p=>p.todasEscuelas||(p.escuelasAsignadas||[]).includes(e.id)).length} prog</div>
+        <div class="m-pbar-w"><div class="m-pbar"><div class="m-pfill" style="width:${pct}%"></div></div></div>
+        <div class="m-pct" style="color:${getPctColor(pct)}">${pct}%</div>
+      </div>
+    </div>`}).join('')}
+    ${estado.escuelas.length>10?`<div style="text-align:center;padding:1rem"><button onclick="mTab('escuelas')" style="padding:.6rem 1.5rem;border-radius:10px;border:1px solid #e2e8f0;background:#fff;color:#3b82f6;font-weight:600;cursor:pointer;font-family:inherit">Ver todas (${estado.escuelas.length})</button></div>`:''}`;
+  }
+
+  function htmlEscuelas(){
+    return`<div class="m-action-row">
+      <button class="m-action-btn m-btn-p" onclick="mNuevaEscuela()">+ Escuela</button>
+      <button class="m-action-btn" style="background:#10b981;color:#fff" onclick="mTab('dashboard')">📊 Stats</button>
+    </div>
+    ${estado.escuelas.map((e,i)=>{const pct=getPct(e);const c=getColor(i);return`
+    <div class="m-card" style="border-left:3px solid ${getPctColor(pct)}">
+      <div class="m-card-hd">
+        <div class="m-avatar" style="background:${c[0]};color:${c[1]}">${getIniciales(e.nombre)}</div>
+        <div style="flex:1"><div class="m-name">${e.nombre}</div><div class="m-cct">${e.cct}</div>${e.director?`<div class="m-dir">Dir: ${e.director}</div>`:''}</div>
+      </div>
+      <div class="m-card-ft">
+        <div class="m-pbar-w"><div class="m-pbar"><div class="m-pfill" style="width:${pct}%"></div></div></div>
+        <div class="m-pct" style="color:${getPctColor(pct)}">${pct}%</div>
+      </div>
+      <div class="m-card-btns">
+        <button class="m-btn" onclick="mEditarEscuela('${e.id}')">✏️ Editar</button>
+        <button class="m-btn" onclick="mPassword('${e.id}')">🔑 Contraseña</button>
+        <button class="m-btn-r" onclick="mBorrarEscuela('${e.id}')">🗑️</button>
+      </div>
+    </div>`}).join('')}`;
+  }
+
+  function htmlProgramas(){
+    return`<div class="m-action-row">
+      <button class="m-action-btn m-btn-p" onclick="mNuevoPrograma()">+ Programa</button>
+    </div>
+    ${estado.programas.map(p=>`
+    <div class="m-prog-card">
+      <div class="m-prog-name">${p.nombre}</div>
+      <div class="m-prog-date">📅 Límite: ${p.fechaLimite}</div>
+      ${p.descripcion?`<div style="font-size:.75rem;color:#64748b;margin-bottom:.5rem">${p.descripcion}</div>`:''}
+      <div class="m-prog-docs">${(p.documentosRequeridos||[]).map(d=>`<span class="m-prog-doc">📄 ${d}</span>`).join('')}</div>
+      <div style="font-size:.7rem;color:#64748b;margin-bottom:.75rem">${p.todasEscuelas?'✅ Todas las escuelas':`${(p.escuelasAsignadas||[]).length} escuelas asignadas`}</div>
+      <div class="m-card-btns">
+        <button class="m-btn" onclick="mEditarPrograma('${p.id}')">✏️ Editar</button>
+        <button class="m-btn-r" onclick="mBorrarPrograma('${p.id}')">🗑️</button>
+      </div>
+    </div>`).join('')}`;
+  }
+
+  function htmlDocumentos(){
+    let docs=estado.documentos.map(d=>{
+      const e=estado.escuelas.find(x=>x.id===d.escuelaId);
+      const p=estado.programas.find(x=>x.id===d.programaId);
+      return{...d,escNombre:e?.nombre||'?',escCCT:e?.cct||'?',progNombre:p?.nombre||'?'};
+    });
+    if(estado.filtroEsc)docs=docs.filter(d=>d.escuelaId===estado.filtroEsc);
+    if(estado.filtroProg)docs=docs.filter(d=>d.programaId===estado.filtroProg);
+    return`<div class="m-filters">
+      <button class="m-chip ${!estado.filtroEsc?'on':''}" onclick="mFiltroEsc('')">Todas</button>
+      ${estado.escuelas.map(e=>`<button class="m-chip ${estado.filtroEsc===e.id?'on':''}" onclick="mFiltroEsc('${e.id}')">${e.nombre.split(' ')[0]}</button>`).join('')}
+    </div>
+    <div class="m-filters">
+      <button class="m-chip ${!estado.filtroProg?'on':''}" onclick="mFiltroProg('')">Todos</button>
+      ${estado.programas.map(p=>`<button class="m-chip ${estado.filtroProg===p.id?'on':''}" onclick="mFiltroProg('${p.id}')">${p.nombre}</button>`).join('')}
+    </div>
+    ${docs.length===0?`<div class="m-empty">📂<br>Sin documentos</div>`:
+    docs.map(d=>{const ico=getDocIco(d.tipo);return`
+    <div class="m-doc-card">
+      <div class="m-doc-hd">
+        <div class="m-doc-ico" style="background:${ico[0]};color:${ico[1]}">${ico[2]}</div>
+        <div style="flex:1;min-width:0">
+          <div class="m-doc-name">${d.nombreArchivo||d.nombreDocumento}</div>
+          <div class="m-doc-esc">${d.escNombre} · ${d.escCCT}</div>
+          <div class="m-doc-prog">${d.progNombre}</div>
+        </div>
+      </div>
+      <div class="m-doc-ft">
+        <div class="m-doc-date">${fmtFecha(d.fecha)}</div>
+        <div style="display:flex;gap:.4rem">
+          <button class="m-btn" onclick="window.open('${d.url}','_blank')">Ver</button>
+          <button class="m-btn-r" onclick="mBorrarDoc('${d.id}')">🗑️</button>
+        </div>
+      </div>
+    </div>`}).join('')}`;
+  }
+
+  function htmlCompartidos(){
+    return`<div class="m-action-row">
+      <button class="m-action-btn m-btn-p" onclick="mNuevoCompartido()">📤 Subir Archivo</button>
+    </div>
+    ${estado.compartidos.length===0?`<div class="m-empty">📂<br>Sin archivos compartidos</div>`:
+    estado.compartidos.map(c=>{
+      const p=estado.programas.find(x=>x.id===c.programaId);
+      return`<div class="m-card">
+        <div class="m-name">${c.nombre}</div>
+        ${c.descripcion?`<div style="font-size:.75rem;color:#64748b;margin:.25rem 0">${c.descripcion}</div>`:''}
+        ${p?`<div style="font-size:.7rem;color:#3b82f6;margin:.25rem 0">📋 ${p.nombre}</div>`:''}
+        <div class="m-card-btns">
+          <button class="m-btn" onclick="window.open('${c.url}','_blank')">Ver</button>
+          <button class="m-btn-r" onclick="mBorrarCompartido('${c.id}')">🗑️</button>
+        </div>
+      </div>`;}).join('')}`;
+  }
+
+  function htmlRubrica(){
+    const{escuelas,programas,documentos,config}=estado;
+    const fecha=new Date().toLocaleDateString('es-MX',{year:'numeric',month:'long',day:'numeric'});
+    return`<div style="margin-bottom:1rem;display:flex;justify-content:flex-end">
+      <button onclick="window.print()" class="m-btn m-btn-p">🖨️ Imprimir</button>
+    </div>
+    <div class="m-rubrica" style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr><th colspan="${3+programas.length}" style="padding:.75rem;text-align:center">${config.nombreZona||'ZONA ESCOLAR'}<br><small>${fecha}</small></th></tr>
+          <tr><th>#</th><th>CCT</th><th style="text-align:left">Escuela</th>
+          ${programas.map(p=>`<th style="max-width:50px"><div style="writing-mode:vertical-rl;transform:rotate(180deg);white-space:nowrap;font-size:.6rem">${p.nombre}</div></th>`).join('')}
+          </tr>
+        </thead>
+        <tbody>
+          ${escuelas.map((e,i)=>`<tr style="background:${i%2?'#f8fafc':'#fff'}">
+            <td>${i+1}</td>
+            <td style="font-family:monospace;font-size:.65rem">${e.cct}</td>
+            <td style="text-align:left;font-size:.75rem">${e.nombre}</td>
+            ${programas.map(p=>{
+              const asig=p.todasEscuelas||(p.escuelasAsignadas||[]).includes(e.id);
+              if(!asig)return`<td style="background:#e5e7eb"></td>`;
+              const ok=documentos.filter(d=>d.escuelaId===e.id&&d.programaId===p.id).length>=p.documentosRequeridos.length;
+              return`<td style="background:${ok?'#d1fae5':'#fff'}">${ok?'✓':''}</td>`;
+            }).join('')}
+          </tr>`).join('')}
+        </tbody>
+        <tfoot>
+          <tr><td colspan="3" style="text-align:left;font-weight:700;background:#f8fafc">TOTAL</td>
+          ${programas.map(p=>{
+            const asig=escuelas.filter(e=>p.todasEscuelas||(p.escuelasAsignadas||[]).includes(e.id));
+            const ent=asig.filter(e=>documentos.filter(d=>d.escuelaId===e.id&&d.programaId===p.id).length>=p.documentosRequeridos.length).length;
+            return`<td style="font-weight:700;background:#f8fafc">${ent}/${asig.length}</td>`;
+          }).join('')}
+          </tr>
+        </tfoot>
+      </table>
+    </div>`;
+  }
+
+  function htmlConfig(){
+    const{config}=estado;
+    return`<div class="m-card">
+      <div class="m-section">Configuración</div>
+      <div style="margin-bottom:1rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.4rem">Nombre de la Zona</label>
+      <input id="m-cfg-nombre" value="${config.nombreZona||''}" style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit;font-size:.9rem"></div>
+      <div style="margin-bottom:1.5rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.4rem">Ciclo Escolar</label>
+      <input id="m-cfg-ciclo" value="${config.cicloEscolar||''}" placeholder="2025-2026" style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit;font-size:.9rem"></div>
+      <button onclick="mGuardarConfig()" class="m-action-btn m-btn-p" style="width:100%">Guardar</button>
+    </div>`;
+  }
+
+  // Acciones
+  window.mFiltroEsc=id=>{estado.filtroEsc=id;renderTab();}
+  window.mFiltroProg=id=>{estado.filtroProg=id;renderTab();}
+
+  window.mBorrarDoc=async id=>{
+    if(!confirm('¿Eliminar este documento?'))return;
+    try{
+      const doc=estado.documentos.find(d=>d.id===id);
+      if(doc?.url){try{await storage.refFromURL(doc.url).delete();}catch(e){}}
+      await db.collection('documentos').doc(id).delete();
+      estado.documentos=estado.documentos.filter(d=>d.id!==id);
+      renderTab();
+    }catch(e){alert('Error al eliminar');}
+  };
+
+  window.mBorrarEscuela=async id=>{
+    if(!confirm('¿Eliminar esta escuela y todos sus documentos?'))return;
+    try{
+      const docs=estado.documentos.filter(d=>d.escuelaId===id);
+      for(const d of docs){if(d.url){try{await storage.refFromURL(d.url).delete();}catch(e){}}await db.collection('documentos').doc(d.id).delete();}
+      await db.collection('escuelas').doc(id).delete();
+      estado.escuelas=estado.escuelas.filter(e=>e.id!==id);
+      estado.documentos=estado.documentos.filter(d=>d.escuelaId!==id);
+      renderTab();
+    }catch(e){alert('Error al eliminar');}
+  };
+
+  window.mBorrarPrograma=async id=>{
+    if(!confirm('¿Eliminar este programa?'))return;
+    try{
+      const docs=estado.documentos.filter(d=>d.programaId===id);
+      for(const d of docs){if(d.url){try{await storage.refFromURL(d.url).delete();}catch(e){}}await db.collection('documentos').doc(d.id).delete();}
+      await db.collection('programas').doc(id).delete();
+      estado.programas=estado.programas.filter(p=>p.id!==id);
+      estado.documentos=estado.documentos.filter(d=>d.programaId!==id);
+      renderTab();
+    }catch(e){alert('Error al eliminar');}
+  };
+
+  window.mBorrarCompartido=async id=>{
+    if(!confirm('¿Eliminar este archivo?'))return;
+    try{
+      const c=estado.compartidos.find(x=>x.id===id);
+      if(c?.url){try{await storage.refFromURL(c.url).delete();}catch(e){}}
+      await db.collection('compartidos').doc(id).delete();
+      estado.compartidos=estado.compartidos.filter(x=>x.id!==id);
+      renderTab();
+    }catch(e){alert('Error al eliminar');}
+  };
+
+  window.mGuardarConfig=async()=>{
+    const nombre=document.getElementById('m-cfg-nombre').value;
+    const ciclo=document.getElementById('m-cfg-ciclo').value;
+    try{
+      await db.collection('configuracion').doc('general').set({...estado.config,nombreZona:nombre,cicloEscolar:ciclo},{merge:true});
+      estado.config={...estado.config,nombreZona:nombre,cicloEscolar:ciclo};
+      alert('✅ Guardado');renderAdmin();
+    }catch(e){alert('Error al guardar');}
+  };
+
+  window.mNuevaEscuela=()=>{
+    const form=`<div class="m-card"><div class="m-section">Nueva Escuela</div>
+    <div style="margin-bottom:.75rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">Nombre *</label><input id="mf-nombre" style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit"></div>
+    <div style="margin-bottom:.75rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">CCT *</label><input id="mf-cct" style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit;text-transform:uppercase"></div>
+    <div style="margin-bottom:.75rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">Comunidad</label><input id="mf-com" style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit"></div>
+    <div style="margin-bottom:1rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">Director</label><input id="mf-dir" style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit"></div>
+    <div style="display:flex;gap:.5rem">
+      <button onclick="mTab('escuelas')" class="m-action-btn" style="background:#f1f5f9;color:#374151">Cancelar</button>
+      <button onclick="mGuardarEscuela()" class="m-action-btn m-btn-p">Guardar</button>
+    </div></div>`;
+    document.getElementById('m-content').innerHTML=form;
+  };
+
+  window.mGuardarEscuela=async()=>{
+    const nombre=document.getElementById('mf-nombre').value.trim();
+    const cct=document.getElementById('mf-cct').value.trim().toUpperCase();
+    if(!nombre||!cct){alert('Nombre y CCT son requeridos');return;}
+    const data={nombre,cct,comunidad:document.getElementById('mf-com').value.trim(),director:document.getElementById('mf-dir').value.trim()};
+    try{const ref=await db.collection('escuelas').add(data);estado.escuelas.push({id:ref.id,...data});mTab('escuelas');}
+    catch(e){alert('Error al guardar');}
+  };
+
+  window.mEditarEscuela=id=>{
+    const e=estado.escuelas.find(x=>x.id===id);
+    if(!e)return;
+    const form=`<div class="m-card"><div class="m-section">Editar Escuela</div>
+    <div style="margin-bottom:.75rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">Nombre *</label><input id="mf-nombre" value="${e.nombre}" style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit"></div>
+    <div style="margin-bottom:.75rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">CCT *</label><input id="mf-cct" value="${e.cct}" style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit;text-transform:uppercase"></div>
+    <div style="margin-bottom:.75rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">Comunidad</label><input id="mf-com" value="${e.comunidad||''}" style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit"></div>
+    <div style="margin-bottom:1rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">Director</label><input id="mf-dir" value="${e.director||''}" style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit"></div>
+    <div style="display:flex;gap:.5rem">
+      <button onclick="mTab('escuelas')" class="m-action-btn" style="background:#f1f5f9;color:#374151">Cancelar</button>
+      <button onclick="mActualizarEscuela('${id}')" class="m-action-btn m-btn-p">Guardar</button>
+    </div></div>`;
+    document.getElementById('m-content').innerHTML=form;
+  };
+
+  window.mActualizarEscuela=async id=>{
+    const nombre=document.getElementById('mf-nombre').value.trim();
+    const cct=document.getElementById('mf-cct').value.trim().toUpperCase();
+    if(!nombre||!cct){alert('Nombre y CCT son requeridos');return;}
+    const data={nombre,cct,comunidad:document.getElementById('mf-com').value.trim(),director:document.getElementById('mf-dir').value.trim(),id};
+    try{await db.collection('escuelas').doc(id).update(data);estado.escuelas=estado.escuelas.map(e=>e.id===id?data:e);mTab('escuelas');}
+    catch(e){alert('Error al guardar');}
+  };
+
+  window.mPassword=id=>{
+    const e=estado.escuelas.find(x=>x.id===id);
+    if(!e)return;
+    const email=`${e.cct.toLowerCase()}@escuela.local`;
+    const form=`<div class="m-card"><div class="m-section">Asignar Contraseña</div>
+    <div style="padding:.75rem;background:#dbeafe;border-radius:8px;font-size:.8rem;margin-bottom:1rem">
+      <strong>${e.nombre}</strong><br>${e.cct}<br>${email}
+    </div>
+    <div style="margin-bottom:.75rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">Nueva Contraseña</label><input id="mf-pwd" type="password" style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit" minlength="6"></div>
+    <div style="margin-bottom:1rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">Confirmar</label><input id="mf-pwd2" type="password" style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit" minlength="6"></div>
+    <div style="display:flex;gap:.5rem">
+      <button onclick="mTab('escuelas')" class="m-action-btn" style="background:#f1f5f9;color:#374151">Cancelar</button>
+      <button onclick="mGuardarPwd('${email}')" class="m-action-btn m-btn-p">Asignar</button>
+    </div></div>`;
+    document.getElementById('m-content').innerHTML=form;
+  };
+
+  window.mGuardarPwd=async email=>{
+    const pwd=document.getElementById('mf-pwd').value;
+    const pwd2=document.getElementById('mf-pwd2').value;
+    if(pwd!==pwd2){alert('Las contraseñas no coinciden');return;}
+    if(pwd.length<6){alert('Mínimo 6 caracteres');return;}
+    try{
+      await auth.createUserWithEmailAndPassword(email,pwd);
+      alert('✅ Contraseña asignada');mTab('escuelas');
+    }catch(e){
+      if(e.code==='auth/email-already-in-use')alert('ℹ️ Usuario ya existe. Para cambiar contraseña usa Firebase Console → Authentication');
+      else alert('Error: '+e.message);
+    }
+  };
+
+  window.mNuevoPrograma=()=>{
+    const form=`<div class="m-card"><div class="m-section">Nuevo Programa</div>
+    <div style="margin-bottom:.75rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">Nombre *</label><input id="mf-pnom" style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit"></div>
+    <div style="margin-bottom:.75rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">Fecha Límite *</label><input id="mf-pfecha" type="date" style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit"></div>
+    <div style="margin-bottom:.75rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">Documentos requeridos</label>
+    <div style="display:flex;gap:.5rem;margin-bottom:.5rem"><input id="mf-pdoc" placeholder="Nombre del documento" style="flex:1;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit">
+    <button onclick="mAgregarDoc()" style="padding:.65rem 1rem;border-radius:8px;border:none;background:#3b82f6;color:#fff;cursor:pointer;font-family:inherit">+</button></div>
+    <div id="mf-pdocs"></div></div>
+    <div style="display:flex;gap:.5rem">
+      <button onclick="mTab('programas')" class="m-action-btn" style="background:#f1f5f9;color:#374151">Cancelar</button>
+      <button onclick="mGuardarPrograma()" class="m-action-btn m-btn-p">Guardar</button>
+    </div></div>`;
+    document.getElementById('m-content').innerHTML=form;
+    window._docs=[];
+  };
+
+  window.mAgregarDoc=()=>{
+    const inp=document.getElementById('mf-pdoc');
+    if(!inp.value.trim())return;
+    window._docs.push(inp.value.trim());inp.value='';
+    document.getElementById('mf-pdocs').innerHTML=window._docs.map((d,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:.4rem .6rem;background:#f1f5f9;border-radius:6px;margin-bottom:.3rem;font-size:.8rem">${d}<button onclick="window._docs.splice(${i},1);mAgregarDoc()" style="border:none;background:none;color:#ef4444;cursor:pointer">×</button></div>`).join('');
+  };
+
+  window.mGuardarPrograma=async()=>{
+    const nombre=document.getElementById('mf-pnom').value.trim();
+    const fecha=document.getElementById('mf-pfecha').value;
+    if(!nombre||!fecha||!window._docs.length){alert('Completa todos los campos y agrega al menos un documento');return;}
+    const data={nombre,fechaLimite:fecha,documentosRequeridos:window._docs,todasEscuelas:true,escuelasAsignadas:[]};
+    try{const ref=await db.collection('programas').add(data);estado.programas.push({id:ref.id,...data});mTab('programas');}
+    catch(e){alert('Error al guardar');}
+  };
+
+  window.mEditarPrograma=id=>{
+    const p=estado.programas.find(x=>x.id===id);
+    if(!p)return;
+    const form=`<div class="m-card"><div class="m-section">Editar Programa</div>
+    <div style="margin-bottom:.75rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">Nombre *</label><input id="mf-pnom" value="${p.nombre}" style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit"></div>
+    <div style="margin-bottom:.75rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">Fecha Límite *</label><input id="mf-pfecha" type="date" value="${p.fechaLimite}" style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit"></div>
+    <div style="margin-bottom:.75rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">Documentos requeridos</label>
+    <div style="display:flex;gap:.5rem;margin-bottom:.5rem"><input id="mf-pdoc" placeholder="Agregar documento" style="flex:1;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit">
+    <button onclick="mAgregarDoc()" style="padding:.65rem 1rem;border-radius:8px;border:none;background:#3b82f6;color:#fff;cursor:pointer;font-family:inherit">+</button></div>
+    <div id="mf-pdocs"></div></div>
+    <div style="display:flex;gap:.5rem">
+      <button onclick="mTab('programas')" class="m-action-btn" style="background:#f1f5f9;color:#374151">Cancelar</button>
+      <button onclick="mActualizarPrograma('${id}')" class="m-action-btn m-btn-p">Guardar</button>
+    </div></div>`;
+    document.getElementById('m-content').innerHTML=form;
+    window._docs=[...p.documentosRequeridos];
+    document.getElementById('mf-pdocs').innerHTML=window._docs.map((d,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:.4rem .6rem;background:#f1f5f9;border-radius:6px;margin-bottom:.3rem;font-size:.8rem">${d}<button onclick="window._docs.splice(${i},1);mAgregarDoc()" style="border:none;background:none;color:#ef4444;cursor:pointer">×</button></div>`).join('');
+  };
+
+  window.mActualizarPrograma=async id=>{
+    const nombre=document.getElementById('mf-pnom').value.trim();
+    const fecha=document.getElementById('mf-pfecha').value;
+    if(!nombre||!fecha||!window._docs.length){alert('Completa todos los campos');return;}
+    const p=estado.programas.find(x=>x.id===id);
+    const data={...p,nombre,fechaLimite:fecha,documentosRequeridos:window._docs};
+    try{await db.collection('programas').doc(id).update(data);estado.programas=estado.programas.map(x=>x.id===id?data:x);mTab('programas');}
+    catch(e){alert('Error al guardar');}
+  };
+
+  window.mNuevoCompartido=()=>{
+    const form=`<div class="m-card"><div class="m-section">Subir Archivo Compartido</div>
+    <div style="margin-bottom:.75rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">Nombre *</label><input id="mf-cnom" style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit"></div>
+    <div style="margin-bottom:.75rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">Descripción</label><textarea id="mf-cdesc" style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit" rows="2"></textarea></div>
+    <div style="margin-bottom:.75rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">Archivo *</label><input id="mf-cfile" type="file" style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit"></div>
+    <div style="display:flex;gap:.5rem">
+      <button onclick="mTab('compartidos')" class="m-action-btn" style="background:#f1f5f9;color:#374151">Cancelar</button>
+      <button onclick="mGuardarCompartido()" id="mf-cbtn" class="m-action-btn m-btn-p">Subir</button>
+    </div></div>`;
+    document.getElementById('m-content').innerHTML=form;
+  };
+
+  window.mGuardarCompartido=async()=>{
+    const nombre=document.getElementById('mf-cnom').value.trim();
+    const file=document.getElementById('mf-cfile').files[0];
+    if(!nombre||!file){alert('Completa todos los campos');return;}
+    document.getElementById('mf-cbtn').textContent='Subiendo...';
+    try{
+      const ref=storage.ref(`compartidos/${Date.now()}_${file.name}`);
+      await ref.put(file);
+      const url=await ref.getDownloadURL();
+      const data={nombre,descripcion:document.getElementById('mf-cdesc').value,url,fecha:new Date().toISOString()};
+      const r=await db.collection('compartidos').add(data);
+      estado.compartidos.push({id:r.id,...data});
+      mTab('compartidos');
+    }catch(e){alert('Error al subir');}
+  };
+}
+</script>

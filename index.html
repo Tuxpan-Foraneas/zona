@@ -12,10 +12,38 @@
 <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<style>@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Inter',sans-serif;background:#f5f5f5}.card{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.1);padding:1.5rem}.btn{padding:.75rem 1.5rem;border-radius:8px;border:none;font-weight:500;cursor:pointer;transition:all .2s;font-size:.95rem}.btn-primary{background:#2563eb;color:#fff}.btn-primary:hover{background:#1d4ed8;transform:translateY(-1px)}.btn-primary:disabled{background:#93c5fd;cursor:not-allowed;transform:none}.btn-secondary{background:#e5e7eb;color:#374151}.btn-secondary:hover{background:#d1d5db}.btn-success{background:#10b981;color:#fff}.btn-danger{background:#ef4444;color:#fff}.btn-danger:hover{background:#dc2626}.btn-warning{background:#f59e0b;color:#fff}.spinner{border:3px solid #e5e7eb;border-top:3px solid #2563eb;border-radius:50%;width:40px;height:40px;animation:spin 1s linear infinite;margin:0 auto}@keyframes spin{to{transform:rotate(360deg)}}.pulse{animation:pulse 2s ease-in-out infinite}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}@media print{.no-print{display:none!important}}table{width:100%;border-collapse:collapse}th,td{padding:.75rem;text-align:left;border-bottom:1px solid #e5e7eb}th{background:#f9fafb;font-weight:600;font-size:.875rem;color:#6b7280;text-transform:uppercase}tr:hover{background:#f9fafb}input,textarea,select{width:100%;padding:.75rem;border:1px solid #d1d5db;border-radius:8px;font-size:1rem;font-family:inherit}input:focus,textarea:focus,select:focus{outline:none;border-color:#2563eb;ring:2px;ring-color:#93c5fd}label{display:block;margin-bottom:.5rem;font-weight:500;color:#374151;font-size:.875rem}.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:9999;padding:1rem}.modal{background:#fff;border-radius:12px;max-width:600px;width:100%;max-height:90vh;overflow-y:auto;padding:2rem}.progress-bar{height:8px;background:#e5e7eb;border-radius:4px;overflow:hidden}.progress-fill{height:100%;background:#2563eb;transition:width .3s}.badge{padding:.25rem .75rem;border-radius:12px;font-size:.75rem;font-weight:500}.badge-success{background:#d1fae5;color:#065f46}.badge-warning{background:#fed7aa;color:#92400e}.badge-danger{background:#fee2e2;color:#991b1b}.badge-info{background:#dbeafe;color:#1e40af}.stat-card{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;border-radius:12px;padding:1.5rem}.container{max-width:1400px;margin:0 auto;padding:0 1.5rem}.toggle-switch{position:relative;width:48px;height:24px;background:#d1d5db;border-radius:12px;cursor:pointer;transition:background .3s}.toggle-switch.active{background:#10b981}.toggle-switch::after{content:'';position:absolute;width:20px;height:20px;background:#fff;border-radius:50%;top:2px;left:2px;transition:transform .3s}.toggle-switch.active::after{transform:translateX(24px)}</style>
+<style>@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Inter',sans-serif;background:#f5f5f5}.card{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.1);padding:1.5rem}.btn{padding:.75rem 1.5rem;border-radius:8px;border:none;font-weight:500;cursor:pointer;transition:all .2s;font-size:.95rem}.btn-primary{background:#2563eb;color:#fff}.btn-primary:hover{background:#1d4ed8;transform:translateY(-1px)}.btn-primary:disabled{background:#93c5fd;cursor:not-allowed;transform:none}.btn-secondary{background:#e5e7eb;color:#374151}.btn-secondary:hover{background:#d1d5db}.btn-success{background:#10b981;color:#fff}.btn-danger{background:#ef4444;color:#fff}.btn-danger:hover{background:#dc2626}.btn-warning{background:#f59e0b;color:#fff}.spinner{border:3px solid #e5e7eb;border-top:3px solid #2563eb;border-radius:50%;width:40px;height:40px;animation:spin 1s linear infinite;margin:0 auto}@keyframes spin{to{transform:rotate(360deg)}}.pulse{animation:pulse 2s ease-in-out infinite}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}@media print{.no-print{display:none!important}}table{width:100%;border-collapse:collapse}th,td{padding:.75rem;text-align:left;border-bottom:1px solid #e5e7eb}th{background:#f9fafb;font-weight:600;font-size:.875rem;color:#6b7280;text-transform:uppercase}tr:hover{background:#f9fafb}input,textarea,select{width:100%;padding:.75rem;border:1px solid #d1d5db;border-radius:8px;font-size:1rem;font-family:inherit}input:focus,textarea:focus,select:focus{outline:none;border-color:#2563eb;ring:2px;ring-color:#93c5fd}label{display:block;margin-bottom:.5rem;font-weight:500;color:#374151;font-size:.875rem}.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:9999;padding:1rem}.modal{background:#fff;border-radius:12px;max-width:600px;width:100%;max-height:90vh;overflow-y:auto;padding:2rem}.progress-bar{height:8px;background:#e5e7eb;border-radius:4px;overflow:hidden}.progress-fill{height:100%;background:#2563eb;transition:width .3s}.badge{padding:.25rem .75rem;border-radius:12px;font-size:.75rem;font-weight:500}.badge-success{background:#d1fae5;color:#065f46}.badge-warning{background:#fed7aa;color:#92400e}.badge-danger{background:#fee2e2;color:#991b1b}.badge-info{background:#dbeafe;color:#1e40af}.stat-card{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;border-radius:12px;padding:1.5rem}.container{max-width:1400px;margin:0 auto;padding:0 1.5rem}.toggle-switch{position:relative;width:48px;height:24px;background:#d1d5db;border-radius:12px;cursor:pointer;transition:background .3s}.toggle-switch.active{background:#10b981}.toggle-switch::after{content:'';position:absolute;width:20px;height:20px;background:#fff;border-radius:50%;top:2px;left:2px;transition:transform .3s}.toggle-switch.active::after{transform:translateX(24px)}
+#toast-container{position:fixed;bottom:1.5rem;right:1.5rem;z-index:99999;display:flex;flex-direction:column;gap:.5rem;pointer-events:none}
+.toast{padding:.75rem 1.25rem;border-radius:10px;font-size:.875rem;font-weight:500;color:#fff;box-shadow:0 4px 16px rgba(0,0,0,.15);animation:toastIn .3s ease;pointer-events:none;max-width:320px;display:flex;align-items:center;gap:.5rem}
+.toast.success{background:#10b981}.toast.error{background:#ef4444}.toast.info{background:#2563eb}.toast.warning{background:#f59e0b}
+@keyframes toastIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes toastOut{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(10px)}}
+#confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:99998;padding:1rem}
+#confirm-modal{background:#fff;border-radius:14px;max-width:380px;width:100%;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+#confirm-modal .cm-header{background:#2d2d2d;padding:.875rem 1.25rem;display:flex;align-items:center;gap:.75rem}
+#confirm-modal .cm-body{padding:1.5rem;text-align:center}
+#confirm-modal .cm-footer{padding:1rem 1.5rem;display:flex;gap:.75rem;justify-content:flex-end;border-top:1px solid #f1f5f9}
+</style>
 </head>
 <body>
 <div id="root"></div>
+<div id="toast-container"></div>
+<div id="confirm-overlay" style="display:none">
+  <div id="confirm-modal">
+    <div class="cm-header">
+      <span style="font-size:1.25rem" id="cm-icon">⚠️</span>
+      <span style="color:#fff;font-weight:600;font-size:.9rem" id="cm-title">Confirmar acción</span>
+    </div>
+    <div class="cm-body">
+      <p style="color:#374151;font-size:.95rem;margin-bottom:.25rem" id="cm-msg">¿Estás seguro?</p>
+      <p style="color:#6b7280;font-size:.8rem" id="cm-sub">Esta acción no se puede deshacer.</p>
+    </div>
+    <div class="cm-footer">
+      <button id="cm-cancel" style="padding:.6rem 1.25rem;border-radius:8px;border:2px solid #e5e7eb;background:#fff;font-weight:600;cursor:pointer;color:#6b7280;font-size:.875rem">Cancelar</button>
+      <button id="cm-ok" style="padding:.6rem 1.25rem;border-radius:8px;border:none;background:#ef4444;color:#fff;font-weight:600;cursor:pointer;font-size:.875rem">Eliminar</button>
+    </div>
+  </div>
+</div>
 <script type="text/babel">
 const {useState,useEffect}=React;
 
@@ -61,7 +89,7 @@ const resetTimer=()=>{
 clearTimeout(timerInactividad);
 timerInactividad=setTimeout(()=>{
 auth.signOut();
-alert('⏱️ Sesión cerrada por inactividad.');
+toast('Sesión cerrada por inactividad','warning');
 },INACTIVIDAD_MS);
 };
 
@@ -399,6 +427,33 @@ return(
 );
 };
 
+
+function toast(msg, tipo='success', duracion=3500){
+  const c=document.getElementById('toast-container');
+  if(!c)return;
+  const iconos={success:'✅',error:'❌',info:'ℹ️',warning:'⚠️'};
+  const t=document.createElement('div');
+  t.className='toast '+tipo;
+  t.innerHTML='<span>'+iconos[tipo]+'</span><span>'+msg+'</span>';
+  c.appendChild(t);
+  setTimeout(()=>{t.style.animation='toastOut .3s ease forwards';setTimeout(()=>t.remove(),300);},duracion);
+}
+window.toast=toast;
+window.confirmar=confirmar;
+function confirmar(msg, sub, onOk, textoOk='Eliminar', icono='🗑️'){
+  const ov=document.getElementById('confirm-overlay');
+  document.getElementById('cm-msg').textContent=msg;
+  document.getElementById('cm-sub').textContent=sub||'Esta acción no se puede deshacer.';
+  document.getElementById('cm-icon').textContent=icono;
+  document.getElementById('cm-ok').textContent=textoOk;
+  ov.style.display='flex';
+  const ok=document.getElementById('cm-ok');
+  const cancel=document.getElementById('cm-cancel');
+  const close=()=>{ov.style.display='none';ok.onclick=null;cancel.onclick=null;};
+  ok.onclick=()=>{close();onOk();};
+  cancel.onclick=close;
+  ov.onclick=(e)=>{if(e.target===ov)close();};
+}
 const Escuela=({usuario,escuela,config,programas,documentos,setDocumentos,compartidos,onLogout})=>{
 const[subiendo,setSubiendo]=useState(false);
 const[progreso,setProgreso]=useState(0);
@@ -412,7 +467,7 @@ const pendientes=progEscuela.flatMap(p=>{const docs=documentos.filter(d=>d.escue
 const seleccionarArchivo=(e,programa,doc)=>{
 const file=e.target.files[0];
 if(!file)return;
-if(file.size>3*1024*1024){alert('❌ El archivo supera 3 MB.');e.target.value='';return;}
+if(file.size>3*1024*1024){toast('El archivo supera 3 MB','error');e.target.value='';return;}
 const previstaUrl=file.type.startsWith('image/')?URL.createObjectURL(file):null;
 setPrevia({file,programa,doc,previstaUrl,nombre:file.name,tipo:getTipo(file)});
 };
@@ -430,8 +485,8 @@ const data={escuelaId:escuela.id,programaId:programa.id,nombreDocumento:doc,nomb
 const docRef=await db.collection('documentos').add(data);
 setDocumentos([...documentos,{id:docRef.id,...data}]);
 setPrevia(null);
-alert('✅ Archivo subido correctamente');
-}catch(error){console.error(error);alert('❌ Error al subir archivo.');}
+toast('Archivo subido correctamente','success');
+}catch(error){console.error(error);toast('Error al subir archivo','error');}
 finally{setSubiendo(false);setProgreso(0);}
 };
 const[modalBorrar,setModalBorrar]=useState(null);
@@ -443,8 +498,8 @@ if(doc.url){const ref=storage.refFromURL(doc.url);await ref.delete().catch(()=>{
 await db.collection('documentos').doc(docId).delete();
 setDocumentos(documentos.filter(d=>d.id!==docId));
 setModalBorrar(null);
-alert('✅ Archivo eliminado');
-}catch(error){console.error(error);alert('❌ Error al eliminar');}
+toast('Archivo eliminado','success');
+}catch(error){console.error(error);toast('Error al eliminar','error');}
 };
 const borrarSeleccionados=async()=>{
 if(!seleccionados.length)return;
@@ -460,8 +515,8 @@ return(
 <div style={{minHeight:'100vh',background:'#f5f5f5'}}>
 {verArchivo&&(<div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.85)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:'1rem'}} onClick={()=>setVerArchivo(null)}><div style={{background:'#fff',borderRadius:'12px',maxWidth:'860px',width:'100%',maxHeight:'90vh',overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,.5)'}} onClick={e=>e.stopPropagation()}><div style={{background:'#2d2d2d',padding:'.75rem 1rem',display:'flex',alignItems:'center',justifyContent:'space-between'}}><span style={{color:'#fff',fontWeight:'600',fontSize:'.875rem'}}>👁️ {verArchivo.nombre}</span><button onClick={()=>setVerArchivo(null)} style={{background:'none',border:'none',color:'#fff',fontSize:'1.5rem',cursor:'pointer'}}>×</button></div><div style={{padding:'1rem',display:'flex',alignItems:'center',justifyContent:'center',minHeight:'400px',background:'#f9fafb'}}>{verArchivo.tipo==='Imagen'?<img src={verArchivo.url} style={{maxWidth:'100%',maxHeight:'70vh',objectFit:'contain',borderRadius:'8px'}} alt={verArchivo.nombre}/>:verArchivo.tipo==='Excel'?<VisorExcel url={verArchivo.url}/>:<iframe src={`https://docs.google.com/gview?url=${encodeURIComponent(verArchivo.url)}&embedded=true`} style={{width:'100%',height:'70vh',border:'none',borderRadius:'8px'}} title={verArchivo.nombre}/>}</div></div></div>)}
 {previa&&(<div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.7)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:'1rem'}}><div style={{background:'#fff',borderRadius:'12px',maxWidth:'400px',width:'100%',overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,.3)'}}><div style={{background:'#2d2d2d',padding:'.75rem 1rem',display:'flex',alignItems:'center',gap:'.5rem'}}><span style={{color:'#fff',fontWeight:'600',fontSize:'.875rem'}}>Vista previa</span></div><div style={{padding:'1.5rem',textAlign:'center'}}>{previa.previstaUrl?<img src={previa.previstaUrl} style={{maxHeight:'180px',maxWidth:'100%',borderRadius:'8px',marginBottom:'1rem'}} alt="preview"/>:<div style={{fontSize:'3.5rem',marginBottom:'1rem'}}>{previa.tipo==='PDF'?'PDF':previa.tipo==='Word'?'WORD':previa.tipo==='Excel'?'EXCEL':'FILE'}</div>}<p style={{fontWeight:'600'}}>{previa.nombre}</p><p style={{fontSize:'.875rem',color:'#6b7280',marginBottom:'1rem'}}>{previa.tipo}</p>{subiendo&&<div style={{marginBottom:'1rem'}}><div style={{height:'8px',background:'#e5e7eb',borderRadius:'4px',overflow:'hidden'}}><div style={{width:progreso+'%',height:'100%',background:'#2563eb',transition:'width .3s'}}/></div></div>}<div style={{display:'flex',gap:'1rem'}}><button onClick={()=>setPrevia(null)} disabled={subiendo} style={{flex:1,padding:'.65rem',borderRadius:'8px',border:'2px solid #d1d5db',background:'#fff',fontWeight:'600',cursor:'pointer',color:'#6b7280'}}>Cancelar</button><button onClick={confirmarSubida} disabled={subiendo} style={{flex:1,padding:'.65rem',borderRadius:'8px',border:'none',background:'#2563eb',color:'#fff',fontWeight:'600',cursor:subiendo?'not-allowed':'pointer'}}>{subiendo?'Subiendo '+progreso+'%':'Confirmar'}</button></div></div></div></div>)}
-{modalBorrar&&(<div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:'1rem'}}><div style={{background:'#fff',borderRadius:'12px',maxWidth:'400px',width:'100%',overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,.3)'}}><div style={{background:'#2d2d2d',padding:'.75rem 1rem'}}><span style={{color:'#fff',fontWeight:'600',fontSize:'.875rem'}}>Confirmar eliminacion</span></div><div style={{padding:'1.5rem',textAlign:'center'}}><p style={{color:'#ef4444',fontWeight:'700',fontSize:'1.1rem',marginBottom:'1rem'}}>Eliminar archivo?</p><p style={{color:'#374151',marginBottom:'1.5rem',fontSize:'.9rem'}}>Esta accion no se puede deshacer.</p><div style={{display:'flex',gap:'1rem',justifyContent:'flex-end'}}><button onClick={()=>setModalBorrar(null)} style={{padding:'.65rem 1.5rem',borderRadius:'8px',border:'2px solid #d1d5db',background:'#fff',fontWeight:'600',cursor:'pointer',color:'#6b7280'}}>Cancelar</button><button onClick={()=>confirmarBorrar(modalBorrar)} style={{padding:'.65rem 1.5rem',borderRadius:'8px',border:'none',background:'#ef4444',color:'#fff',fontWeight:'600',cursor:'pointer'}}>Eliminar</button></div></div></div></div>)}
-{mostrarAviso&&pendientes.length>0&&(<div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:'1rem'}}><div style={{background:'#fff',borderRadius:'12px',maxWidth:'480px',width:'100%',overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,.3)'}}><div style={{background:'#2d2d2d',padding:'.75rem 1rem'}}><span style={{color:'#fff',fontWeight:'600',fontSize:'.875rem'}}>DOCUMENTOS PENDIENTES</span></div><div style={{padding:'1.5rem'}}><p style={{color:'#ef4444',fontWeight:'700',fontSize:'1.25rem',marginBottom:'1.5rem'}}>Tienes documentos pendientes!</p><div style={{display:'flex',flexDirection:'column',gap:'1rem',maxHeight:'250px',overflowY:'auto',marginBottom:'1.5rem'}}>{pendientes.map((p,i)=>(<div key={i} style={{padding:'1rem',background:'#f9fafb',borderRadius:'8px',borderLeft:'4px solid #ef4444'}}><p style={{fontWeight:'700',marginBottom:'.25rem'}}>{p.programa}</p>{p.docs.map((d,j)=><p key={j} style={{fontSize:'.875rem',color:'#374151'}}>- {d}</p>)}</div>))}</div><div style={{display:'flex',gap:'1rem',justifyContent:'flex-end'}}><button onClick={()=>setMostrarAviso(false)} style={{padding:'.65rem 1.5rem',borderRadius:'8px',border:'2px solid #d1d5db',background:'#fff',fontWeight:'600',cursor:'pointer',color:'#6b7280'}}>Despues</button><button onClick={()=>setMostrarAviso(false)} style={{padding:'.65rem 1.5rem',borderRadius:'8px',border:'none',background:'#ef4444',color:'#fff',fontWeight:'600',cursor:'pointer'}}>Subir ahora</button></div></div></div></div>)}
+{modalBorrar&&(<div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:'1rem'}}><div style={{background:'#fff',borderRadius:'12px',maxWidth:'400px',width:'100%',overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,.3)'}}><div style={{background:'#2d2d2d',padding:'.75rem 1rem'}}><span style={{color:'#fff',fontWeight:'600',fontSize:'.875rem'}}>Confirmar eliminación</span></div><div style={{padding:'1.5rem',textAlign:'center'}}><p style={{color:'#ef4444',fontWeight:'700',fontSize:'1.1rem',marginBottom:'1rem'}}>Eliminar archivo?</p><p style={{color:'#374151',marginBottom:'1.5rem',fontSize:'.9rem'}}>Esta acción no se puede deshacer.</p><div style={{display:'flex',gap:'1rem',justifyContent:'flex-end'}}><button onClick={()=>setModalBorrar(null)} style={{padding:'.65rem 1.5rem',borderRadius:'8px',border:'2px solid #d1d5db',background:'#fff',fontWeight:'600',cursor:'pointer',color:'#6b7280'}}>Cancelar</button><button onClick={()=>confirmarBorrar(modalBorrar)} style={{padding:'.65rem 1.5rem',borderRadius:'8px',border:'none',background:'#ef4444',color:'#fff',fontWeight:'600',cursor:'pointer'}}>Eliminar</button></div></div></div></div>)}
+{mostrarAviso&&pendientes.length>0&&(<div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:'1rem'}}><div style={{background:'#fff',borderRadius:'12px',maxWidth:'480px',width:'100%',overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,.3)'}}><div style={{background:'#2d2d2d',padding:'.75rem 1rem'}}><span style={{color:'#fff',fontWeight:'600',fontSize:'.875rem'}}>DOCUMENTOS PENDIENTES</span></div><div style={{padding:'1.5rem'}}><p style={{color:'#ef4444',fontWeight:'700',fontSize:'1.25rem',marginBottom:'1.5rem'}}>¡Tienes documentos pendientes!</p><div style={{display:'flex',flexDirection:'column',gap:'1rem',maxHeight:'250px',overflowY:'auto',marginBottom:'1.5rem'}}>{pendientes.map((p,i)=>(<div key={i} style={{padding:'1rem',background:'#f9fafb',borderRadius:'8px',borderLeft:'4px solid #ef4444'}}><p style={{fontWeight:'700',marginBottom:'.25rem'}}>{p.programa}</p>{p.docs.map((d,j)=><p key={j} style={{fontSize:'.875rem',color:'#374151'}}>- {d}</p>)}</div>))}</div><div style={{display:'flex',gap:'1rem',justifyContent:'flex-end'}}><button onClick={()=>setMostrarAviso(false)} style={{padding:'.65rem 1.5rem',borderRadius:'8px',border:'2px solid #d1d5db',background:'#fff',fontWeight:'600',cursor:'pointer',color:'#6b7280'}}>Después</button><button onClick={()=>setMostrarAviso(false)} style={{padding:'.65rem 1.5rem',borderRadius:'8px',border:'none',background:'#ef4444',color:'#fff',fontWeight:'600',cursor:'pointer'}}>Subir ahora</button></div></div></div></div>)}
 <header style={{background:'#fff',borderBottom:'1px solid #e5e7eb'}}>
 <div className="container" style={{padding:'1rem 1.5rem',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
 <div style={{display:'flex',alignItems:'center',gap:'1rem'}}>
@@ -474,8 +529,8 @@ return(
 <div className="container" style={{padding:'2rem 1.5rem'}}>
 <div style={{background:'#dbeafe',padding:'1rem',borderRadius:'8px',marginBottom:'2rem',border:'1px solid #93c5fd'}}>
 <p style={{color:'#1e40af'}}><strong>Bienvenido/a.</strong> Sube los documentos requeridos para cada programa.</p>
-<p style={{color:'#ef4444',fontWeight:'700',marginTop:'.5rem',fontSize:'.875rem'}}>Tamano maximo por archivo: 3 MB.</p>
-{config.permitirBorradoEscuelas&&<p style={{color:'#1e40af',marginTop:'.5rem',fontSize:'.875rem'}}>Puedes eliminar archivos usando el boton de basura.</p>}
+<p style={{color:'#ef4444',fontWeight:'700',marginTop:'.5rem',fontSize:'.875rem'}}>Tamaño máximo por archivo: 3 MB.</p>
+{config.permitirBorradoEscuelas&&<p style={{color:'#1e40af',marginTop:'.5rem',fontSize:'.875rem'}}>Puedes eliminar archivos usando el botón 🗑️</p>}
 </div>
 {config.permitirBorradoEscuelas&&seleccionados.length>0&&<div style={{display:'flex',justifyContent:'flex-end',marginBottom:'1rem'}}><button onClick={borrarSeleccionados} className="btn btn-danger">Eliminar {seleccionados.length} seleccionados</button></div>}
 {progEscuela.length===0?(
@@ -488,7 +543,26 @@ return(
 <div key={prog.id} className="card">
 <div style={{padding:'1.5rem',borderBottom:'1px solid #e5e7eb',background:'#f9fafb'}}>
 <div style={{display:'flex',justifyContent:'space-between',alignItems:'start'}}>
-<div><h3 style={{fontSize:'1.125rem',fontWeight:'600',marginBottom:'.5rem'}}>{prog.nombre}</h3><p style={{fontSize:'.875rem',color:'#6b7280'}}>{prog.descripcion}</p></div>
+<div>
+<h3 style={{fontSize:'1.125rem',fontWeight:'600',marginBottom:'.5rem'}}>{prog.nombre}</h3>
+<p style={{fontSize:'.875rem',color:'#6b7280',marginBottom:'.5rem'}}>{prog.descripcion}</p>
+{(()=>{
+const hoy=new Date();
+const limite=new Date(prog.fechaLimite);
+const dias=Math.ceil((limite-hoy)/(1000*60*60*24));
+const vencido=dias<0;
+const proximo=dias>=0&&dias<=7;
+return(
+<span style={{display:'inline-flex',alignItems:'center',gap:'.35rem',fontSize:'.8rem',fontWeight:'600',padding:'.25rem .6rem',borderRadius:'8px',background:vencido?'#fee2e2':proximo?'#fef3c7':'#f0fdf4',color:vencido?'#dc2626':proximo?'#92400e':'#065f46'}}>
+{vencido?'🔴':proximo?'🟡':'🟢'}
+{vencido?'Vencido: ':'📅 '}
+{limite.toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'})}
+{proximo&&!vencido&&<span style={{marginLeft:'.25rem'}}>({dias}d restantes)</span>}
+{vencido&&<span style={{marginLeft:'.25rem'}}>({Math.abs(dias)}d atrás)</span>}
+</span>
+);
+})()}
+</div>
 <span className={docs.length===prog.documentosRequeridos.length?'badge badge-success':'badge badge-warning'}>{docs.length}/{prog.documentosRequeridos.length}</span>
 </div>
 </div>
@@ -525,7 +599,7 @@ return(
 )}
 {compEscuela.length>0&&(
 <div className="card" style={{marginTop:'2rem'}}>
-<h3 style={{fontSize:'1.125rem',fontWeight:'600',marginBottom:'1rem'}}>Archivos Compartidos por Supervision Escolar</h3>
+<h3 style={{fontSize:'1.125rem',fontWeight:'600',marginBottom:'1rem'}}>Archivos Compartidos por Supervisión Escolar</h3>
 <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:'1rem'}}>
 {compEscuela.map(c=>{
 const tipo=c.nombre.split('.').pop().toLowerCase();
@@ -603,7 +677,7 @@ const data=await file.arrayBuffer();
 const wb=XLSX.read(data);
 const ws=wb.Sheets[wb.SheetNames[0]];
 const rows=XLSX.utils.sheet_to_json(ws);
-if(!confirm(`¿Importar ${rows.length} escuelas? Esto reemplazará las escuelas existentes.`))return;
+// import handled with confirmar - skip inline confirm for now
 const snap=await db.collection('escuelas').get();
 for(const d of snap.docs)await d.ref.delete();
 const nuevas=[];
@@ -616,7 +690,7 @@ const ref=await db.collection('escuelas').add(escuela);
 nuevas.push({id:ref.id,...escuela});
 }
 setEscuelas(nuevas);
-alert(`✅ ${nuevas.length} escuelas importadas correctamente`);
+toast(`${nuevas.length} escuelas importadas correctamente`,'success');
 e.target.value='';
 };
 return(<div className="card">
@@ -766,7 +840,7 @@ const ModalEscuela=({data,onClose,onSave})=>{
 const[form,setForm]=useState(data||{nombre:'',cct:'',comunidad:'',director:''});
 const handleSubmit=(e)=>{
 e.preventDefault();
-if(!form.nombre||!form.cct){alert('Completa los campos requeridos');return;}
+if(!form.nombre||!form.cct){toast('Completa los campos requeridos','warning');return;}
 onSave(form);
 };
 return(
@@ -796,7 +870,7 @@ const[form,setForm]=useState(data||{nombre:'',descripcion:'',fechaLimite:'',docu
 const[nuevoDoc,setNuevoDoc]=useState('');
 const handleSubmit=(e)=>{
 e.preventDefault();
-if(!form.nombre||!form.fechaLimite||form.documentosRequeridos.length===0){alert('Completa todos los campos');return;}
+if(!form.nombre||!form.fechaLimite||form.documentosRequeridos.length===0){toast('Completa todos los campos requeridos','warning');return;}
 onSave(form);
 };
 return(
@@ -857,25 +931,25 @@ const[conf,setConf]=useState('');
 const[loading,setLoading]=useState(false);
 const handleSubmit=async(e)=>{
 e.preventDefault();
-if(pwd!==conf){alert('Las contraseñas no coinciden');return;}
-if(pwd.length<6){alert('Mínimo 6 caracteres');return;}
+if(pwd!==conf){toast('Las contraseñas no coinciden','warning');return;}
+if(pwd.length<6){toast('La contraseña debe tener mínimo 6 caracteres','warning');return;}
 setLoading(true);
 try{
 const email=`${escuela.cct.toLowerCase()}@escuela.local`;
 try{
 await auth.createUserWithEmailAndPassword(email,pwd);
-alert('✅ Contraseña asignada correctamente');
+toast('Contraseña asignada correctamente','success');
 onClose();
 }catch(error){
 if(error.code==='auth/email-already-in-use'){
-alert('ℹ️ Usuario existe.\n\nPara cambiar contraseña:\n1. Ve a Firebase Console\n2. Authentication → Users\n3. Busca: '+email+'\n4. Actions → Reset password');
+toast('El usuario ya existe. Para cambiar contraseña ve a Firebase Console → Authentication','info');
 }else{
 throw error;
 }
 }
 }catch(error){
 console.error(error);
-alert('❌ Error al asignar contraseña');
+toast('Error al asignar contraseña','error');
 }finally{
 setLoading(false);
 }
@@ -919,7 +993,7 @@ const url=await ref.getDownloadURL();
 setForm({...form,logoUrl:url});
 }catch(error){
 console.error(error);
-alert('Error subiendo logo');
+toast('Error al subir el logo','error');
 }finally{
 setUploading(false);
 }
@@ -959,7 +1033,7 @@ const[form,setForm]=useState({nombre:'',descripcion:'',programaId:'',archivo:nul
 const[uploading,setUploading]=useState(false);
 const handleSubmit=async(e)=>{
 e.preventDefault();
-if(!form.nombre||!form.archivo){alert('Completa todos los campos');return;}
+if(!form.nombre||!form.archivo){toast('Completa todos los campos','warning');return;}
 setUploading(true);
 try{
 const ref=storage.ref(`compartidos/${Date.now()}_${form.archivo.name}`);
@@ -967,12 +1041,12 @@ await ref.put(form.archivo);
 const url=await ref.getDownloadURL();
 const data={nombre:form.nombre,descripcion:form.descripcion,programaId:form.programaId,url,fecha:new Date().toISOString()};
 await db.collection('compartidos').add(data);
-alert('✅ Archivo compartido subido');
+toast('Archivo compartido subido correctamente','success');
 onClose();
 window.location.reload();
 }catch(error){
 console.error(error);
-alert('❌ Error al subir archivo');
+toast('Error al subir el archivo','error');
 }finally{
 setUploading(false);
 }
@@ -1039,7 +1113,7 @@ setEscuelas([...escuelas,{id:ref.id,...data}]);
 onClose();
 }catch(error){
 console.error(error);
-alert('Error al guardar');
+toast('Error al guardar','error');
 }
 };
 
@@ -1055,7 +1129,7 @@ setProgramas([...programas,{id:ref.id,...data}]);
 onClose();
 }catch(error){
 console.error(error);
-alert('Error al guardar');
+toast('Error al guardar','error');
 }
 };
 
@@ -1063,10 +1137,10 @@ const saveConfig=async(data,setConfig)=>{
 try{
 await db.collection('configuracion').doc('general').set(data,{merge:true});
 setConfig(data);
-alert('✅ Configuración guardada');
+toast('Configuración guardada correctamente','success');
 }catch(error){
 console.error(error);
-alert('Error al guardar');
+toast('Error al guardar','error');
 }
 };
 
@@ -1077,12 +1151,12 @@ setCompartidos([...compartidos,{id:ref.id,...data}]);
 onClose();
 }catch(error){
 console.error(error);
-alert('Error al guardar');
+toast('Error al guardar','error');
 }
 };
 
 const delEscuela=async(id,escuelas,setEscuelas,documentos,setDocumentos)=>{
-if(!confirm('¿Eliminar esta escuela? Se perderán todos sus documentos.'))return;
+confirmar('¿Eliminar esta escuela?','Se perderán todos sus documentos. Esta acción no se puede deshacer.',async()=>{
 try{
 const docsEscuela=documentos.filter(d=>d.escuelaId===id);
 for(const doc of docsEscuela){if(doc.url){try{await storage.refFromURL(doc.url).delete();}catch(e){}}await db.collection('documentos').doc(doc.id).delete();}
@@ -1091,11 +1165,12 @@ setDocumentos(documentos.filter(d=>d.escuelaId!==id));
 setEscuelas(escuelas.filter(e=>e.id!==id));
 }catch(error){
 console.error(error);
-alert('Error al eliminar');
+toast('Error al eliminar','error');
 }
+},'Eliminar','🗑️');
 };
 const delPrograma=async(id,programas,setProgramas,documentos,setDocumentos)=>{
-if(!confirm('¿Eliminar este programa?'))return;
+confirmar('¿Eliminar este programa?','Esta acción no se puede deshacer.',async()=>{
 try{
 const docsPrograma=documentos.filter(d=>d.programaId===id);
 for(const doc of docsPrograma){if(doc.url){try{await storage.refFromURL(doc.url).delete();}catch(e){}}await db.collection('documentos').doc(doc.id).delete();}
@@ -1103,12 +1178,13 @@ await db.collection('programas').doc(id).delete();
 setDocumentos(documentos.filter(d=>d.programaId!==id));
 setProgramas(programas.filter(p=>p.id!==id));
 }catch(error){console.error(error);
-alert('Error al eliminar');
+toast('Error al eliminar','error');
 }
+},'Eliminar','🗑️');
 };
 
 const delDocumento=async(id,documentos,setDocumentos)=>{
-if(!confirm('¿Eliminar este documento?'))return;
+confirmar('¿Eliminar este documento?','El archivo se eliminará permanentemente.',async()=>{
 try{
 const doc=documentos.find(d=>d.id===id);
 if(doc.url){
@@ -1117,15 +1193,16 @@ await ref.delete().catch(()=>{});
 }
 await db.collection('documentos').doc(id).delete();
 setDocumentos(documentos.filter(d=>d.id!==id));
-alert('✅ Documento eliminado');
+toast('Documento eliminado','success');
 }catch(error){
 console.error(error);
-alert('❌ Error al eliminar');
+toast('Error al eliminar','error');
 }
+},'Eliminar','🗑️');
 };
 
 const delCompartido=async(id,compartidos,setCompartidos)=>{
-if(!confirm('¿Eliminar este archivo?'))return;
+confirmar('¿Eliminar este archivo compartido?','El archivo se eliminará permanentemente.',async()=>{
 try{
 const doc=compartidos.find(c=>c.id===id);
 if(doc.url){
@@ -1136,8 +1213,9 @@ await db.collection('compartidos').doc(id).delete();
 setCompartidos(compartidos.filter(c=>c.id!==id));
 }catch(error){
 console.error(error);
-alert('Error al eliminar');
+toast('Error al eliminar','error');
 }
+},'Eliminar','🗑️');
 };
 
 const exportExcel=(escuelas,programas,documentos)=>{
@@ -1263,8 +1341,8 @@ async function iniciarMovil(){
       <p style="color:#64748b;font-size:.875rem">Sistema de Documentación Escolar</p>
     </div>
     <div style="display:flex;gap:.5rem;margin-bottom:1.5rem;background:#f1f5f9;padding:.25rem;border-radius:10px">
-      <button id="m-tab-esc" onclick="renderLogin('escuela')" style="flex:1;padding:.6rem;border-radius:8px;border:none;font-weight:600;font-size:.875rem;cursor:pointer;font-family:inherit;background:${modo==='escuela'?'#fff':'transparent'};color:${modo==='escuela'?'#2563eb':'#94a3b8'};box-shadow:${modo==='escuela'?'0 1px 3px rgba(0,0,0,.1)':'none'}">Escuela</button>
-      <button id="m-tab-adm" onclick="renderLogin('admin')" style="flex:1;padding:.6rem;border-radius:8px;border:none;font-weight:600;font-size:.875rem;cursor:pointer;font-family:inherit;background:${modo==='admin'?'#fff':'transparent'};color:${modo==='admin'?'#2563eb':'#94a3b8'};box-shadow:${modo==='admin'?'0 1px 3px rgba(0,0,0,.1)':'none'}">Administrador</button>
+      <button id="m-tab-esc" onclick="estado._ultimoModo='escuela';renderLogin('escuela')" style="flex:1;padding:.6rem;border-radius:8px;border:none;font-weight:600;font-size:.875rem;cursor:pointer;font-family:inherit;background:${modo==='escuela'?'#fff':'transparent'};color:${modo==='escuela'?'#2563eb':'#94a3b8'};box-shadow:${modo==='escuela'?'0 1px 3px rgba(0,0,0,.1)':'none'}">Escuela</button>
+      <button id="m-tab-adm" onclick="estado._ultimoModo='admin';renderLogin('admin')" style="flex:1;padding:.6rem;border-radius:8px;border:none;font-weight:600;font-size:.875rem;cursor:pointer;font-family:inherit;background:${modo==='admin'?'#fff':'transparent'};color:${modo==='admin'?'#2563eb':'#94a3b8'};box-shadow:${modo==='admin'?'0 1px 3px rgba(0,0,0,.1)':'none'}">Administrador</button>
     </div>
     <div id="m-login-err" style="display:none;padding:.75rem;background:#fee2e2;border-radius:8px;color:#dc2626;font-size:.8rem;margin-bottom:1rem"></div>
     ${modo==='escuela'?'<input id="m-cct" type="text" placeholder="CCT de tu escuela (30EPR0000A)" style="width:100%;padding:.75rem;border:1px solid #e2e8f0;border-radius:8px;font-size:.95rem;margin-bottom:.75rem;font-family:inherit;text-transform:uppercase">':''}
@@ -1305,7 +1383,7 @@ async function iniciarMovil(){
       <div class="m-header-row">
         <div style="display:flex;align-items:center;gap:.625rem">
           ${config.logoUrl?`<img src="${config.logoUrl}" style="height:36px;border-radius:8px;object-fit:contain">`:'<div class="m-logo">Z268</div>'}
-          <div><div class="m-title">${config.nombreZona||'Panel Admin'}</div><div class="m-sub">Gestión Documental${config.cicloEscolar?' · '+config.cicloEscolar:''}</div></div>
+          <div><div class="m-title">${config.nombreZona||'Panel de Administración'}</div><div class="m-sub">Gestión Documental${config.cicloEscolar?' · '+config.cicloEscolar:''}</div></div>
         </div>
         <div style="display:flex;gap:.5rem;align-items:center">
           <button onclick="mTab('config')" style="width:32px;height:32px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;font-size:.875rem;cursor:pointer">⚙️</button>
@@ -1429,14 +1507,15 @@ async function iniciarMovil(){
   };
 
   window.mBorrarDocDetalle=async(docId,escId)=>{
-    if(!confirm('¿Eliminar este documento?'))return;
+    confirmar('¿Eliminar este documento?','El archivo se eliminará permanentemente.',async()=>{
     try{
       const doc=estado.documentos.find(d=>d.id===docId);
       if(doc?.url){try{await storage.refFromURL(doc.url).delete();}catch(e){}}
       await db.collection('documentos').doc(docId).delete();
       estado.documentos=estado.documentos.filter(d=>d.id!==docId);
       mVerEscuela(escId);
-    }catch(e){alert('Error al eliminar');}
+    }catch(e){toast('Error al eliminar','error');}
+    },'Eliminar','🗑️');
   };
 
   function htmlEscuelas(){
@@ -1665,7 +1744,7 @@ async function iniciarMovil(){
   window.mSubirDocMovil=async(event,escuelaId,programaId,docNom,progNombre,cct)=>{
     const file=event.target.files[0];
     if(!file)return;
-    if(file.size>3*1024*1024){alert('El archivo supera 3 MB');event.target.value='';return;}
+    if(file.size>3*1024*1024){toast('El archivo supera 3 MB','error');event.target.value='';return;}
     const btn=event.target.parentElement;
     btn.textContent='Subiendo...';btn.style.pointerEvents='none';
     try{
@@ -1677,22 +1756,23 @@ async function iniciarMovil(){
       const docRef=await db.collection('documentos').add(data);
       estado.documentos.push({id:docRef.id,...data});
       mVerEscuela(escuelaId);
-    }catch(e){alert('Error al subir archivo');btn.textContent='📤 Subir';btn.style.pointerEvents='';}
+    }catch(e){toast('Error al subir archivo','error');btn.textContent='📤 Subir';btn.style.pointerEvents='';}
   };
 
   window.mBorrarDoc=async id=>{
-    if(!confirm('¿Eliminar este documento?'))return;
+    confirmar('¿Eliminar este documento?','El archivo se eliminará permanentemente.',async()=>{
     try{
       const doc=estado.documentos.find(d=>d.id===id);
       if(doc?.url){try{await storage.refFromURL(doc.url).delete();}catch(e){}}
       await db.collection('documentos').doc(id).delete();
       estado.documentos=estado.documentos.filter(d=>d.id!==id);
       renderTab();
-    }catch(e){alert('Error al eliminar');}
+    }catch(e){toast('Error al eliminar','error');}
+    },'Eliminar','🗑️');
   };
 
   window.mBorrarEscuela=async id=>{
-    if(!confirm('¿Eliminar esta escuela y todos sus documentos?'))return;
+    confirmar('¿Eliminar esta escuela?','Se eliminarán todos sus documentos permanentemente.',async()=>{
     try{
       const docs=estado.documentos.filter(d=>d.escuelaId===id);
       for(const d of docs){if(d.url){try{await storage.refFromURL(d.url).delete();}catch(e){}}await db.collection('documentos').doc(d.id).delete();}
@@ -1700,11 +1780,12 @@ async function iniciarMovil(){
       estado.escuelas=estado.escuelas.filter(e=>e.id!==id);
       estado.documentos=estado.documentos.filter(d=>d.escuelaId!==id);
       renderTab();
-    }catch(e){alert('Error al eliminar');}
+    }catch(e){toast('Error al eliminar','error');}
+    },'Eliminar','🗑️');
   };
 
   window.mBorrarPrograma=async id=>{
-    if(!confirm('¿Eliminar este programa?'))return;
+    confirmar('¿Eliminar este programa?','Esta acción no se puede deshacer.',async()=>{
     try{
       const docs=estado.documentos.filter(d=>d.programaId===id);
       for(const d of docs){if(d.url){try{await storage.refFromURL(d.url).delete();}catch(e){}}await db.collection('documentos').doc(d.id).delete();}
@@ -1712,18 +1793,20 @@ async function iniciarMovil(){
       estado.programas=estado.programas.filter(p=>p.id!==id);
       estado.documentos=estado.documentos.filter(d=>d.programaId!==id);
       renderTab();
-    }catch(e){alert('Error al eliminar');}
+    }catch(e){toast('Error al eliminar','error');}
+    },'Eliminar','🗑️');
   };
 
   window.mBorrarCompartido=async id=>{
-    if(!confirm('¿Eliminar este archivo?'))return;
+    confirmar('¿Eliminar este archivo compartido?','El archivo se eliminará permanentemente.',async()=>{
     try{
       const c=estado.compartidos.find(x=>x.id===id);
       if(c?.url){try{await storage.refFromURL(c.url).delete();}catch(e){}}
       await db.collection('compartidos').doc(id).delete();
       estado.compartidos=estado.compartidos.filter(x=>x.id!==id);
       renderTab();
-    }catch(e){alert('Error al eliminar');}
+    }catch(e){toast('Error al eliminar','error');}
+    },'Eliminar','🗑️');
   };
 
   window.mToggleBorrado=()=>{
@@ -1743,8 +1826,8 @@ async function iniciarMovil(){
     try{
       await db.collection('configuracion').doc('general').set({...estado.config,nombreZona:nombre,cicloEscolar:ciclo,permitirBorradoEscuelas:permitirBorrado},{merge:true});
       estado.config={...estado.config,nombreZona:nombre,cicloEscolar:ciclo,permitirBorradoEscuelas:permitirBorrado};
-      alert('✅ Guardado');renderAdmin();
-    }catch(e){alert('Error al guardar');}
+      toast('Configuración guardada','success');renderAdmin();
+    }catch(e){toast('Error al guardar','error');}
   };
 
   window.mNuevaEscuela=()=>{
@@ -1763,10 +1846,10 @@ async function iniciarMovil(){
   window.mGuardarEscuela=async()=>{
     const nombre=document.getElementById('mf-nombre').value.trim();
     const cct=document.getElementById('mf-cct').value.trim().toUpperCase();
-    if(!nombre||!cct){alert('Nombre y CCT son requeridos');return;}
+    if(!nombre||!cct){toast('Nombre y CCT son requeridos','warning');return;}
     const data={nombre,cct,comunidad:document.getElementById('mf-com').value.trim(),director:document.getElementById('mf-dir').value.trim()};
     try{const ref=await db.collection('escuelas').add(data);estado.escuelas.push({id:ref.id,...data});mTab('escuelas');}
-    catch(e){alert('Error al guardar');}
+    catch(e){toast('Error al guardar','error');}
   };
 
   window.mEditarEscuela=id=>{
@@ -1787,10 +1870,10 @@ async function iniciarMovil(){
   window.mActualizarEscuela=async id=>{
     const nombre=document.getElementById('mf-nombre').value.trim();
     const cct=document.getElementById('mf-cct').value.trim().toUpperCase();
-    if(!nombre||!cct){alert('Nombre y CCT son requeridos');return;}
+    if(!nombre||!cct){toast('Nombre y CCT son requeridos','warning');return;}
     const data={nombre,cct,comunidad:document.getElementById('mf-com').value.trim(),director:document.getElementById('mf-dir').value.trim(),id};
     try{await db.collection('escuelas').doc(id).update(data);estado.escuelas=estado.escuelas.map(e=>e.id===id?data:e);mTab('escuelas');}
-    catch(e){alert('Error al guardar');}
+    catch(e){toast('Error al guardar','error');}
   };
 
   window.mPassword=id=>{
@@ -1813,14 +1896,14 @@ async function iniciarMovil(){
   window.mGuardarPwd=async email=>{
     const pwd=document.getElementById('mf-pwd').value;
     const pwd2=document.getElementById('mf-pwd2').value;
-    if(pwd!==pwd2){alert('Las contraseñas no coinciden');return;}
-    if(pwd.length<6){alert('Mínimo 6 caracteres');return;}
+    if(pwd!==pwd2){toast('Las contraseñas no coinciden','warning');return;}
+    if(pwd.length<6){toast('La contraseña debe tener mínimo 6 caracteres','warning');return;}
     try{
       await auth.createUserWithEmailAndPassword(email,pwd);
-      alert('✅ Contraseña asignada');mTab('escuelas');
+      toast('Contraseña asignada correctamente','success');mTab('escuelas');
     }catch(e){
-      if(e.code==='auth/email-already-in-use')alert('ℹ️ Usuario ya existe. Para cambiar contraseña usa Firebase Console → Authentication');
-      else alert('Error: '+e.message);
+      if(e.code==='auth/email-already-in-use')toast('El usuario ya existe. Usa Firebase Console para cambiar contraseña','info');
+      else toast('Error: '+e.message,'error');
     }
   };
 
@@ -1850,10 +1933,10 @@ async function iniciarMovil(){
   window.mGuardarPrograma=async()=>{
     const nombre=document.getElementById('mf-pnom').value.trim();
     const fecha=document.getElementById('mf-pfecha').value;
-    if(!nombre||!fecha||!window._docs.length){alert('Completa todos los campos y agrega al menos un documento');return;}
+    if(!nombre||!fecha||!window._docs.length){toast('Completa todos los campos y agrega al menos un documento','warning');return;}
     const data={nombre,fechaLimite:fecha,documentosRequeridos:window._docs,todasEscuelas:true,escuelasAsignadas:[]};
     try{const ref=await db.collection('programas').add(data);estado.programas.push({id:ref.id,...data});mTab('programas');}
-    catch(e){alert('Error al guardar');}
+    catch(e){toast('Error al guardar','error');}
   };
 
   window.mEditarPrograma=id=>{
@@ -1878,11 +1961,11 @@ async function iniciarMovil(){
   window.mActualizarPrograma=async id=>{
     const nombre=document.getElementById('mf-pnom').value.trim();
     const fecha=document.getElementById('mf-pfecha').value;
-    if(!nombre||!fecha||!window._docs.length){alert('Completa todos los campos');return;}
+    if(!nombre||!fecha||!window._docs.length){toast('Completa todos los campos','warning');return;}
     const p=estado.programas.find(x=>x.id===id);
     const data={...p,nombre,fechaLimite:fecha,documentosRequeridos:window._docs};
     try{await db.collection('programas').doc(id).update(data);estado.programas=estado.programas.map(x=>x.id===id?data:x);mTab('programas');}
-    catch(e){alert('Error al guardar');}
+    catch(e){toast('Error al guardar','error');}
   };
 
   window.mNuevoCompartido=()=>{
@@ -1900,7 +1983,7 @@ async function iniciarMovil(){
   window.mGuardarCompartido=async()=>{
     const nombre=document.getElementById('mf-cnom').value.trim();
     const file=document.getElementById('mf-cfile').files[0];
-    if(!nombre||!file){alert('Completa todos los campos');return;}
+    if(!nombre||!file){toast('Completa todos los campos','warning');return;}
     document.getElementById('mf-cbtn').textContent='Subiendo...';
     try{
       const ref=storage.ref(`compartidos/${Date.now()}_${file.name}`);
@@ -1910,7 +1993,7 @@ async function iniciarMovil(){
       const r=await db.collection('compartidos').add(data);
       estado.compartidos.push({id:r.id,...data});
       mTab('compartidos');
-    }catch(e){alert('Error al subir');}
+    }catch(e){toast('Error al subir el archivo','error');}
   };
 }
 </script>

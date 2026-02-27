@@ -1333,19 +1333,42 @@ async function iniciarMovil(){
   }
   function fmtFecha(iso){if(!iso)return'';return new Date(iso).toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit',year:'2-digit'});}
 
-  function renderLogin(){
+  function renderLogin(modo='escuela'){
     root.innerHTML=`<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem;background:linear-gradient(135deg,#667eea,#764ba2)">
-    <div style="background:#fff;border-radius:16px;padding:2rem;width:100%;max-width:360px;text-align:center">
-    <div style="font-size:1.25rem;font-weight:700;margin-bottom:.5rem">${estado.config.nombreZona||'DocuEscuela'}</div>
-    <p style="color:#64748b;font-size:.875rem;margin-bottom:1.5rem">Acceso de Administrador</p>
+    <div style="background:#fff;border-radius:16px;padding:2rem;width:100%;max-width:360px">
+    <div style="text-align:center;margin-bottom:1.5rem">
+      <div style="font-size:1.25rem;font-weight:700;margin-bottom:.25rem">${estado.config.nombreZona||'DocuEscuela'}</div>
+      <p style="color:#64748b;font-size:.875rem">Sistema de Documentación Escolar</p>
+    </div>
+    <div style="display:flex;gap:.5rem;margin-bottom:1.5rem;background:#f1f5f9;padding:.25rem;border-radius:10px">
+      <button id="m-tab-esc" onclick="renderLogin('escuela')" style="flex:1;padding:.6rem;border-radius:8px;border:none;font-weight:600;font-size:.875rem;cursor:pointer;font-family:inherit;background:${modo==='escuela'?'#fff':'transparent'};color:${modo==='escuela'?'#2563eb':'#94a3b8'};box-shadow:${modo==='escuela'?'0 1px 3px rgba(0,0,0,.1)':'none'}">Escuela</button>
+      <button id="m-tab-adm" onclick="renderLogin('admin')" style="flex:1;padding:.6rem;border-radius:8px;border:none;font-weight:600;font-size:.875rem;cursor:pointer;font-family:inherit;background:${modo==='admin'?'#fff':'transparent'};color:${modo==='admin'?'#2563eb':'#94a3b8'};box-shadow:${modo==='admin'?'0 1px 3px rgba(0,0,0,.1)':'none'}">Administrador</button>
+    </div>
     <div id="m-login-err" style="display:none;padding:.75rem;background:#fee2e2;border-radius:8px;color:#dc2626;font-size:.8rem;margin-bottom:1rem"></div>
-    <input id="m-pwd" type="password" placeholder="Contraseña" style="width:100%;padding:.75rem;border:1px solid #e2e8f0;border-radius:8px;font-size:1rem;margin-bottom:1rem;font-family:inherit">
-    <button onclick="mLogin()" style="width:100%;padding:.75rem;border-radius:8px;border:none;background:#2563eb;color:#fff;font-weight:600;font-size:1rem;cursor:pointer;font-family:inherit">Ingresar</button>
+    ${modo==='escuela'?'<input id="m-cct" type="text" placeholder="CCT de tu escuela (30EPR0000A)" style="width:100%;padding:.75rem;border:1px solid #e2e8f0;border-radius:8px;font-size:.95rem;margin-bottom:.75rem;font-family:inherit;text-transform:uppercase">':''} 
+    <input id="m-pwd" type="password" placeholder="Contraseña" style="width:100%;padding:.75rem;border:1px solid #e2e8f0;border-radius:8px;font-size:.95rem;margin-bottom:1rem;font-family:inherit">
+    <button onclick="mLogin('${modo}')" style="width:100%;padding:.75rem;border-radius:8px;border:none;background:#2563eb;color:#fff;font-weight:600;font-size:1rem;cursor:pointer;font-family:inherit">Ingresar</button>
+    <div style="margin-top:1rem;padding:.75rem;background:#f9fafb;border-radius:8px;font-size:.72rem;color:#94a3b8;text-align:center">💡 Si el sistema tarda en conectar, por favor espera.</div>
     </div></div>`;
-    window.mLogin=async()=>{
+    window.mLogin=async(modo)=>{
       const pwd=document.getElementById('m-pwd').value;
-      try{await auth.signInWithEmailAndPassword(ADMIN_EMAIL,pwd);}
-      catch(e){const err=document.getElementById('m-login-err');err.style.display='block';err.textContent='Contraseña incorrecta';}
+      const err=document.getElementById('m-login-err');
+      err.style.display='none';
+      try{
+        if(modo==='admin'){
+          await auth.signInWithEmailAndPassword(ADMIN_EMAIL,pwd);
+        }else{
+          const cct=document.getElementById('m-cct').value.trim().toUpperCase();
+          if(!cct){err.style.display='block';err.textContent='Ingresa tu CCT';return;}
+          const snap=await db.collection('escuelas').where('cct','==',cct).limit(1).get();
+          if(snap.empty){err.style.display='block';err.textContent='CCT no encontrado en el sistema';return;}
+          const email=`${cct.toLowerCase()}@escuela.local`;
+          await auth.signInWithEmailAndPassword(email,pwd);
+        }
+      }catch(e){
+        err.style.display='block';
+        err.textContent=e.code==='auth/wrong-password'||e.code==='auth/user-not-found'?'CCT o contraseña incorrectos':'Error de conexión. Intenta de nuevo.';
+      }
     };
   }
 
@@ -1407,12 +1430,13 @@ async function iniciarMovil(){
       <div class="m-stat" style="background:linear-gradient(135deg,#059669,#047857)"><div class="m-stat-lbl">Completas</div><div class="m-stat-val">${s.completas}</div></div>
       <div class="m-stat" style="background:linear-gradient(135deg,#f59e0b,#d97706)"><div class="m-stat-lbl">Pendientes</div><div class="m-stat-val">${s.pendientes}</div></div>
     </div>
-    <div class="m-section">Resumen por escuela</div>
+    <div class="m-section">Resumen por escuela — toca para ver detalle</div>
     ${esc.map((e,i)=>{const pct=getPct(e);const c=getColor(i);return`
-    <div class="m-card">
+    <div class="m-card" onclick="mVerEscuela('${e.id}')" style="cursor:pointer;active:opacity:.8">
       <div class="m-card-hd">
         <div class="m-avatar" style="background:${c[0]};color:${c[1]}">${getIniciales(e.nombre)}</div>
-        <div><div class="m-name">${e.nombre}</div><div class="m-cct">${e.cct}</div></div>
+        <div style="flex:1"><div class="m-name">${e.nombre}</div><div class="m-cct">${e.cct}</div></div>
+        <div style="color:#cbd5e1;font-size:1.25rem">›</div>
       </div>
       <div class="m-card-ft">
         <div class="m-prog-b">${estado.programas.filter(p=>p.todasEscuelas||(p.escuelasAsignadas||[]).includes(e.id)).length} prog</div>
@@ -1422,6 +1446,73 @@ async function iniciarMovil(){
     </div>`}).join('')}
     ${estado.escuelas.length>10?`<div style="text-align:center;padding:1rem"><button onclick="mTab('escuelas')" style="padding:.6rem 1.5rem;border-radius:10px;border:1px solid #e2e8f0;background:#fff;color:#3b82f6;font-weight:600;cursor:pointer;font-family:inherit">Ver todas (${estado.escuelas.length})</button></div>`:''}`;
   }
+
+  window.mVerEscuela=id=>{
+    const e=estado.escuelas.find(x=>x.id===id);
+    if(!e)return;
+    const progs=estado.programas.filter(p=>p.todasEscuelas||(p.escuelasAsignadas||[]).includes(e.id));
+    const pct=getPct(e);
+    const c=getColor(estado.escuelas.indexOf(e));
+    const html=`<div>
+      <button onclick="mTab('dashboard')" style="display:flex;align-items:center;gap:.5rem;border:none;background:none;color:#3b82f6;font-size:.875rem;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:1rem;padding:0">‹ Volver al Dashboard</button>
+      <div class="m-card" style="margin-bottom:1rem">
+        <div class="m-card-hd">
+          <div class="m-avatar" style="background:${c[0]};color:${c[1]};width:48px;height:48px;font-size:.9rem">${getIniciales(e.nombre)}</div>
+          <div><div class="m-name" style="font-size:1rem">${e.nombre}</div><div class="m-cct">${e.cct}</div>${e.director?`<div class="m-dir">Dir: ${e.director}</div>`:''}</div>
+        </div>
+        <div class="m-card-ft">
+          <div class="m-pbar-w"><div class="m-pbar"><div class="m-pfill" style="width:${pct}%"></div></div></div>
+          <div class="m-pct" style="color:${getPctColor(pct)}">${pct}% completado</div>
+        </div>
+      </div>
+      ${progs.length===0?'<div class="m-empty">Sin programas asignados</div>':
+      progs.map(p=>{
+        const docsEsc=estado.documentos.filter(d=>d.escuelaId===e.id&&d.programaId===p.id);
+        const total=p.documentosRequeridos.length;
+        const ent=docsEsc.length;
+        const pPct=total>0?Math.round((ent/total)*100):0;
+        return`<div class="m-card" style="margin-bottom:.75rem">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
+            <div><div class="m-name">${p.nombre}</div><div style="font-size:.7rem;color:#f59e0b;font-weight:600">📅 Límite: ${p.fechaLimite}</div></div>
+            <div style="font-size:.75rem;font-weight:700;padding:.25rem .6rem;border-radius:8px;background:${pPct===100?'#d1fae5':'#fee2e2'};color:${pPct===100?'#059669':'#dc2626'}">${ent}/${total}</div>
+          </div>
+          <div style="margin-bottom:.75rem">
+            <div class="m-pbar" style="height:4px"><div class="m-pfill" style="width:${pPct}%"></div></div>
+          </div>
+          <div style="font-size:.75rem;font-weight:600;color:#64748b;margin-bottom:.5rem">Documentos requeridos:</div>
+          ${p.documentosRequeridos.map(docNom=>{
+            const docSub=docsEsc.find(d=>d.nombreDocumento===docNom);
+            const ico=docSub?getDocIco(docSub.tipo):null;
+            return`<div style="display:flex;align-items:center;justify-content:space-between;padding:.5rem .6rem;border-radius:8px;background:${docSub?'#f0fdf4':'#fff9f9'};border:1px solid ${docSub?'#bbf7d0':'#fecaca'};margin-bottom:.35rem">
+              <div style="display:flex;align-items:center;gap:.5rem;flex:1;min-width:0">
+                <span style="font-size:.85rem">${docSub?'✅':'❌'}</span>
+                <div style="min-width:0">
+                  <div style="font-size:.75rem;font-weight:600;color:#374151;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${docNom}</div>
+                  ${docSub?`<div style="font-size:.65rem;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${docSub.nombreArchivo}</div>`:''}
+                </div>
+              </div>
+              ${docSub?`<div style="display:flex;gap:.35rem;flex-shrink:0;margin-left:.5rem">
+                <button onclick="window.open('${docSub.url}','_blank')" style="padding:.25rem .5rem;border-radius:6px;border:1px solid #e2e8f0;background:#fff;font-size:.65rem;cursor:pointer;font-family:inherit;color:#3b82f6;font-weight:600">Ver</button>
+                <button onclick="mBorrarDocDetalle('${docSub.id}','${e.id}')" style="padding:.25rem .5rem;border-radius:6px;border:none;background:#fee2e2;color:#dc2626;font-size:.65rem;cursor:pointer;font-family:inherit">🗑️</button>
+              </div>`:''}
+            </div>`;
+          }).join('')}
+        </div>`;
+      }).join('')}
+    </div>`;
+    document.getElementById('m-content').innerHTML=html;
+  };
+
+  window.mBorrarDocDetalle=async(docId,escId)=>{
+    if(!confirm('¿Eliminar este documento?'))return;
+    try{
+      const doc=estado.documentos.find(d=>d.id===docId);
+      if(doc?.url){try{await storage.refFromURL(doc.url).delete();}catch(e){}}
+      await db.collection('documentos').doc(docId).delete();
+      estado.documentos=estado.documentos.filter(d=>d.id!==docId);
+      mVerEscuela(escId);
+    }catch(e){alert('Error al eliminar');}
+  };
 
   function htmlEscuelas(){
     return`<div class="m-action-row">

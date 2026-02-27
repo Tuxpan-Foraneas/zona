@@ -1661,16 +1661,23 @@ async function iniciarMovil(){
 
   function htmlRubrica(){
     const{escuelas,programas,documentos,config}=estado;
+    if(!estado.filtroRubrica)estado.filtroRubrica='';
     const fecha=new Date().toLocaleDateString('es-MX',{year:'numeric',month:'long',day:'numeric'});
-    return`<div style="margin-bottom:1rem;display:flex;justify-content:flex-end">
-      <button onclick="window.print()" class="m-btn m-btn-p">🖨️ Imprimir</button>
+    const progsFiltrados=estado.filtroRubrica?programas.filter(p=>p.id===estado.filtroRubrica):programas;
+    const labelFiltro=estado.filtroRubrica?programas.find(p=>p.id===estado.filtroRubrica)?.nombre:'Todos los programas';
+    return`
+    <div style="display:flex;gap:.5rem;margin-bottom:1rem;align-items:center">
+      <button onclick="mFiltroRubricaModal()" style="flex:1;padding:.6rem 1rem;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-weight:600;cursor:pointer;font-size:.8rem;display:flex;align-items:center;justify-content:space-between;gap:.5rem;font-family:inherit">
+        <span>📋 ${labelFiltro}</span><span style="color:#94a3b8">▼</span>
+      </button>
+      <button onclick="window.print()" class="m-btn m-btn-p" style="flex-shrink:0">🖨️</button>
     </div>
     <div class="m-rubrica" style="overflow-x:auto">
       <table>
         <thead>
-          <tr><th colspan="${3+programas.length}" style="padding:.75rem;text-align:center">${config.nombreZona||'ZONA ESCOLAR'}<br><small>${fecha}</small></th></tr>
+          <tr><th colspan="${3+progsFiltrados.length}" style="padding:.75rem;text-align:center">${config.nombreZona||'ZONA ESCOLAR'}<br><small>${labelFiltro} — ${fecha}</small></th></tr>
           <tr><th>#</th><th>CCT</th><th style="text-align:left">Escuela</th>
-          ${programas.map(p=>`<th style="max-width:50px"><div style="writing-mode:vertical-rl;transform:rotate(180deg);white-space:nowrap;font-size:.6rem">${p.nombre}</div></th>`).join('')}
+          ${progsFiltrados.map(p=>`<th style="max-width:50px"><div style="writing-mode:vertical-rl;transform:rotate(180deg);white-space:nowrap;font-size:.6rem">${p.nombre}</div></th>`).join('')}
           </tr>
         </thead>
         <tbody>
@@ -1678,7 +1685,7 @@ async function iniciarMovil(){
             <td>${i+1}</td>
             <td style="font-family:monospace;font-size:.65rem">${e.cct}</td>
             <td style="text-align:left;font-size:.75rem">${e.nombre}</td>
-            ${programas.map(p=>{
+            ${progsFiltrados.map(p=>{
               const asig=p.todasEscuelas||(p.escuelasAsignadas||[]).includes(e.id);
               if(!asig)return`<td style="background:#e5e7eb"></td>`;
               const ok=documentos.filter(d=>d.escuelaId===e.id&&d.programaId===p.id).length>=p.documentosRequeridos.length;
@@ -1688,7 +1695,7 @@ async function iniciarMovil(){
         </tbody>
         <tfoot>
           <tr><td colspan="3" style="text-align:left;font-weight:700;background:#f8fafc">TOTAL</td>
-          ${programas.map(p=>{
+          ${progsFiltrados.map(p=>{
             const asig=escuelas.filter(e=>p.todasEscuelas||(p.escuelasAsignadas||[]).includes(e.id));
             const ent=asig.filter(e=>documentos.filter(d=>d.escuelaId===e.id&&d.programaId===p.id).length>=p.documentosRequeridos.length).length;
             return`<td style="font-weight:700;background:#f8fafc">${ent}/${asig.length}</td>`;
@@ -1722,6 +1729,33 @@ async function iniciarMovil(){
 
   window.mFiltroEsc=id=>{estado.filtroEsc=id;renderTab();}
   window.mFiltroProg=id=>{estado.filtroProg=id;renderTab();}
+
+  window.mFiltroRubricaModal=()=>{
+    const{programas}=estado;
+    let modal=document.getElementById('m-rubrica-modal');
+    if(!modal){modal=document.createElement('div');modal.id='m-rubrica-modal';document.body.appendChild(modal);}
+    modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center;z-index:99999;';
+    modal.innerHTML=`
+      <div style="background:#fff;border-radius:20px 20px 0 0;padding:1.5rem;width:100%;max-width:480px;max-height:70vh;overflow-y:auto">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+          <h3 style="font-weight:700;font-size:1rem">📋 Filtrar Rúbrica</h3>
+          <button onclick="document.getElementById('m-rubrica-modal').style.display='none'" style="border:none;background:none;font-size:1.5rem;cursor:pointer;color:#64748b">×</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:.4rem">
+          <button onclick="estado.filtroRubrica='';document.getElementById('m-rubrica-modal').style.display='none';renderTab();"
+            style="padding:.75rem 1rem;border-radius:10px;border:2px solid ${!estado.filtroRubrica?'#2563eb':'#e5e7eb'};background:${!estado.filtroRubrica?'#eff6ff':'#fff'};font-weight:600;cursor:pointer;text-align:left;font-family:inherit;font-size:.875rem;color:${!estado.filtroRubrica?'#2563eb':'#374151'}">
+            📊 Todos los programas
+          </button>
+          ${programas.map(p=>`
+          <button onclick="estado.filtroRubrica='${p.id}';document.getElementById('m-rubrica-modal').style.display='none';renderTab();"
+            style="padding:.75rem 1rem;border-radius:10px;border:2px solid ${estado.filtroRubrica===p.id?'#2563eb':'#e5e7eb'};background:${estado.filtroRubrica===p.id?'#eff6ff':'#fff'};font-weight:600;cursor:pointer;text-align:left;font-family:inherit;font-size:.875rem;color:${estado.filtroRubrica===p.id?'#2563eb':'#374151'}">
+            ${p.nombre}<span style="font-size:.7rem;color:#94a3b8;display:block;font-weight:400">Límite: ${p.fechaLimite}</span>
+          </button>`).join('')}
+        </div>
+      </div>`;
+    modal.style.display='flex';
+    modal.onclick=e=>{if(e.target===modal)modal.style.display='none';};
+  };
 
   function getTipoMovil(nombre){
     if(!nombre)return'Otro';
@@ -1875,12 +1909,25 @@ async function iniciarMovil(){
     }catch(e){toast('Error al guardar','error');}
   };
 
+  function mEscuelaForm(e){
+    // Genera checkboxes de programas para asignar a la escuela
+    const progsHtml=estado.programas.map(p=>{
+      const asignado=e?(p.todasEscuelas||(p.escuelasAsignadas||[]).includes(e.id)):false;
+      return`<label style="display:flex;align-items:center;gap:.5rem;padding:.5rem .6rem;border:1px solid #e2e8f0;border-radius:8px;cursor:pointer;font-size:.8rem;margin-bottom:.35rem">
+        <input type="checkbox" id="mf-prog-${p.id}" ${p.todasEscuelas?'checked disabled':asignado?'checked':''} style="width:16px;height:16px">
+        <span>${p.nombre}</span>${p.todasEscuelas?'<span style="font-size:.65rem;color:#94a3b8;margin-left:auto">Todas</span>':''}
+      </label>`;
+    }).join('');
+    return progsHtml;
+  }
+
   window.mNuevaEscuela=()=>{
     const form=`<div class="m-card"><div class="m-section">Nueva Escuela</div>
     <div style="margin-bottom:.75rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">Nombre *</label><input id="mf-nombre" style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit"></div>
     <div style="margin-bottom:.75rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">CCT *</label><input id="mf-cct" style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit;text-transform:uppercase"></div>
     <div style="margin-bottom:.75rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">Comunidad</label><input id="mf-com" style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit"></div>
-    <div style="margin-bottom:1rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">Director</label><input id="mf-dir" style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit"></div>
+    <div style="margin-bottom:.75rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">Director</label><input id="mf-dir" style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit"></div>
+    <div style="margin-bottom:1rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.5rem">📋 Programas asignados</label>${mEscuelaForm(null)}</div>
     <div style="display:flex;gap:.5rem">
       <button onclick="mTab('escuelas')" class="m-action-btn" style="background:#f1f5f9;color:#374151">Cancelar</button>
       <button onclick="mGuardarEscuela()" class="m-action-btn m-btn-p">Guardar</button>
@@ -1893,8 +1940,25 @@ async function iniciarMovil(){
     const cct=document.getElementById('mf-cct').value.trim().toUpperCase();
     if(!nombre||!cct){toast('Nombre y CCT son requeridos','warning');return;}
     const data={nombre,cct,comunidad:document.getElementById('mf-com').value.trim(),director:document.getElementById('mf-dir').value.trim()};
-    try{const ref=await db.collection('escuelas').add(data);estado.escuelas.push({id:ref.id,...data});mTab('escuelas');}
-    catch(e){toast('Error al guardar','error');}
+    try{
+      const ref=await db.collection('escuelas').add(data);
+      const newId=ref.id;
+      estado.escuelas.push({id:newId,...data});
+      // Actualizar programas asignados (no-todasEscuelas)
+      for(const p of estado.programas){
+        if(p.todasEscuelas)continue;
+        const cb=document.getElementById('mf-prog-'+p.id);
+        if(!cb)continue;
+        const asignados=p.escuelasAsignadas||[];
+        const yaEsta=asignados.includes(newId);
+        if(cb.checked&&!yaEsta){
+          const nuevos=[...asignados,newId];
+          await db.collection('programas').doc(p.id).update({escuelasAsignadas:nuevos});
+          p.escuelasAsignadas=nuevos;
+        }
+      }
+      mTab('escuelas');
+    }catch(e){toast('Error al guardar','error');}
   };
 
   window.mEditarEscuela=id=>{
@@ -1904,7 +1968,8 @@ async function iniciarMovil(){
     <div style="margin-bottom:.75rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">Nombre *</label><input id="mf-nombre" value="${e.nombre}" style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit"></div>
     <div style="margin-bottom:.75rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">CCT *</label><input id="mf-cct" value="${e.cct}" style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit;text-transform:uppercase"></div>
     <div style="margin-bottom:.75rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">Comunidad</label><input id="mf-com" value="${e.comunidad||''}" style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit"></div>
-    <div style="margin-bottom:1rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">Director</label><input id="mf-dir" value="${e.director||''}" style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit"></div>
+    <div style="margin-bottom:.75rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">Director</label><input id="mf-dir" value="${e.director||''}" style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit"></div>
+    <div style="margin-bottom:1rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.5rem">📋 Programas asignados</label>${mEscuelaForm(e)}</div>
     <div style="display:flex;gap:.5rem">
       <button onclick="mTab('escuelas')" class="m-action-btn" style="background:#f1f5f9;color:#374151">Cancelar</button>
       <button onclick="mActualizarEscuela('${id}')" class="m-action-btn m-btn-p">Guardar</button>
@@ -1917,8 +1982,28 @@ async function iniciarMovil(){
     const cct=document.getElementById('mf-cct').value.trim().toUpperCase();
     if(!nombre||!cct){toast('Nombre y CCT son requeridos','warning');return;}
     const data={nombre,cct,comunidad:document.getElementById('mf-com').value.trim(),director:document.getElementById('mf-dir').value.trim(),id};
-    try{await db.collection('escuelas').doc(id).update(data);estado.escuelas=estado.escuelas.map(e=>e.id===id?data:e);mTab('escuelas');}
-    catch(e){toast('Error al guardar','error');}
+    try{
+      await db.collection('escuelas').doc(id).update(data);
+      estado.escuelas=estado.escuelas.map(e=>e.id===id?data:e);
+      // Actualizar programas asignados
+      for(const p of estado.programas){
+        if(p.todasEscuelas)continue;
+        const cb=document.getElementById('mf-prog-'+p.id);
+        if(!cb)continue;
+        const asignados=p.escuelasAsignadas||[];
+        const yaEsta=asignados.includes(id);
+        if(cb.checked&&!yaEsta){
+          const nuevos=[...asignados,id];
+          await db.collection('programas').doc(p.id).update({escuelasAsignadas:nuevos});
+          p.escuelasAsignadas=nuevos;
+        }else if(!cb.checked&&yaEsta){
+          const nuevos=asignados.filter(x=>x!==id);
+          await db.collection('programas').doc(p.id).update({escuelasAsignadas:nuevos});
+          p.escuelasAsignadas=nuevos;
+        }
+      }
+      mTab('escuelas');
+    }catch(e){toast('Error al guardar','error');}
   };
 
   window.mPassword=id=>{
@@ -1927,28 +2012,56 @@ async function iniciarMovil(){
     const email=`${e.cct.toLowerCase()}@escuela.local`;
     const form=`<div class="m-card"><div class="m-section">Asignar Contraseña</div>
     <div style="padding:.75rem;background:#dbeafe;border-radius:8px;font-size:.8rem;margin-bottom:1rem">
-      <strong>${e.nombre}</strong><br>${e.cct}<br>${email}
+      <strong>${e.nombre}</strong><br>🪪 ${e.cct}<br>${email}
     </div>
-    <div style="margin-bottom:.75rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">Nueva Contraseña</label><input id="mf-pwd" type="password" style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit" minlength="6"></div>
-    <div style="margin-bottom:1rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">Confirmar</label><input id="mf-pwd2" type="password" style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit" minlength="6"></div>
+    <div style="margin-bottom:.75rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">Nueva Contraseña</label><input id="mf-pwd" type="password" style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit" minlength="6" placeholder="Mínimo 6 caracteres"></div>
+    <div style="margin-bottom:1rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">Confirmar</label><input id="mf-pwd2" type="password" style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit" minlength="6" placeholder="Repite la contraseña"></div>
     <div style="display:flex;gap:.5rem">
       <button onclick="mTab('escuelas')" class="m-action-btn" style="background:#f1f5f9;color:#374151">Cancelar</button>
-      <button onclick="mGuardarPwd('${email}')" class="m-action-btn m-btn-p">Asignar</button>
+      <button onclick="mGuardarPwd('${email}','${id}')" class="m-action-btn m-btn-p">Asignar</button>
     </div></div>`;
     document.getElementById('m-content').innerHTML=form;
   };
 
-  window.mGuardarPwd=async email=>{
+  window.mGuardarPwd=async(email,escuelaId)=>{
     const pwd=document.getElementById('mf-pwd').value;
     const pwd2=document.getElementById('mf-pwd2').value;
     if(pwd!==pwd2){toast('Las contraseñas no coinciden','warning');return;}
-    if(pwd.length<6){toast('La contraseña debe tener mínimo 6 caracteres','warning');return;}
+    if(pwd.length<6){toast('Mínimo 6 caracteres','warning');return;}
+    const btn=document.querySelector('[onclick*="mGuardarPwd"]');
+    if(btn){btn.textContent='Guardando...';btn.disabled=true;}
+    const appKey=`pwd_${Date.now()}`;
+    let appTemp=null;
     try{
-      await auth.createUserWithEmailAndPassword(email,pwd);
-      toast('Contraseña asignada correctamente','success');mTab('escuelas');
+      appTemp=firebase.initializeApp(firebaseConfig,appKey);
+      const authTemp=appTemp.auth();
+      try{
+        await authTemp.createUserWithEmailAndPassword(email,pwd);
+        await db.collection('escuelas').doc(escuelaId).update({_pwdHint:pwd});
+        toast('Contraseña asignada correctamente','success');
+        mTab('escuelas');
+      }catch(err){
+        if(err.code==='auth/email-already-in-use'){
+          const escSnap=await db.collection('escuelas').doc(escuelaId).get();
+          const hint=escSnap.data()?._pwdHint||null;
+          let cambiado=false;
+          if(hint){
+            try{
+              const cred=await authTemp.signInWithEmailAndPassword(email,hint);
+              await cred.user.updatePassword(pwd);
+              cambiado=true;
+            }catch(e2){console.warn('hint desactualizado',e2.code);}
+          }
+          await db.collection('escuelas').doc(escuelaId).update({_pwdHint:pwd});
+          toast(cambiado?'Contraseña actualizada correctamente':'Contraseña guardada. Se aplicará en el próximo acceso.',cambiado?'success':'info');
+          mTab('escuelas');
+        }else{throw err;}
+      }
     }catch(e){
-      if(e.code==='auth/email-already-in-use')toast('El usuario ya existe. Usa Firebase Console para cambiar contraseña','info');
-      else toast('Error: '+e.message,'error');
+      toast('Error: '+e.message,'error');
+      if(btn){btn.textContent='Asignar';btn.disabled=false;}
+    }finally{
+      if(appTemp)try{await appTemp.delete();}catch(e){}
     }
   };
 
@@ -2014,9 +2127,13 @@ async function iniciarMovil(){
   };
 
   window.mNuevoCompartido=()=>{
+    const progsOpts=`<option value="">Sin programa específico</option>`+
+      estado.programas.map(p=>`<option value="${p.id}">${p.nombre}</option>`).join('');
     const form=`<div class="m-card"><div class="m-section">Subir Archivo Compartido</div>
     <div style="margin-bottom:.75rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">Nombre *</label><input id="mf-cnom" style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit"></div>
     <div style="margin-bottom:.75rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">Descripción</label><textarea id="mf-cdesc" style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit" rows="2"></textarea></div>
+    <div style="margin-bottom:.75rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">📋 Programa (opcional)</label>
+    <select id="mf-cprog" style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit;font-size:.875rem">${progsOpts}</select></div>
     <div style="margin-bottom:.75rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">Archivo *</label><input id="mf-cfile" type="file" style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit"></div>
     <div style="display:flex;gap:.5rem">
       <button onclick="mTab('compartidos')" class="m-action-btn" style="background:#f1f5f9;color:#374151">Cancelar</button>
@@ -2029,16 +2146,21 @@ async function iniciarMovil(){
     const nombre=document.getElementById('mf-cnom').value.trim();
     const file=document.getElementById('mf-cfile').files[0];
     if(!nombre||!file){toast('Completa todos los campos','warning');return;}
-    document.getElementById('mf-cbtn').textContent='Subiendo...';
+    if(file.size>5*1024*1024){toast('El archivo supera 3 MB','error');return;}
+    const btn=document.getElementById('mf-cbtn');
+    btn.textContent='Subiendo...';btn.disabled=true;
     try{
       const ref=storage.ref(`compartidos/${Date.now()}_${file.name}`);
       await ref.put(file);
       const url=await ref.getDownloadURL();
-      const data={nombre,descripcion:document.getElementById('mf-cdesc').value,url,fecha:new Date().toISOString()};
+      const progId=document.getElementById('mf-cprog')?.value||'';
+      const tipo=getTipoMovil(file.name);
+      const data={nombre,descripcion:document.getElementById('mf-cdesc').value,programaId:progId,url,tipo,fecha:new Date().toISOString()};
       const r=await db.collection('compartidos').add(data);
       estado.compartidos.push({id:r.id,...data});
+      toast('Archivo compartido subido','success');
       mTab('compartidos');
-    }catch(e){toast('Error al subir el archivo','error');}
+    }catch(e){toast('Error al subir el archivo','error');btn.textContent='Subir';btn.disabled=false;}
   };
 }
 </script>

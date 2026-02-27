@@ -1276,7 +1276,7 @@ async function iniciarMovil(){
   const root=document.getElementById('mobile-root');
 
   auth.onAuthStateChanged(async user=>{
-    if(!user){renderLogin();return;}
+    if(!user){renderLogin(estado._ultimoModo||'escuela');return;}
     estado.usuario=user;
     estado.esAdmin=user.email===ADMIN_EMAIL;
   if(!estado.esAdmin){document.getElementById('mobile-root').style.display='none';document.getElementById('root').style.display='block';return;}
@@ -1387,7 +1387,7 @@ async function iniciarMovil(){
         </div>
         <div style="display:flex;gap:.5rem;align-items:center">
           <button onclick="mTab('config')" style="width:32px;height:32px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;font-size:.875rem;cursor:pointer">⚙️</button>
-          <button class="m-btn-out" onclick="auth.signOut()">Salir</button>
+          <button class="m-btn-out" onclick="estado._ultimoModo='admin';auth.signOut()">Salir</button>
         </div>
       </div>
     </div>
@@ -1497,7 +1497,7 @@ async function iniciarMovil(){
               ${docSub?`<div style="display:flex;gap:.35rem;flex-shrink:0;margin-left:.5rem">
                 <button onclick="mVerArchivo('${docSub.url}','${(docSub.nombreArchivo||'').replace(/'/g,"\\'")}','${docSub.tipo||''}')" style="padding:.25rem .5rem;border-radius:6px;border:1px solid #e2e8f0;background:#fff;font-size:.65rem;cursor:pointer;font-family:inherit;color:#3b82f6;font-weight:600">Ver</button>
                 <button onclick="mBorrarDocDetalle('${docSub.id}','${e.id}')" style="padding:.25rem .5rem;border-radius:6px;border:none;background:#fee2e2;color:#dc2626;font-size:.65rem;cursor:pointer;font-family:inherit">🗑️</button>
-              </div>`:`<label style="padding:.25rem .6rem;border-radius:6px;border:none;background:#dbeafe;color:#1d4ed8;font-size:.65rem;cursor:pointer;font-family:inherit;font-weight:600">📤 Subir<input type="file" style="display:none" onchange="mSubirDocMovil(event,'${e.id}','${p.id}','${docNom.replace(/'/g,"\\'")}','${p.nombre.replace(/'/g,"\\'")}','${e.cct}')" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"/></label>`}
+              </div>`:''}
             </div>`;
           }).join('')}
         </div>`;
@@ -1661,6 +1661,15 @@ async function iniciarMovil(){
       <input id="m-cfg-nombre" value="${config.nombreZona||''}" style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit;font-size:.9rem"></div>
       <div style="margin-bottom:1.5rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.4rem">Ciclo Escolar</label>
       <input id="m-cfg-ciclo" value="${config.cicloEscolar||''}" placeholder="2025-2026" style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit;font-size:.9rem"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:1rem;background:#f9fafb;border-radius:10px;margin-bottom:1.5rem;border:1px solid #e2e8f0">
+        <div>
+          <div style="font-size:.875rem;font-weight:600;color:#374151">Permitir borrado en escuelas</div>
+          <div style="font-size:.75rem;color:#64748b;margin-top:.15rem">Las escuelas pueden eliminar sus archivos</div>
+        </div>
+        <div id="m-cfg-toggle" onclick="mToggleBorrado()" style="width:44px;height:24px;border-radius:12px;background:${config.permitirBorradoEscuelas?'#2563eb':'#d1d5db'};cursor:pointer;position:relative;transition:background .2s;flex-shrink:0">
+          <div style="position:absolute;top:2px;left:${config.permitirBorradoEscuelas?'22':'2'}px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)"></div>
+        </div>
+      </div>
       <button onclick="mGuardarConfig()" class="m-action-btn m-btn-p" style="width:100%">Guardar</button>
     </div>`;
   }
@@ -1799,12 +1808,23 @@ async function iniciarMovil(){
     }catch(e){alert('Error al eliminar');}
   };
 
+  window.mToggleBorrado=()=>{
+    estado.config.permitirBorradoEscuelas=!estado.config.permitirBorradoEscuelas;
+    const toggle=document.getElementById('m-cfg-toggle');
+    if(toggle){
+      const val=estado.config.permitirBorradoEscuelas;
+      toggle.style.background=val?'#2563eb':'#d1d5db';
+      toggle.children[0].style.left=val?'22px':'2px';
+    }
+  };
+
   window.mGuardarConfig=async()=>{
     const nombre=document.getElementById('m-cfg-nombre').value;
     const ciclo=document.getElementById('m-cfg-ciclo').value;
+    const permitirBorrado=estado.config.permitirBorradoEscuelas;
     try{
-      await db.collection('configuracion').doc('general').set({...estado.config,nombreZona:nombre,cicloEscolar:ciclo},{merge:true});
-      estado.config={...estado.config,nombreZona:nombre,cicloEscolar:ciclo};
+      await db.collection('configuracion').doc('general').set({...estado.config,nombreZona:nombre,cicloEscolar:ciclo,permitirBorradoEscuelas:permitirBorrado},{merge:true});
+      estado.config={...estado.config,nombreZona:nombre,cicloEscolar:ciclo,permitirBorradoEscuelas:permitirBorrado};
       alert('✅ Guardado');renderAdmin();
     }catch(e){alert('Error al guardar');}
   };

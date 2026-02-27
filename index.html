@@ -363,7 +363,7 @@ const stats=calcStats(escuelas,programas,documentos);
 const docsConDetalles=documentos.map(doc=>{
 const escuela=escuelas.find(e=>e.id===doc.escuelaId);
 const programa=programas.find(p=>p.id===doc.programaId);
-return{...doc,escuelaNombre:escuela?.nombre||'Desconocida',escuelaCCT:escuela?.cct||'N/A',programaNombre:programa?.nombre||'Desconocido'};
+return{...doc,escuelaNombre:escuela?.nombre||'Desconocida',escuelaCCT:escuela?.cct||'N/A',escuelaComunidad:escuela?.comunidad||'',programaNombre:programa?.nombre||'Desconocido'};
 });
 
 let docsFiltrados=docsConDetalles;
@@ -518,7 +518,7 @@ return(
 <div className="container" style={{padding:'1rem 1.5rem',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
 <div style={{display:'flex',alignItems:'center',gap:'1rem'}}>
 {config.logoUrl&&<img src={config.logoUrl} alt="Logo" style={{height:'45px'}}/>}
-<div><h1 style={{fontSize:'1.125rem',fontWeight:'600'}}>{escuela.nombre}</h1><p style={{fontSize:'.875rem',color:'#6b7280'}}>CCT: {escuela.cct}</p></div>
+<div><h1 style={{fontSize:'1.125rem',fontWeight:'600'}}>{escuela.nombre}</h1><p style={{fontSize:'.875rem',color:'#6b7280'}}>CCT: {escuela.cct}</p>{escuela.comunidad&&<p style={{fontSize:'.75rem',color:'#94a3b8'}}>📍 {escuela.comunidad}</p>}{escuela.director&&<p style={{fontSize:'.75rem',color:'#94a3b8'}}>👤 {escuela.director}</p>}</div>
 </div>
 <button onClick={onLogout} className="btn btn-secondary">Salir</button>
 </div>
@@ -600,9 +600,12 @@ return(
 <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:'1rem'}}>
 {compEscuela.map(c=>{
 const tipo=c.tipo||(c.nombre||'').split('.').pop().toLowerCase();
-const esImagen=['Imagen','jpg','jpeg','png','gif','webp'].includes(tipo);
-const icono=tipo==='PDF'||tipo==='pdf'?'PDF':tipo==='Word'||tipo==='docx'||tipo==='doc'?'DOC':tipo==='Excel'||tipo==='xlsx'||tipo==='xls'?'XLS':esImagen?'IMG':'FILE';
-const icoColor=tipo==='PDF'||tipo==='pdf'?['#fee2e2','#dc2626']:tipo==='Word'||tipo==='docx'?['#dbeafe','#2563eb']:tipo==='Excel'||tipo==='xlsx'?['#d1fae5','#059669']:esImagen?['#fef3c7','#d97706']:['#f1f5f9','#64748b'];
+const esPDF=['PDF','pdf','application/pdf'].includes(tipo);
+const esWord=['Word','docx','doc','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document'].includes(tipo);
+const esExcel=['Excel','xlsx','xls','application/vnd.ms-excel','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'].includes(tipo);
+const esImagen=['Imagen','jpg','jpeg','png','gif','webp','image/jpeg','image/png','image/gif','image/webp'].includes(tipo);
+const icono=esPDF?'PDF':esWord?'DOC':esExcel?'XLS':esImagen?'IMG':'FILE';
+const icoColor=esPDF?['#fee2e2','#dc2626']:esWord?['#dbeafe','#2563eb']:esExcel?['#d1fae5','#059669']:esImagen?['#fef3c7','#d97706']:['#f1f5f9','#64748b'];
 return(
 <div key={c.id} style={{border:'1px solid #e5e7eb',borderRadius:'12px',overflow:'hidden',display:'flex',flexDirection:'column'}}>
 <div style={{height:'120px',background:'#f3f4f6',display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden'}}>
@@ -770,7 +773,7 @@ return(<div>
 {documentos.map(d=>(
 <tr key={d.id}>
 <td><input type="checkbox" checked={selAdmin.includes(d.id)} onChange={(ev)=>{if(ev.target.checked){setSelAdmin([...selAdmin,d.id]);}else{setSelAdmin(selAdmin.filter(id=>id!==d.id));}}}/></td>
-<td><div><p style={{fontWeight:'500',fontSize:'.875rem'}}>{d.escuelaNombre}</p><p style={{fontSize:'.75rem',color:'#6b7280'}}>{d.escuelaCCT}</p></div></td>
+<td><div><p style={{fontWeight:'500',fontSize:'.875rem'}}>{d.escuelaNombre}</p><p style={{fontSize:'.75rem',color:'#6b7280'}}>{d.escuelaCCT}</p>{d.escuelaComunidad&&<p style={{fontSize:'.7rem',color:'#94a3b8'}}>📍 {d.escuelaComunidad}</p>}</div></td>
 <td style={{fontSize:'.875rem'}}>{d.programaNombre}</td>
 <td style={{fontSize:'.875rem',fontWeight:'500'}}>{d.nombreDocumento}</td>
 <td style={{fontSize:'.875rem',color:'#6b7280'}}>{d.nombreArchivo}</td>
@@ -1051,7 +1054,7 @@ try{
 const ref=storage.ref(`compartidos/${Date.now()}_${form.archivo.name}`);
 await ref.put(form.archivo);
 const url=await ref.getDownloadURL();
-const data={nombre:form.nombre,descripcion:form.descripcion,programaId:form.programaId,url,fecha:new Date().toISOString()};
+const data={nombre:form.nombre,descripcion:form.descripcion,programaId:form.programaId,url,tipo:getTipo(form.archivo),fecha:new Date().toISOString()};
 await db.collection('compartidos').add(data);
 toast('Archivo compartido subido correctamente','success');
 onClose();
@@ -1371,24 +1374,32 @@ async function iniciarMovil(){
 
   window.mLogin=async()=>{
     const modo=estado._modoLogin||'escuela';
-      const pwd=document.getElementById('m-pwd')?document.getElementById('m-pwd').value:'';
-      const err=document.getElementById('m-login-err');
-      if(err)err.style.display='none';
-      try{
-        if(modo==='admin'){
-          await auth.signInWithEmailAndPassword(ADMIN_EMAIL,pwd);
-        }else{
-          const cctEl=document.getElementById('m-cct');
-          const cct=cctEl?cctEl.value.trim().toUpperCase():'';
-          if(!cct){if(err){err.style.display='block';err.textContent='Ingresa tu CCT';}return;}
-          const snap=await db.collection('escuelas').where('cct','==',cct).limit(1).get();
-          if(snap.empty){if(err){err.style.display='block';err.textContent='CCT no encontrado en el sistema';}return;}
-          const email=cct.toLowerCase()+'@escuela.local';
-          await auth.signInWithEmailAndPassword(email,pwd);
-        }
-      }catch(e){
-        if(err){err.style.display='block';err.textContent=e.code==='auth/wrong-password'||e.code==='auth/user-not-found'?'CCT o contraseña incorrectos':'Error de conexión. Intenta de nuevo.';}
+    const pwd=document.getElementById('m-pwd')?document.getElementById('m-pwd').value:'';
+    const err=document.getElementById('m-login-err');
+    if(err)err.style.display='none';
+    // Mostrar spinner de carga mientras se autentica
+    const btn=document.querySelector('[onclick="mLogin()"]');
+    if(btn){btn.disabled=true;btn.textContent='Entrando...';}
+    try{
+      if(modo==='admin'){
+        // Ocultar root de React ANTES de signIn para evitar pantalla en blanco
+        document.getElementById('root').style.display='none';
+        document.getElementById('mobile-root').style.display='block';
+        await auth.signInWithEmailAndPassword(ADMIN_EMAIL,pwd);
+      }else{
+        const cctEl=document.getElementById('m-cct');
+        const cct=cctEl?cctEl.value.trim().toUpperCase():'';
+        if(!cct){if(err){err.style.display='block';err.textContent='Ingresa tu CCT';}if(btn){btn.disabled=false;btn.textContent='Ingresar';}return;}
+        const snap=await db.collection('escuelas').where('cct','==',cct).limit(1).get();
+        if(snap.empty){if(err){err.style.display='block';err.textContent='CCT no encontrado en el sistema';}if(btn){btn.disabled=false;btn.textContent='Ingresar';}return;}
+        const email=cct.toLowerCase()+'@escuela.local';
+        await auth.signInWithEmailAndPassword(email,pwd);
       }
+    }catch(e){
+      document.getElementById('root').style.display='block';
+      if(err){err.style.display='block';err.textContent=e.code==='auth/wrong-password'||e.code==='auth/user-not-found'?'Contraseña incorrecta':'Error de conexión. Intenta de nuevo.';}
+      if(btn){btn.disabled=false;btn.textContent='Ingresar';}
+    }
   }
 
   function renderAdmin(){
@@ -1760,7 +1771,7 @@ async function iniciarMovil(){
   window.mSubirDocMovil=async(event,escuelaId,programaId,docNom,progNombre,cct)=>{
     const file=event.target.files[0];
     if(!file)return;
-    if(file.size>3*1024*1024){toast('El archivo supera 3 MB','error');event.target.value='';return;}
+    if(file.size>5*1024*1024){toast('El archivo supera 3 MB','error');event.target.value='';return;}
     const btn=event.target.parentElement;
     btn.textContent='Subiendo...';btn.style.pointerEvents='none';
     try{

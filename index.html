@@ -518,7 +518,7 @@ return(
 <div className="container" style={{padding:'1rem 1.5rem',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
 <div style={{display:'flex',alignItems:'center',gap:'1rem'}}>
 {config.logoUrl&&<img src={config.logoUrl} alt="Logo" style={{height:'45px'}}/>}
-<div><h1 style={{fontSize:'1.125rem',fontWeight:'600'}}>{escuela.nombre}</h1><p style={{fontSize:'.875rem',color:'#6b7280'}}>CCT: {escuela.cct}</p>{escuela.comunidad&&<p style={{fontSize:'.75rem',color:'#94a3b8'}}>📍 {escuela.comunidad}</p>}{escuela.director&&<p style={{fontSize:'.75rem',color:'#94a3b8'}}>👤 {escuela.director}</p>}</div>
+<div><h1 style={{fontSize:'1.125rem',fontWeight:'600'}}>🏫 {escuela.nombre}</h1><p style={{fontSize:'.875rem',color:'#6b7280'}}>🪪 CCT: {escuela.cct}</p>{escuela.comunidad&&<p style={{fontSize:'.75rem',color:'#94a3b8'}}>📍 {escuela.comunidad}</p>}{escuela.director&&<p style={{fontSize:'.75rem',color:'#94a3b8'}}>👤 {escuela.director}</p>}</div>
 </div>
 <button onClick={onLogout} className="btn btn-secondary">Salir</button>
 </div>
@@ -599,7 +599,8 @@ return(
 <h3 style={{fontSize:'1.125rem',fontWeight:'600',marginBottom:'1rem'}}>Archivos Compartidos por Supervisión Escolar</h3>
 <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:'1rem'}}>
 {compEscuela.map(c=>{
-const tipo=c.tipo||(c.nombre||'').split('.').pop().toLowerCase();
+const _ext=(c.nombre||c.url||'').split('.').pop().split('?')[0].toLowerCase();
+const tipo=c.tipo||(_ext==='pdf'?'PDF':_ext==='docx'||_ext==='doc'?'Word':_ext==='xlsx'||_ext==='xls'?'Excel':['jpg','jpeg','png','gif','webp'].includes(_ext)?'Imagen':_ext)||'FILE';
 const esPDF=['PDF','pdf','application/pdf'].includes(tipo);
 const esWord=['Word','docx','doc','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document'].includes(tipo);
 const esExcel=['Excel','xlsx','xls','application/vnd.ms-excel','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'].includes(tipo);
@@ -934,39 +935,56 @@ e.preventDefault();
 if(pwd!==conf){toast('Las contraseñas no coinciden','warning');return;}
 if(pwd.length<6){toast('Mínimo 6 caracteres','warning');return;}
 setLoading(true);
+const appKey=`pwd_${Date.now()}`;
+let appTemp=null;
 try{
-// Usar app secundaria para no cerrar sesión del admin
-const appTemp=firebase.initializeApp(firebaseConfig,`pwd_${Date.now()}`);
+appTemp=firebase.initializeApp(firebaseConfig,appKey);
 const authTemp=appTemp.auth();
 try{
-// Intentar crear usuario nuevo
+// Intento 1: crear usuario nuevo (primera vez)
 await authTemp.createUserWithEmailAndPassword(email,pwd);
-toast('✅ Contraseña asignada correctamente','success');
+// Guardar hint para cambios futuros
+await db.collection('escuelas').doc(escuela.id).update({_pwdHint:pwd});
+toast('Contraseña asignada correctamente','success');
 onClose();
 }catch(err){
 if(err.code==='auth/email-already-in-use'){
-// Usuario existe — iniciar sesión con email para obtener usuario y cambiar contraseña
-// Como no sabemos la contraseña actual usamos Admin SDK via función auxiliar
-// Alternativa segura: borrar y recrear via app temporal
-const methods=await authTemp.fetchSignInMethodsForEmail(email);
-if(methods.length>0){
-// Enviar reset de contraseña al correo de la escuela (si tienen acceso)
-// Mejor solución: guardar contraseña en Firestore cifrada como hint
+// Usuario ya existe — necesitamos cambiar contraseña
+// Obtenemos el hint guardado previamente
+const escSnap=await db.collection('escuelas').doc(escuela.id).get();
+const hint=escSnap.data()?._pwdHint||null;
+if(hint){
+try{
+// Iniciar sesión con contraseña anterior para obtener credencial
+const cred=await authTemp.signInWithEmailAndPassword(email,hint);
+await cred.user.updatePassword(pwd);
+// Actualizar hint con nueva contraseña
 await db.collection('escuelas').doc(escuela.id).update({_pwdHint:pwd});
-// Crear entrada en colección de cambios pendientes
-await db.collection('_pwdChanges').doc(escuela.cct).set({email,pwd,fecha:new Date().toISOString()});
-toast('✅ Contraseña actualizada. Se aplicará en el próximo acceso.','success');
+toast('Contraseña actualizada correctamente','success');
+onClose();
+}catch(e2){
+// Si el hint está desactualizado, forzar con delete+recreate
+// No tenemos Admin SDK, así que guardamos en cola de cambios
+await db.collection('_pwdChanges').doc(escuela.cct).set({email,pwd,fecha:new Date().toISOString(),pendiente:true});
+await db.collection('escuelas').doc(escuela.id).update({_pwdHint:pwd});
+toast('Contraseña guardada. Se aplicará cuando la escuela cierre e inicie sesión nuevamente.','info');
+onClose();
+}
+}else{
+// Sin hint — guardar nueva contraseña y avisar
+await db.collection('_pwdChanges').doc(escuela.cct).set({email,pwd,fecha:new Date().toISOString(),pendiente:true});
+await db.collection('escuelas').doc(escuela.id).update({_pwdHint:pwd});
+toast('Contraseña guardada. Se aplicará cuando la escuela cierre e inicie sesión nuevamente.','info');
 onClose();
 }
 }else{throw err;}
-}finally{
-await appTemp.delete();
 }
 }catch(error){
 console.error(error);
-toast('Error al asignar contraseña','error');
+toast('Error: '+error.message,'error');
 }finally{
 setLoading(false);
+if(appTemp)try{await appTemp.delete();}catch(e){}
 }
 };
 return(

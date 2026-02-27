@@ -1246,7 +1246,6 @@ root.render(<App/>);
 const esCelular=()=>window.innerWidth<=768||/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
 if(esCelular()){
-  document.getElementById('root').style.display='none';
   document.getElementById('mobile-root').style.display='block';
 
   // Esperar a que React cargue los datos
@@ -1282,6 +1281,7 @@ async function iniciarMovil(){
     estado.esAdmin=user.email===ADMIN_EMAIL;
   if(!estado.esAdmin){document.getElementById('mobile-root').style.display='none';document.getElementById('root').style.display='block';return;}
     await cargarDatos();
+    document.getElementById('root').style.display='none';
     renderAdmin();
   });
 

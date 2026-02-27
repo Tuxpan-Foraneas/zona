@@ -1280,7 +1280,7 @@ async function iniciarMovil(){
     if(!user){renderLogin();return;}
     estado.usuario=user;
     estado.esAdmin=user.email===ADMIN_EMAIL;
-    if(!estado.esAdmin){root.innerHTML='<div style="padding:2rem;text-align:center;color:#ef4444">Solo acceso para administrador</div>';return;}
+  if(!estado.esAdmin){document.getElementById('mobile-root').style.display='none';document.getElementById('root').style.display='block';return;}
     await cargarDatos();
     renderAdmin();
   });

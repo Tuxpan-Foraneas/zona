@@ -1305,6 +1305,7 @@ async function iniciarMovil(){
     filtroEsc:'',filtroProg:'',filtroRubrica:'',dashboardTodas:false,
     modal:null,modalData:null
   };
+  window._mEstado=estado;
 
   const root=document.getElementById('mobile-root');
 
@@ -1378,7 +1379,7 @@ async function iniciarMovil(){
   }
   function fmtFecha(iso){if(!iso)return'';return new Date(iso).toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit',year:'2-digit'});}
 
-  function renderLogin(modo='escuela'){
+  window.renderLogin=function(modo='escuela'){
     root.innerHTML=`<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem;background:linear-gradient(135deg,#667eea,#764ba2)">
     <div style="background:#fff;border-radius:16px;padding:2rem;width:100%;max-width:360px">
     <div style="text-align:center;margin-bottom:1.5rem">
@@ -1386,8 +1387,8 @@ async function iniciarMovil(){
       <p style="color:#64748b;font-size:.875rem">Sistema de Documentación Escolar</p>
     </div>
     <div style="display:flex;gap:.5rem;margin-bottom:1.5rem;background:#f1f5f9;padding:.25rem;border-radius:10px">
-      <button id="m-tab-esc" onclick="estado._ultimoModo='escuela';renderLogin('escuela')" style="flex:1;padding:.6rem;border-radius:8px;border:none;font-weight:600;font-size:.875rem;cursor:pointer;font-family:inherit;background:${modo==='escuela'?'#fff':'transparent'};color:${modo==='escuela'?'#2563eb':'#94a3b8'};box-shadow:${modo==='escuela'?'0 1px 3px rgba(0,0,0,.1)':'none'}">Escuela</button>
-      <button id="m-tab-adm" onclick="estado._ultimoModo='admin';renderLogin('admin')" style="flex:1;padding:.6rem;border-radius:8px;border:none;font-weight:600;font-size:.875rem;cursor:pointer;font-family:inherit;background:${modo==='admin'?'#fff':'transparent'};color:${modo==='admin'?'#2563eb':'#94a3b8'};box-shadow:${modo==='admin'?'0 1px 3px rgba(0,0,0,.1)':'none'}">Administrador</button>
+      <button id="m-tab-esc" onclick="window._mEstado&&(window._mEstado._modoLogin='escuela');window.renderLogin('escuela')" style="flex:1;padding:.6rem;border-radius:8px;border:none;font-weight:600;font-size:.875rem;cursor:pointer;font-family:inherit;background:${modo==='escuela'?'#fff':'transparent'};color:${modo==='escuela'?'#2563eb':'#94a3b8'};box-shadow:${modo==='escuela'?'0 1px 3px rgba(0,0,0,.1)':'none'}">Escuela</button>
+      <button id="m-tab-adm" onclick="window._mEstado&&(window._mEstado._modoLogin='admin');window.renderLogin('admin')" style="flex:1;padding:.6rem;border-radius:8px;border:none;font-weight:600;font-size:.875rem;cursor:pointer;font-family:inherit;background:${modo==='admin'?'#fff':'transparent'};color:${modo==='admin'?'#2563eb':'#94a3b8'};box-shadow:${modo==='admin'?'0 1px 3px rgba(0,0,0,.1)':'none'}">Administrador</button>
     </div>
     <div id="m-login-err" style="display:none;padding:.75rem;background:#fee2e2;border-radius:8px;color:#dc2626;font-size:.8rem;margin-bottom:1rem"></div>
     ${modo==='escuela'?'<input id="m-cct" type="text" placeholder="CCT de tu escuela (30EPR0000A)" style="width:100%;padding:.75rem;border:1px solid #e2e8f0;border-radius:8px;font-size:.95rem;margin-bottom:.75rem;font-family:inherit;text-transform:uppercase">':''}
@@ -1396,10 +1397,11 @@ async function iniciarMovil(){
     <div style="margin-top:1rem;padding:.75rem;background:#f9fafb;border-radius:8px;font-size:.72rem;color:#94a3b8;text-align:center">💡 Si el sistema tarda en conectar, por favor espera.</div>
     </div></div>`;
     estado._modoLogin=modo;
+    if(window._mEstado)window._mEstado._modoLogin=modo;
   }
 
   window.mLogin=async()=>{
-    const modo=estado._modoLogin||'escuela';
+    const modo=(window._mEstado&&window._mEstado._modoLogin)||estado._modoLogin||'escuela';
     const pwd=document.getElementById('m-pwd')?document.getElementById('m-pwd').value:'';
     const err=document.getElementById('m-login-err');
     if(err)err.style.display='none';
@@ -1470,7 +1472,7 @@ async function iniciarMovil(){
     renderTab();
   }
 
-  function renderTab(){
+  window.renderTab=function renderTab(){
     const c=document.getElementById('m-content');
     if(!c)return;
     const{tab}=estado;
@@ -1490,7 +1492,7 @@ async function iniciarMovil(){
     if(estado.dashboardTodas){
       return`<div>
         <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1rem">
-          <button onclick="estado.dashboardTodas=false;renderTab()" style="display:flex;align-items:center;gap:.4rem;border:none;background:none;color:#3b82f6;font-size:.875rem;font-weight:600;cursor:pointer;font-family:inherit;padding:0">‹ Volver</button>
+          <button onclick="window._mEstado.dashboardTodas=false;window.renderTab()" style="display:flex;align-items:center;gap:.4rem;border:none;background:none;color:#3b82f6;font-size:.875rem;font-weight:600;cursor:pointer;font-family:inherit;padding:0">‹ Volver</button>
           <div class="m-section" style="margin:0">Todas las escuelas (${estado.escuelas.length})</div>
         </div>
         ${estado.escuelas.map((e,i)=>{const pct=getPct(e);const c=getColor(i);return`
@@ -1535,7 +1537,7 @@ async function iniciarMovil(){
         <div class="m-pct" style="color:${getPctColor(pct)}">${pct}%</div>
       </div>
     </div>`}).join('')}
-    ${estado.escuelas.length>10?`<div style="text-align:center;padding:1rem"><button onclick="estado.dashboardTodas=true;renderTab()" style="padding:.6rem 1.5rem;border-radius:10px;border:1px solid #e2e8f0;background:#fff;color:#3b82f6;font-weight:600;cursor:pointer;font-family:inherit">Ver todas (${estado.escuelas.length})</button></div>`:''}`;
+    ${estado.escuelas.length>10?`<div style="text-align:center;padding:1rem"><button onclick="window._mEstado.dashboardTodas=true;window.renderTab()" style="padding:.6rem 1.5rem;border-radius:10px;border:1px solid #e2e8f0;background:#fff;color:#3b82f6;font-weight:600;cursor:pointer;font-family:inherit">Ver todas (${estado.escuelas.length})</button></div>`:''}`;
   }
 
   window.mVerEscuela=id=>{

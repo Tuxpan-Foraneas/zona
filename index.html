@@ -617,8 +617,12 @@ return(
 const hoy=new Date();const limite=new Date(prog.fechaLimite);
 const dias=Math.ceil((limite-hoy)/(1000*60*60*24));
 const vencido=dias<0;const proximo=dias>=0&&dias<=7;
-return(<span style={{display:'inline-flex',alignItems:'center',gap:'.3rem',fontSize:'.72rem',fontWeight:'700',padding:'3px 8px',borderRadius:'6px',background:vencido?'#fee2e2':proximo?'#fef3c7':'#f0fdf4',color:vencido?'#dc2626':proximo?'#92400e':'#065f46'}}>
-{vencido?'🔴':proximo?'🟡':'🟢'}{vencido?'Vencido: ':'Límite: '}{limite.toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'})}{proximo&&!vencido&&` (${dias}d)`}{vencido&&` (${Math.abs(dias)}d atrás)`}
+const yaCompleto=docs.length>=prog.documentosRequeridos.length;
+const bgColor=vencido&&!yaCompleto?'#fee2e2':proximo&&!yaCompleto?'#fef3c7':'#f0fdf4';
+const txColor=vencido&&!yaCompleto?'#dc2626':proximo&&!yaCompleto?'#92400e':'#065f46';
+const icono=vencido&&!yaCompleto?'🔴':proximo&&!yaCompleto?'🟡':'🟢';
+return(<span style={{display:'inline-flex',alignItems:'center',gap:'.3rem',fontSize:'.72rem',fontWeight:'700',padding:'3px 8px',borderRadius:'6px',background:bgColor,color:txColor}}>
+{icono}{vencido?'Vencido: ':'Límite: '}{limite.toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'})}{proximo&&!vencido&&` (${dias}d)`}{vencido&&!yaCompleto&&` (${Math.abs(dias)}d atrás)`}
 </span>);
 })()}
 </div>
@@ -655,6 +659,7 @@ return(
 <div style={{minWidth:0}}>
 <p style={{fontWeight:'600',fontSize:'.875rem',color:'#0f172a',margin:0,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{doc}</p>
 {entregado&&<p style={{fontSize:'.7rem',color:'#64748b',margin:0}}>{entregado.tipo} • {entregado.nombreArchivo}</p>}
+{entregado&&entregado.fecha&&<p style={{fontSize:'.65rem',color:'#94a3b8',margin:'2px 0 0',display:'flex',alignItems:'center',gap:'3px'}}>📅 {(d=>{const dt=new Date(d);return dt.toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'})+' · '+dt.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});})(entregado.fecha)}</p>}
 </div>
 </div>
 <div style={{display:'flex',gap:'.4rem',flexShrink:0}}>
@@ -767,6 +772,7 @@ return(
 {d?<span style={{width:'20px',height:'20px',borderRadius:'50%',background:'#10b981',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:'.65rem',fontWeight:'800',flexShrink:0}}>✓</span>:<span style={{width:'20px',height:'20px',borderRadius:'50%',border:'1.5px dashed #fca5a5',flexShrink:0}}/>}
 <span style={{fontSize:'.8rem',fontWeight:'600',color:'#0f172a',flex:1}}>{doc}</span>
 {d&&<span style={{fontSize:'.65rem',color:'#64748b',background:'#f1f5f9',padding:'1px 6px',borderRadius:'4px'}}>{d.tipo}</span>}
+{d&&d.fecha&&<span style={{fontSize:'.62rem',color:'#94a3b8',marginLeft:'4px'}}>📅 {(()=>{const dt=new Date(d.fecha);return dt.toLocaleDateString('es-MX',{day:'2-digit',month:'short'})+' '+dt.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});})()}</span>}
 </div>
 );
 })}
@@ -1564,7 +1570,7 @@ async function iniciarMovil(){
     if(tipo==='Imagen')return['#fef3c7','#d97706','IMG'];
     return['#f1f5f9','#64748b','FILE'];
   }
-  function fmtFecha(iso){if(!iso)return'';return new Date(iso).toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit',year:'2-digit'});}
+  function fmtFecha(iso){if(!iso)return'';const d=new Date(iso);return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'2-digit'})+' '+d.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});}
 
   window.renderLogin=function(modo='escuela'){
     const logoHtml=estado.config.logoUrl
@@ -1780,6 +1786,7 @@ async function iniciarMovil(){
                 <div style="min-width:0">
                   <div style="font-size:.75rem;font-weight:600;color:#374151;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${docNom}</div>
                   ${docSub?`<div style="font-size:.65rem;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${docSub.nombreArchivo}</div>`:''}
+                  ${docSub&&docSub.fecha?`<div style="font-size:.6rem;color:#94a3b8;margin-top:1px">📅 ${(()=>{const dt=new Date(docSub.fecha);return dt.toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'2-digit'})+' '+dt.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});})()}</div>`:''}
                 </div>
               </div>
               ${docSub?`<div style="display:flex;gap:.35rem;flex-shrink:0;margin-left:.5rem">

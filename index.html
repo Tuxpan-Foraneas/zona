@@ -509,79 +509,130 @@ setDocumentos(documentos.filter(d=>!seleccionados.includes(d.id)));
 setSeleccionados([]);
 };
 return(
-<div style={{minHeight:'100vh',background:'#f5f5f5'}}>
-{verArchivo&&(<div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.85)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:'1rem'}} onClick={()=>setVerArchivo(null)}><div style={{background:'#fff',borderRadius:'12px',maxWidth:'860px',width:'100%',maxHeight:'90vh',overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,.5)'}} onClick={e=>e.stopPropagation()}><div style={{background:'#2d2d2d',padding:'.75rem 1rem',display:'flex',alignItems:'center',justifyContent:'space-between'}}><span style={{color:'#fff',fontWeight:'600',fontSize:'.875rem'}}>👁️ {verArchivo.nombre}</span><button onClick={()=>setVerArchivo(null)} style={{background:'none',border:'none',color:'#fff',fontSize:'1.5rem',cursor:'pointer'}}>×</button></div><div style={{padding:'1rem',display:'flex',alignItems:'center',justifyContent:'center',minHeight:'400px',background:'#f9fafb'}}>{verArchivo.tipo==='Imagen'?<img src={verArchivo.url} style={{maxWidth:'100%',maxHeight:'70vh',objectFit:'contain',borderRadius:'8px'}} alt={verArchivo.nombre}/>:verArchivo.tipo==='Excel'?<VisorExcel url={verArchivo.url}/>:<iframe src={`https://docs.google.com/gview?url=${encodeURIComponent(verArchivo.url)}&embedded=true`} style={{width:'100%',height:'70vh',border:'none',borderRadius:'8px'}} title={verArchivo.nombre}/>}</div></div></div>)}
-{previa&&(<div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.7)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:'1rem'}}><div style={{background:'#fff',borderRadius:'12px',maxWidth:'400px',width:'100%',overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,.3)'}}><div style={{background:'#2d2d2d',padding:'.75rem 1rem',display:'flex',alignItems:'center',gap:'.5rem'}}><span style={{color:'#fff',fontWeight:'600',fontSize:'.875rem'}}>Vista previa</span></div><div style={{padding:'1.5rem',textAlign:'center'}}>{previa.previstaUrl?<img src={previa.previstaUrl} style={{maxHeight:'180px',maxWidth:'100%',borderRadius:'8px',marginBottom:'1rem'}} alt="preview"/>:<div style={{fontSize:'3.5rem',marginBottom:'1rem'}}>{previa.tipo==='PDF'?'PDF':previa.tipo==='Word'?'WORD':previa.tipo==='Excel'?'EXCEL':'FILE'}</div>}<p style={{fontWeight:'600'}}>{previa.nombre}</p><p style={{fontSize:'.875rem',color:'#6b7280',marginBottom:'1rem'}}>{previa.tipo}</p>{subiendo&&<div style={{marginBottom:'1rem'}}><div style={{height:'8px',background:'#e5e7eb',borderRadius:'4px',overflow:'hidden'}}><div style={{width:progreso+'%',height:'100%',background:'#2563eb',transition:'width .3s'}}/></div></div>}<div style={{display:'flex',gap:'1rem'}}><button onClick={()=>setPrevia(null)} disabled={subiendo} style={{flex:1,padding:'.65rem',borderRadius:'8px',border:'2px solid #d1d5db',background:'#fff',fontWeight:'600',cursor:'pointer',color:'#6b7280'}}>Cancelar</button><button onClick={confirmarSubida} disabled={subiendo} style={{flex:1,padding:'.65rem',borderRadius:'8px',border:'none',background:'#2563eb',color:'#fff',fontWeight:'600',cursor:subiendo?'not-allowed':'pointer'}}>{subiendo?'Subiendo '+progreso+'%':'Confirmar'}</button></div></div></div></div>)}
-{modalBorrar&&(<div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:'1rem'}}><div style={{background:'#fff',borderRadius:'12px',maxWidth:'400px',width:'100%',overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,.3)'}}><div style={{background:'#2d2d2d',padding:'.75rem 1rem'}}><span style={{color:'#fff',fontWeight:'600',fontSize:'.875rem'}}>Confirmar eliminación</span></div><div style={{padding:'1.5rem',textAlign:'center'}}><p style={{color:'#ef4444',fontWeight:'700',fontSize:'1.1rem',marginBottom:'1rem'}}>Eliminar archivo?</p><p style={{color:'#374151',marginBottom:'1.5rem',fontSize:'.9rem'}}>Esta acción no se puede deshacer.</p><div style={{display:'flex',gap:'1rem',justifyContent:'flex-end'}}><button onClick={()=>setModalBorrar(null)} style={{padding:'.65rem 1.5rem',borderRadius:'8px',border:'2px solid #d1d5db',background:'#fff',fontWeight:'600',cursor:'pointer',color:'#6b7280'}}>Cancelar</button><button onClick={()=>confirmarBorrar(modalBorrar)} style={{padding:'.65rem 1.5rem',borderRadius:'8px',border:'none',background:'#ef4444',color:'#fff',fontWeight:'600',cursor:'pointer'}}>Eliminar</button></div></div></div></div>)}
-{mostrarAviso&&pendientes.length>0&&(<div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:'1rem'}}><div style={{background:'#fff',borderRadius:'12px',maxWidth:'480px',width:'100%',overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,.3)'}}><div style={{background:'#2d2d2d',padding:'.75rem 1rem'}}><span style={{color:'#fff',fontWeight:'600',fontSize:'.875rem'}}>DOCUMENTOS PENDIENTES</span></div><div style={{padding:'1.5rem'}}><p style={{color:'#ef4444',fontWeight:'700',fontSize:'1.25rem',marginBottom:'1.5rem'}}>¡Tienes documentos pendientes!</p><div style={{display:'flex',flexDirection:'column',gap:'1rem',maxHeight:'250px',overflowY:'auto',marginBottom:'1.5rem'}}>{pendientes.map((p,i)=>(<div key={i} style={{padding:'1rem',background:'#f9fafb',borderRadius:'8px',borderLeft:'4px solid #ef4444'}}><p style={{fontWeight:'700',marginBottom:'.25rem'}}>{p.programa}</p>{p.docs.map((d,j)=><p key={j} style={{fontSize:'.875rem',color:'#374151'}}>- {d}</p>)}</div>))}</div><div style={{display:'flex',gap:'1rem',justifyContent:'flex-end'}}><button onClick={()=>setMostrarAviso(false)} style={{padding:'.65rem 1.5rem',borderRadius:'8px',border:'2px solid #d1d5db',background:'#fff',fontWeight:'600',cursor:'pointer',color:'#6b7280'}}>Después</button><button onClick={()=>setMostrarAviso(false)} style={{padding:'.65rem 1.5rem',borderRadius:'8px',border:'none',background:'#ef4444',color:'#fff',fontWeight:'600',cursor:'pointer'}}>Subir ahora</button></div></div></div></div>)}
-<header style={{background:'#fff',borderBottom:'1px solid #e5e7eb'}}>
-<div className="container" style={{padding:'1rem 1.5rem',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+<div style={{minHeight:'100vh',background:'#f0f4f8'}}>
+
+{/* ── MODAL VER ARCHIVO ── */}
+{verArchivo&&(<div style={{position:'fixed',inset:0,background:'rgba(15,23,42,.9)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:'1rem'}} onClick={()=>setVerArchivo(null)}><div style={{background:'#fff',borderRadius:'16px',maxWidth:'860px',width:'100%',maxHeight:'90vh',overflow:'hidden',boxShadow:'0 25px 80px rgba(0,0,0,.6)'}} onClick={e=>e.stopPropagation()}><div style={{background:'linear-gradient(135deg,#1e3a8a,#1d4ed8)',padding:'1rem 1.25rem',display:'flex',alignItems:'center',justifyContent:'space-between'}}><span style={{color:'#fff',fontWeight:'700',fontSize:'.9rem',display:'flex',alignItems:'center',gap:'.5rem'}}>👁 {verArchivo.nombre}</span><button onClick={()=>setVerArchivo(null)} style={{background:'rgba(255,255,255,.15)',border:'none',color:'#fff',fontSize:'1.25rem',cursor:'pointer',width:'32px',height:'32px',borderRadius:'8px',display:'flex',alignItems:'center',justifyContent:'center'}}>×</button></div><div style={{padding:'1rem',display:'flex',alignItems:'center',justifyContent:'center',minHeight:'400px',background:'#f8fafc'}}>{verArchivo.tipo==='Imagen'?<img src={verArchivo.url} style={{maxWidth:'100%',maxHeight:'70vh',objectFit:'contain',borderRadius:'8px'}} alt={verArchivo.nombre}/>:verArchivo.tipo==='Excel'?<VisorExcel url={verArchivo.url}/>:<iframe src={`https://docs.google.com/gview?url=${encodeURIComponent(verArchivo.url)}&embedded=true`} style={{width:'100%',height:'70vh',border:'none',borderRadius:'8px'}} title={verArchivo.nombre}/>}</div></div></div>)}
+
+{/* ── MODAL VISTA PREVIA SUBIDA ── */}
+{previa&&(<div style={{position:'fixed',inset:0,background:'rgba(15,23,42,.8)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:'1rem'}}><div style={{background:'#fff',borderRadius:'20px',maxWidth:'400px',width:'100%',overflow:'hidden',boxShadow:'0 25px 80px rgba(0,0,0,.4)'}}><div style={{background:'linear-gradient(135deg,#1e3a8a,#1d4ed8)',padding:'1rem 1.25rem',display:'flex',alignItems:'center',gap:'.5rem'}}><span style={{color:'#fff',fontWeight:'700',fontSize:'.9rem'}}>📎 Vista previa</span></div><div style={{padding:'1.75rem',textAlign:'center'}}>{previa.previstaUrl?<img src={previa.previstaUrl} style={{maxHeight:'180px',maxWidth:'100%',borderRadius:'12px',marginBottom:'1.25rem',boxShadow:'0 4px 12px rgba(0,0,0,.1)'}} alt="preview"/>:<div style={{width:'72px',height:'72px',borderRadius:'16px',background:previa.tipo==='PDF'?'#fee2e2':previa.tipo==='Word'?'#dbeafe':previa.tipo==='Excel'?'#d1fae5':'#f1f5f9',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 1.25rem',fontSize:'1.5rem',fontWeight:'800',color:previa.tipo==='PDF'?'#dc2626':previa.tipo==='Word'?'#1d4ed8':previa.tipo==='Excel'?'#059669':'#64748b'}}>{previa.tipo==='PDF'?'PDF':previa.tipo==='Word'?'W':previa.tipo==='Excel'?'X':'📄'}</div>}<p style={{fontWeight:'700',fontSize:'.95rem',color:'#0f172a',marginBottom:'.25rem'}}>{previa.nombre}</p><p style={{fontSize:'.8rem',color:'#94a3b8',marginBottom:'1.25rem'}}>{previa.tipo}</p>{subiendo&&<div style={{marginBottom:'1.25rem'}}><div style={{height:'6px',background:'#e2e8f0',borderRadius:'3px',overflow:'hidden',marginBottom:'.5rem'}}><div style={{width:progreso+'%',height:'100%',background:'linear-gradient(90deg,#2563eb,#1d4ed8)',transition:'width .3s',borderRadius:'3px'}}/></div><p style={{fontSize:'.75rem',color:'#2563eb',fontWeight:'600'}}>{progreso}%</p></div>}<div style={{display:'flex',gap:'.75rem'}}><button onClick={()=>setPrevia(null)} disabled={subiendo} style={{flex:1,padding:'.7rem',borderRadius:'10px',border:'1.5px solid #e2e8f0',background:'#fff',fontWeight:'600',cursor:'pointer',color:'#64748b',fontSize:'.875rem'}}>Cancelar</button><button onClick={confirmarSubida} disabled={subiendo} style={{flex:1,padding:'.7rem',borderRadius:'10px',border:'none',background:'linear-gradient(135deg,#2563eb,#1d4ed8)',color:'#fff',fontWeight:'700',cursor:subiendo?'not-allowed':'pointer',fontSize:'.875rem',boxShadow:'0 4px 12px rgba(37,99,235,.35)'}}>{subiendo?'Subiendo...':'✓ Confirmar'}</button></div></div></div></div>)}
+
+{/* ── MODAL BORRAR ── */}
+{modalBorrar&&(<div style={{position:'fixed',inset:0,background:'rgba(15,23,42,.8)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:'1rem'}}><div style={{background:'#fff',borderRadius:'20px',maxWidth:'380px',width:'100%',overflow:'hidden',boxShadow:'0 25px 80px rgba(0,0,0,.4)'}}><div style={{background:'linear-gradient(135deg,#dc2626,#b91c1c)',padding:'1rem 1.25rem'}}><span style={{color:'#fff',fontWeight:'700',fontSize:'.9rem'}}>🗑 Confirmar eliminación</span></div><div style={{padding:'1.75rem',textAlign:'center'}}><div style={{width:'56px',height:'56px',background:'#fee2e2',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 1rem',fontSize:'1.5rem'}}>⚠️</div><p style={{fontWeight:'700',fontSize:'1rem',color:'#0f172a',marginBottom:'.5rem'}}>¿Eliminar este archivo?</p><p style={{color:'#64748b',marginBottom:'1.5rem',fontSize:'.875rem'}}>Esta acción no se puede deshacer.</p><div style={{display:'flex',gap:'.75rem',justifyContent:'flex-end'}}><button onClick={()=>setModalBorrar(null)} style={{padding:'.65rem 1.25rem',borderRadius:'10px',border:'1.5px solid #e2e8f0',background:'#fff',fontWeight:'600',cursor:'pointer',color:'#64748b'}}>Cancelar</button><button onClick={()=>confirmarBorrar(modalBorrar)} style={{padding:'.65rem 1.25rem',borderRadius:'10px',border:'none',background:'linear-gradient(135deg,#dc2626,#b91c1c)',color:'#fff',fontWeight:'700',cursor:'pointer',boxShadow:'0 4px 12px rgba(220,38,38,.35)'}}>Eliminar</button></div></div></div></div>)}
+
+{/* ── MODAL DOCUMENTOS PENDIENTES ── */}
+{mostrarAviso&&pendientes.length>0&&(<div style={{position:'fixed',inset:0,background:'rgba(15,23,42,.75)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:'1rem'}}><div style={{background:'#fff',borderRadius:'20px',maxWidth:'480px',width:'100%',overflow:'hidden',boxShadow:'0 25px 80px rgba(0,0,0,.4)'}}><div style={{background:'linear-gradient(135deg,#f59e0b,#d97706)',padding:'1.25rem 1.5rem',display:'flex',alignItems:'center',gap:'.75rem'}}><span style={{fontSize:'1.5rem'}}>📋</span><div><p style={{color:'#fff',fontWeight:'800',fontSize:'1rem',margin:0}}>Documentos pendientes</p><p style={{color:'rgba(255,255,255,.8)',fontSize:'.8rem',margin:0}}>Por favor súbelos antes de la fecha límite</p></div></div><div style={{padding:'1.5rem'}}><div style={{display:'flex',flexDirection:'column',gap:'.75rem',maxHeight:'260px',overflowY:'auto',marginBottom:'1.25rem'}}>{pendientes.map((p,i)=>(<div key={i} style={{padding:'1rem',background:'#fffbeb',borderRadius:'12px',borderLeft:'4px solid #f59e0b'}}><p style={{fontWeight:'700',marginBottom:'.35rem',color:'#0f172a',fontSize:'.9rem'}}>{p.programa}</p>{p.docs.map((d,j)=><p key={j} style={{fontSize:'.8rem',color:'#64748b',display:'flex',alignItems:'center',gap:'.35rem'}}>• {d}</p>)}</div>))}</div><div style={{display:'flex',gap:'.75rem',justifyContent:'flex-end'}}><button onClick={()=>setMostrarAviso(false)} style={{padding:'.65rem 1.25rem',borderRadius:'10px',border:'1.5px solid #e2e8f0',background:'#fff',fontWeight:'600',cursor:'pointer',color:'#64748b',fontSize:'.875rem'}}>Después</button><button onClick={()=>setMostrarAviso(false)} style={{padding:'.65rem 1.5rem',borderRadius:'10px',border:'none',background:'linear-gradient(135deg,#f59e0b,#d97706)',color:'#fff',fontWeight:'700',cursor:'pointer',fontSize:'.875rem',boxShadow:'0 4px 12px rgba(245,158,11,.35)'}}>Subir ahora</button></div></div></div></div>)}
+
+{/* ── HEADER ── */}
+<header style={{background:'linear-gradient(135deg,#1a56db 0%,#1e3a8a 100%)',boxShadow:'0 4px 20px rgba(30,58,138,.4)',position:'sticky',top:0,zIndex:100}}>
+<div className="container" style={{padding:'.875rem 1.5rem',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
 <div style={{display:'flex',alignItems:'center',gap:'1rem'}}>
-{config.logoUrl&&<img src={config.logoUrl} alt="Logo" style={{height:'45px'}}/>}
-<div><h1 style={{fontSize:'1.125rem',fontWeight:'600'}}>🏫 {escuela.nombre}</h1><p style={{fontSize:'.875rem',color:'#6b7280'}}>🪪 CCT: {escuela.cct}</p>{escuela.comunidad&&<p style={{fontSize:'.75rem',color:'#94a3b8'}}>📍 {escuela.comunidad}</p>}{escuela.director&&<p style={{fontSize:'.75rem',color:'#94a3b8'}}>👤 {escuela.director}</p>}</div>
+{config.logoUrl?<img src={config.logoUrl} alt="Logo" style={{height:'48px',borderRadius:'10px',border:'2px solid rgba(255,255,255,.25)',objectFit:'contain',background:'rgba(255,255,255,.1)',padding:'2px'}}/>:<div style={{width:'48px',height:'48px',borderRadius:'10px',background:'rgba(255,255,255,.15)',border:'2px solid rgba(255,255,255,.25)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'1.25rem'}}>🏫</div>}
+<div>
+<h1 style={{fontSize:'1rem',fontWeight:'800',color:'#fff',letterSpacing:'-.01em',margin:0}}>{escuela.nombre}</h1>
+<div style={{display:'flex',flexWrap:'wrap',gap:'.5rem',marginTop:'3px'}}>
+<span style={{fontSize:'.7rem',color:'rgba(255,255,255,.75)',display:'flex',alignItems:'center',gap:'3px'}}>🪪 {escuela.cct}</span>
+{escuela.comunidad&&<span style={{fontSize:'.7rem',color:'rgba(255,255,255,.75)',display:'flex',alignItems:'center',gap:'3px'}}>📍 {escuela.comunidad}</span>}
+{escuela.director&&<span style={{fontSize:'.7rem',color:'rgba(255,255,255,.75)',display:'flex',alignItems:'center',gap:'3px'}}>👤 {escuela.director}</span>}
 </div>
-<button onClick={onLogout} className="btn btn-secondary">Salir</button>
+</div>
+</div>
+<button onClick={onLogout} style={{padding:'.45rem 1rem',borderRadius:'9px',border:'1.5px solid rgba(255,255,255,.3)',background:'rgba(255,255,255,.1)',color:'#fff',fontWeight:'600',cursor:'pointer',fontSize:'.8rem',backdropFilter:'blur(8px)',transition:'all .2s'}}>Salir</button>
 </div>
 </header>
-<div className="container" style={{padding:'2rem 1.5rem'}}>
-<div style={{background:'#dbeafe',padding:'1rem',borderRadius:'8px',marginBottom:'2rem',border:'1px solid #93c5fd'}}>
-<p style={{color:'#1e40af'}}><strong>Bienvenido/a.</strong> Sube los documentos requeridos para cada programa.</p>
-<p style={{color:'#ef4444',fontWeight:'700',marginTop:'.5rem',fontSize:'.875rem'}}>Tamaño máximo por archivo: 3 MB.</p>
-{config.permitirBorradoEscuelas&&<p style={{color:'#1e40af',marginTop:'.5rem',fontSize:'.875rem'}}>Puedes eliminar archivos usando el botón 🗑️</p>}
+
+<div className="container" style={{padding:'1.5rem 1.5rem 3rem'}}>
+
+{/* ── AVISO BIENVENIDA ── */}
+<div style={{background:'#fff',padding:'1rem 1.25rem',borderRadius:'14px',marginBottom:'1.5rem',border:'none',boxShadow:'0 2px 8px rgba(0,0,0,.06)',display:'flex',alignItems:'flex-start',gap:'1rem',borderLeft:'4px solid #1d4ed8'}}>
+<div style={{width:'38px',height:'38px',borderRadius:'10px',background:'#eff6ff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'1.1rem',flexShrink:0}}>📋</div>
+<div style={{flex:1}}>
+<p style={{color:'#1e3a8a',fontWeight:'700',fontSize:'.9rem',margin:'0 0 3px'}}>Bienvenido/a — {escuela.nombre}</p>
+<p style={{color:'#64748b',fontSize:'.8rem',margin:0}}>Sube los documentos requeridos para cada programa a tiempo.</p>
+<div style={{display:'flex',gap:'.5rem',flexWrap:'wrap',marginTop:'.5rem'}}>
+<span style={{display:'inline-flex',alignItems:'center',gap:'4px',background:'#fef3c7',color:'#92400e',borderRadius:'6px',padding:'2px 8px',fontSize:'.72rem',fontWeight:'700'}}>⚠️ Máx. 3 MB por archivo</span>
+{config.permitirBorradoEscuelas&&<span style={{display:'inline-flex',alignItems:'center',gap:'4px',background:'#eff6ff',color:'#1d4ed8',borderRadius:'6px',padding:'2px 8px',fontSize:'.72rem',fontWeight:'700'}}>🗑 Puedes eliminar archivos</span>}
 </div>
-{config.permitirBorradoEscuelas&&seleccionados.length>0&&<div style={{display:'flex',justifyContent:'flex-end',marginBottom:'1rem'}}><button onClick={borrarSeleccionados} className="btn btn-danger">Eliminar {seleccionados.length} seleccionados</button></div>}
+</div>
+</div>
+
+{config.permitirBorradoEscuelas&&seleccionados.length>0&&<div style={{display:'flex',justifyContent:'flex-end',marginBottom:'1rem'}}><button onClick={borrarSeleccionados} style={{padding:'.6rem 1.25rem',borderRadius:'10px',border:'none',background:'linear-gradient(135deg,#dc2626,#b91c1c)',color:'#fff',fontWeight:'700',cursor:'pointer',fontSize:'.875rem',boxShadow:'0 4px 12px rgba(220,38,38,.3)'}}>🗑 Eliminar {seleccionados.length} seleccionados</button></div>}
+
+{/* ── PROGRAMAS ── */}
 {progEscuela.length===0?(
-<div className="card" style={{padding:'3rem',textAlign:'center',color:'#6b7280'}}>No tienes programas asignados</div>
+<div style={{background:'#fff',padding:'3rem',textAlign:'center',color:'#94a3b8',borderRadius:'16px',boxShadow:'0 2px 8px rgba(0,0,0,.06)'}}>No tienes programas asignados</div>
 ):(
-<div style={{display:'flex',flexDirection:'column',gap:'1.5rem'}}>
-{progEscuela.map(prog=>{
+<div style={{display:'flex',flexDirection:'column',gap:'1.25rem'}}>
+{progEscuela.map((prog,progIdx)=>{
 const docs=documentos.filter(d=>d.escuelaId===escuela.id&&d.programaId===prog.id);
+const total=prog.documentosRequeridos.length;
+const entregados=docs.length;
+const pct=total>0?Math.round((entregados/total)*100):0;
+const completo=entregados>=total;
+const colores=['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444','#06b6d4','#f97316','#84cc16'];
+const acento=colores[progIdx%colores.length];
 return(
-<div key={prog.id} className="card">
-<div style={{padding:'1.5rem',borderBottom:'1px solid #e5e7eb',background:'#f9fafb'}}>
-<div style={{display:'flex',justifyContent:'space-between',alignItems:'start'}}>
-<div>
-<h3 style={{fontSize:'1.125rem',fontWeight:'600',marginBottom:'.5rem'}}>{prog.nombre}</h3>
-<p style={{fontSize:'.875rem',color:'#6b7280',marginBottom:'.5rem'}}>{prog.descripcion}</p>
+<div key={prog.id} style={{background:'#fff',borderRadius:'16px',overflow:'hidden',boxShadow:'0 2px 12px rgba(0,0,0,.07)',border:'1px solid #e8edf3'}}>
+{/* cabecera del programa */}
+<div style={{padding:'1.25rem 1.5rem',borderBottom:'1px solid #f1f5f9',position:'relative'}}>
+<div style={{position:'absolute',left:0,top:0,bottom:0,width:'4px',background:acento,borderRadius:'0'}}/>
+<div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',paddingLeft:'8px'}}>
+<div style={{flex:1,minWidth:0}}>
+<h3 style={{fontSize:'1rem',fontWeight:'800',color:'#0f172a',margin:'0 0 4px',letterSpacing:'-.01em'}}>{prog.nombre}</h3>
+{prog.descripcion&&<p style={{fontSize:'.8rem',color:'#64748b',margin:'0 0 8px'}}>{prog.descripcion}</p>}
 {(()=>{
-const hoy=new Date();
-const limite=new Date(prog.fechaLimite);
+const hoy=new Date();const limite=new Date(prog.fechaLimite);
 const dias=Math.ceil((limite-hoy)/(1000*60*60*24));
-const vencido=dias<0;
-const proximo=dias>=0&&dias<=7;
-return(
-<span style={{display:'inline-flex',alignItems:'center',gap:'.35rem',fontSize:'.8rem',fontWeight:'600',padding:'.25rem .6rem',borderRadius:'8px',background:vencido?'#fee2e2':proximo?'#fef3c7':'#f0fdf4',color:vencido?'#dc2626':proximo?'#92400e':'#065f46'}}>
-{vencido?'🔴':proximo?'🟡':'🟢'}
-{vencido?'Vencido: ':'📅 '}
-{limite.toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'})}
-{proximo&&!vencido&&<span style={{marginLeft:'.25rem'}}>({dias}d restantes)</span>}
-{vencido&&<span style={{marginLeft:'.25rem'}}>({Math.abs(dias)}d atrás)</span>}
-</span>
-);
+const vencido=dias<0;const proximo=dias>=0&&dias<=7;
+return(<span style={{display:'inline-flex',alignItems:'center',gap:'.3rem',fontSize:'.72rem',fontWeight:'700',padding:'3px 8px',borderRadius:'6px',background:vencido?'#fee2e2':proximo?'#fef3c7':'#f0fdf4',color:vencido?'#dc2626':proximo?'#92400e':'#065f46'}}>
+{vencido?'🔴':proximo?'🟡':'🟢'}{vencido?'Vencido: ':'Límite: '}{limite.toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'})}{proximo&&!vencido&&` (${dias}d)`}{vencido&&` (${Math.abs(dias)}d atrás)`}
+</span>);
 })()}
 </div>
-<span className={docs.length===prog.documentosRequeridos.length?'badge badge-success':'badge badge-warning'}>{docs.length}/{prog.documentosRequeridos.length}</span>
+<div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:'4px',flexShrink:0,marginLeft:'1rem'}}>
+<span style={{fontSize:'.75rem',fontWeight:'800',padding:'3px 10px',borderRadius:'20px',background:completo?'#d1fae5':entregados>0?'#fef3c7':'#fee2e2',color:completo?'#065f46':entregados>0?'#92400e':'#991b1b'}}>{entregados}/{total}</span>
 </div>
 </div>
-<div style={{padding:'1.5rem'}}>
-<div style={{display:'flex',flexDirection:'column',gap:'1rem'}}>
+{/* barra de progreso */}
+<div style={{marginTop:'10px',paddingLeft:'8px'}}>
+<div style={{height:'5px',background:'#f1f5f9',borderRadius:'3px',overflow:'hidden'}}>
+<div style={{width:pct+'%',height:'100%',background:completo?'#10b981':acento,borderRadius:'3px',transition:'width .5s ease'}}/>
+</div>
+</div>
+</div>
+{/* documentos */}
+<div style={{padding:'1rem 1.5rem',display:'flex',flexDirection:'column',gap:'.6rem'}}>
 {prog.documentosRequeridos.map(doc=>{
 const entregado=docs.find(d=>d.nombreDocumento===doc);
+const tipo=entregado?.tipo||'';
+const esPDF=['PDF','pdf'].includes(tipo);
+const esWord=['Word','docx','doc'].includes(tipo);
+const esExcel=['Excel','xlsx','xls'].includes(tipo);
+const esImg=['Imagen','jpg','jpeg','png'].includes(tipo);
+const icoTxt=esPDF?'PDF':esWord?'W':esExcel?'X':esImg?'🖼':'📄';
+const icoBg=esPDF?['#fee2e2','#dc2626']:esWord?['#dbeafe','#1d4ed8']:esExcel?['#d1fae5','#059669']:esImg?['#fef3c7','#d97706']:['#f1f5f9','#64748b'];
 return(
-<div key={doc} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'1rem',border:entregado?'1px solid #e5e7eb':'2px solid #ef4444',borderRadius:'8px'}}>
-<div style={{display:'flex',alignItems:'center',gap:'.75rem'}}>
-{entregado?<div style={{width:'24px',height:'24px',borderRadius:'50%',background:'#10b981',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:'14px'}}>ok</div>:<div style={{width:'24px',height:'24px',borderRadius:'50%',border:'2px solid #d1d5db'}}/>}
-<div><p style={{fontWeight:'500'}}>{doc}</p>{entregado&&<p style={{fontSize:'.75rem',color:'#6b7280'}}>{entregado.tipo}</p>}</div>
+<div key={doc} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'.75rem 1rem',borderRadius:'10px',background:entregado?'#f0fdf4':'#fff9f9',border:entregado?'1px solid #bbf7d0':'1.5px dashed #fca5a5',gap:'.75rem'}}>
+<div style={{display:'flex',alignItems:'center',gap:'.75rem',flex:1,minWidth:0}}>
+{entregado?(
+<div style={{width:'32px',height:'32px',borderRadius:'8px',background:icoBg[0],display:'flex',alignItems:'center',justifyContent:'center',fontWeight:'800',fontSize:'.7rem',color:icoBg[1],flexShrink:0}}>{icoTxt}</div>
+):(
+<div style={{width:'32px',height:'32px',borderRadius:'8px',background:'#fee2e2',border:'1.5px dashed #fca5a5',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,color:'#fca5a5',fontSize:'1rem'}}>−</div>
+)}
+<div style={{minWidth:0}}>
+<p style={{fontWeight:'600',fontSize:'.875rem',color:'#0f172a',margin:0,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{doc}</p>
+{entregado&&<p style={{fontSize:'.7rem',color:'#64748b',margin:0}}>{entregado.tipo} • {entregado.nombreArchivo}</p>}
 </div>
-<div style={{display:'flex',gap:'.5rem'}}>
+</div>
+<div style={{display:'flex',gap:'.4rem',flexShrink:0}}>
 {entregado?(
 <>
-<button onClick={()=>setVerArchivo({url:entregado.url,nombre:entregado.nombreArchivo,tipo:entregado.tipo})} className="btn btn-secondary" style={{padding:'.5rem 1rem',fontSize:'.875rem'}}>Ver</button>
-<button onClick={()=>{const abrevProg=prog.nombre.replace(/s+/g,'').substring(0,10);const nombre=escuela.cct+'_'+abrevProg+'_'+doc+'.'+entregado.nombreArchivo.split('.').pop();const url=entregado.url+'&response-content-disposition=attachment%3B%20filename%3D'+encodeURIComponent(nombre);window.open(url,'_blank');}} className="btn btn-secondary" style={{padding:'.5rem 1rem',fontSize:'.875rem'}}>Descargar</button>
-{config.permitirBorradoEscuelas&&<div style={{display:'flex',gap:'.5rem',alignItems:'center'}}><input type="checkbox" checked={seleccionados.includes(entregado.id)} onChange={(ev)=>{if(ev.target.checked){setSeleccionados([...seleccionados,entregado.id]);}else{setSeleccionados(seleccionados.filter(id=>id!==entregado.id));}}}/><button onClick={()=>setModalBorrar(entregado.id)} className="btn btn-danger" style={{padding:'.5rem 1rem',fontSize:'.875rem'}}>Borrar</button></div>}
+<button onClick={()=>setVerArchivo({url:entregado.url,nombre:entregado.nombreArchivo,tipo:entregado.tipo})} style={{padding:'.4rem .8rem',borderRadius:'8px',border:'1px solid #e2e8f0',background:'#fff',color:'#374151',fontWeight:'600',cursor:'pointer',fontSize:'.75rem',display:'flex',alignItems:'center',gap:'4px'}}>👁 Ver</button>
+<button onClick={()=>{const abrevProg=prog.nombre.replace(/s+/g,'').substring(0,10);const nombre=escuela.cct+'_'+abrevProg+'_'+doc+'.'+entregado.nombreArchivo.split('.').pop();const url=entregado.url+'&response-content-disposition=attachment%3B%20filename%3D'+encodeURIComponent(nombre);window.open(url,'_blank');}} style={{padding:'.4rem .8rem',borderRadius:'8px',border:'1px solid #e2e8f0',background:'#fff',color:'#374151',fontWeight:'600',cursor:'pointer',fontSize:'.75rem',display:'flex',alignItems:'center',gap:'4px'}}>⬇ Bajar</button>
+{config.permitirBorradoEscuelas&&<><input type="checkbox" checked={seleccionados.includes(entregado.id)} onChange={(ev)=>{if(ev.target.checked){setSeleccionados([...seleccionados,entregado.id]);}else{setSeleccionados(seleccionados.filter(id=>id!==entregado.id));}}} style={{marginRight:'2px'}}/><button onClick={()=>setModalBorrar(entregado.id)} style={{padding:'.4rem .8rem',borderRadius:'8px',border:'none',background:'#fee2e2',color:'#dc2626',fontWeight:'700',cursor:'pointer',fontSize:'.75rem'}}>🗑</button></>}
 </>
 ):(
-<label className="btn btn-primary" style={{padding:'.5rem 1rem',cursor:subiendo?'not-allowed':'pointer',fontSize:'.875rem',opacity:subiendo?.6:1}}>Subir<input type="file" style={{display:'none'}} onChange={(e)=>seleccionarArchivo(e,prog,doc)} accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" disabled={subiendo}/></label>
+<label style={{padding:'.45rem 1rem',borderRadius:'8px',border:'none',background:'linear-gradient(135deg,#2563eb,#1d4ed8)',color:'#fff',fontWeight:'700',cursor:subiendo?'not-allowed':'pointer',fontSize:'.78rem',display:'flex',alignItems:'center',gap:'5px',boxShadow:'0 3px 8px rgba(37,99,235,.3)',opacity:subiendo?.6:1}}>＋ Subir<input type="file" style={{display:'none'}} onChange={(e)=>seleccionarArchivo(e,prog,doc)} accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" disabled={subiendo}/></label>
 )}
 </div>
 </div>
@@ -589,15 +640,19 @@ return(
 })}
 </div>
 </div>
-</div>
 );
 })}
 </div>
 )}
+
+{/* ── ARCHIVOS COMPARTIDOS ── */}
 {compEscuela.length>0&&(
-<div className="card" style={{marginTop:'2rem'}}>
-<h3 style={{fontSize:'1.125rem',fontWeight:'600',marginBottom:'1rem'}}>Archivos Compartidos por Supervisión Escolar</h3>
-<div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:'1rem'}}>
+<div style={{marginTop:'2rem'}}>
+<div style={{display:'flex',alignItems:'center',gap:'.5rem',marginBottom:'1rem'}}>
+<div style={{width:'3px',height:'18px',background:'linear-gradient(180deg,#2563eb,#1d4ed8)',borderRadius:'2px'}}/>
+<h3 style={{fontSize:'.9rem',fontWeight:'800',color:'#0f172a',textTransform:'uppercase',letterSpacing:'.04em',margin:0}}>Archivos de Supervisión Escolar</h3>
+</div>
+<div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(180px,1fr))',gap:'.875rem'}}>
 {compEscuela.map(c=>{
 const _ext=(c.nombre||c.url||'').split('.').pop().split('?')[0].toLowerCase();
 const tipo=c.tipo||(_ext==='pdf'?'PDF':_ext==='docx'||_ext==='doc'?'Word':_ext==='xlsx'||_ext==='xls'?'Excel':['jpg','jpeg','png','gif','webp'].includes(_ext)?'Imagen':_ext)||'FILE';
@@ -605,17 +660,18 @@ const esPDF=['PDF','pdf','application/pdf'].includes(tipo);
 const esWord=['Word','docx','doc','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document'].includes(tipo);
 const esExcel=['Excel','xlsx','xls','application/vnd.ms-excel','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'].includes(tipo);
 const esImagen=['Imagen','jpg','jpeg','png','gif','webp','image/jpeg','image/png','image/gif','image/webp'].includes(tipo);
-const icono=esPDF?'PDF':esWord?'DOC':esExcel?'XLS':esImagen?'IMG':'FILE';
-const icoColor=esPDF?['#fee2e2','#dc2626']:esWord?['#dbeafe','#2563eb']:esExcel?['#d1fae5','#059669']:esImagen?['#fef3c7','#d97706']:['#f1f5f9','#64748b'];
+const icoTxt=esPDF?'PDF':esWord?'W':esExcel?'X':esImagen?'IMG':'FILE';
+const icoBg=esPDF?{bg:'#fff1f1',color:'#dc2626',grad:'linear-gradient(135deg,#ef4444,#dc2626)'}:esWord?{bg:'#eff6ff',color:'#1d4ed8',grad:'linear-gradient(135deg,#3b82f6,#1d4ed8)'}:esExcel?{bg:'#f0fdf4',color:'#059669',grad:'linear-gradient(135deg,#10b981,#059669)'}:esImagen?{bg:'#fffbeb',color:'#d97706',grad:'linear-gradient(135deg,#f59e0b,#d97706)'}:{bg:'#f8fafc',color:'#64748b',grad:'linear-gradient(135deg,#94a3b8,#64748b)'};
 return(
-<div key={c.id} style={{border:'1px solid #e5e7eb',borderRadius:'12px',overflow:'hidden',display:'flex',flexDirection:'column'}}>
-<div style={{height:'120px',background:'#f3f4f6',display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden'}}>
-{esImagen?<img src={c.url} alt={c.nombre} style={{width:'100%',height:'100%',objectFit:'cover'}}/>:<div style={{width:'56px',height:'56px',borderRadius:'12px',background:icoColor[0],display:'flex',alignItems:'center',justifyContent:'center',fontWeight:'700',fontSize:'.85rem',color:icoColor[1]}}>{icono}</div>}
+<div key={c.id} style={{background:'#fff',borderRadius:'14px',overflow:'hidden',border:'1px solid #e8edf3',boxShadow:'0 2px 8px rgba(0,0,0,.05)',display:'flex',flexDirection:'column'}}>
+<div style={{height:'90px',background:icoBg.bg,display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden'}}>
+{esImagen?<img src={c.url} alt={c.nombre} style={{width:'100%',height:'100%',objectFit:'cover'}}/>:
+<div style={{width:'52px',height:'52px',borderRadius:'14px',background:icoBg.grad,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:'900',fontSize:'.8rem',color:'#fff',boxShadow:'0 4px 12px rgba(0,0,0,.15)'}}>{icoTxt}</div>}
 </div>
-<div style={{padding:'.75rem',flex:1,display:'flex',flexDirection:'column',gap:'.25rem'}}>
-<p style={{fontWeight:'600',fontSize:'.875rem'}}>{c.nombre}</p>
-{c.descripcion&&<p style={{fontSize:'.75rem',color:'#6b7280'}}>{c.descripcion}</p>}
-<a href={c.url} target="_blank" className="btn btn-secondary" style={{padding:'.4rem',textDecoration:'none',fontSize:'.8rem',textAlign:'center',marginTop:'auto'}}>Descargar</a>
+<div style={{padding:'.75rem',flex:1,display:'flex',flexDirection:'column',gap:'.2rem'}}>
+<p style={{fontWeight:'700',fontSize:'.8rem',color:'#0f172a',margin:0,lineHeight:1.3}}>{c.nombre}</p>
+{c.descripcion&&<p style={{fontSize:'.7rem',color:'#94a3b8',margin:0,lineHeight:1.3}}>{c.descripcion}</p>}
+<a href={c.url} target="_blank" style={{marginTop:'auto',paddingTop:'.6rem',display:'flex',alignItems:'center',justifyContent:'center',gap:'5px',padding:'.4rem',borderRadius:'8px',background:icoBg.grad,color:'#fff',fontWeight:'700',fontSize:'.72rem',textDecoration:'none',boxShadow:'0 3px 8px rgba(0,0,0,.15)',marginTop:'.5rem'}}>⬇ Descargar</a>
 </div>
 </div>
 );

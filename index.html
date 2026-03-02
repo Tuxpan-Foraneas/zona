@@ -809,17 +809,35 @@ const TabCompartidos=({compartidos,onDelete})=>(
 </div>
 );
 const TabRubrica=({escuelas,programas,documentos,config})=>{
+const[filtroP,setFiltroP]=React.useState('');
 const fecha=new Date().toLocaleDateString('es-MX',{year:'numeric',month:'long',day:'numeric'});
-return(<div><div style={{marginBottom:'1rem',display:'flex',justifyContent:'flex-end'}} className="no-print"><button onClick={()=>{const w=window.open('','_blank');w.document.write('<html><head><title>Rúbrica</title><style>body{font-family:Arial,sans-serif}table{width:100%;border-collapse:collapse;font-size:.8rem}th,td{border:1px solid #000;padding:.4rem}@media print{button{display:none}}</style></head><body>'+document.getElementById('rubrica-contenido').innerHTML+'<script>window.print()<\/script></body></html>');w.document.close();}} className="btn btn-primary">🖨️ Imprimir Rúbrica</button></div>
+const progsFiltrados=filtroP?programas.filter(p=>p.id===filtroP):programas;
+const imprimir=()=>{
+const w=window.open('','_blank');
+w.document.write('<html><head><title>Rúbrica</title><style>body{font-family:Arial,sans-serif}table{width:100%;border-collapse:collapse;font-size:.8rem}th,td{border:1px solid #000;padding:.4rem}@media print{button{display:none}}</style></head><body>'+document.getElementById('rubrica-contenido').innerHTML+'<script>window.print()<\/script></body></html>');
+w.document.close();
+};
+return(<div>
+<div style={{marginBottom:'1rem',display:'flex',alignItems:'center',justifyContent:'space-between',gap:'1rem',flexWrap:'wrap'}} className="no-print">
+<div style={{display:'flex',alignItems:'center',gap:'.75rem'}}>
+<label style={{fontWeight:'600',fontSize:'.875rem',color:'#374151'}}>📋 Filtrar programa:</label>
+<select value={filtroP} onChange={e=>setFiltroP(e.target.value)} style={{padding:'.5rem .75rem',borderRadius:'8px',border:'1px solid #d1d5db',fontSize:'.875rem',background:'#fff',cursor:'pointer',minWidth:'200px'}}>
+<option value="">Todos los programas</option>
+{programas.map(p=><option key={p.id} value={p.id}>{p.nombre}</option>)}
+</select>
+{filtroP&&<button onClick={()=>setFiltroP('')} style={{padding:'.4rem .75rem',borderRadius:'6px',border:'1px solid #e5e7eb',background:'#fff',fontSize:'.8rem',cursor:'pointer',color:'#6b7280'}}>✕ Quitar filtro</button>}
+</div>
+<button onClick={imprimir} className="btn btn-primary">🖨️ Imprimir Rúbrica</button>
+</div>
 <div id="rubrica-contenido" style={{background:'#fff',padding:'1.5rem',borderRadius:'12px',overflowX:'auto'}}>
 <table style={{width:'100%',borderCollapse:'collapse',fontSize:'.8rem'}}>
 <thead>
-<tr><th colSpan={3+programas.length} style={{padding:'1rem',textAlign:'center',borderBottom:'2px solid #000',borderTop:'2px solid #000'}}><div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'1rem'}}>{config.logoUrl&&<img src={config.logoUrl} alt="Logo" style={{height:'40px',objectFit:'contain'}}/>}<div><div style={{fontSize:'1rem',fontWeight:'700'}}>{config.nombreZona||'ZONA ESCOLAR'}</div><div style={{fontSize:'.8rem'}}>{fecha}</div></div></div></th></tr>
+<tr><th colSpan={3+progsFiltrados.length} style={{padding:'1rem',textAlign:'center',borderBottom:'2px solid #000',borderTop:'2px solid #000'}}><div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'1rem'}}>{config.logoUrl&&<img src={config.logoUrl} alt="Logo" style={{height:'40px',objectFit:'contain'}}/>}<div><div style={{fontSize:'1rem',fontWeight:'700'}}>{config.nombreZona||'ZONA ESCOLAR'}{filtroP?` — ${programas.find(p=>p.id===filtroP)?.nombre}`:''}</div><div style={{fontSize:'.8rem'}}>{fecha}</div></div></div></th></tr>
 <tr>
 <th style={{border:'1px solid #000',padding:'.4rem',background:'#f3f4f6',textAlign:'center'}}>No.</th>
 <th style={{border:'1px solid #000',padding:'.4rem',background:'#f3f4f6'}}>CLAVE</th>
 <th style={{border:'1px solid #000',padding:'.4rem',background:'#f3f4f6'}}>ESCUELA</th>
-{programas.map(p=>(<th key={p.id} style={{border:'1px solid #000',padding:'.2rem',background:'#f3f4f6',textAlign:'center',maxWidth:'60px'}}><div style={{writingMode:'vertical-rl',transform:'rotate(180deg)',whiteSpace:'nowrap',fontSize:'.7rem',fontWeight:'600'}}>{p.nombre}</div></th>))}
+{progsFiltrados.map(p=>(<th key={p.id} style={{border:'1px solid #000',padding:'.2rem',background:'#f3f4f6',textAlign:'center',maxWidth:'60px'}}><div style={{writingMode:'vertical-rl',transform:'rotate(180deg)',whiteSpace:'nowrap',fontSize:'.7rem',fontWeight:'600'}}>{p.nombre}</div></th>))}
 </tr>
 </thead>
 <tbody>
@@ -827,12 +845,12 @@ return(<div><div style={{marginBottom:'1rem',display:'flex',justifyContent:'flex
 <td style={{border:'1px solid #d1d5db',padding:'.4rem',textAlign:'center',fontWeight:'600'}}>{i+1}</td>
 <td style={{border:'1px solid #d1d5db',padding:'.4rem',fontFamily:'monospace',fontSize:'.75rem'}}>{e.cct}</td>
 <td style={{border:'1px solid #d1d5db',padding:'.4rem',fontWeight:'500'}}>{e.nombre}</td>
-{programas.map(p=>{const asignado=p.todasEscuelas||(p.escuelasAsignadas||[]).includes(e.id);if(!asignado)return <td key={p.id} style={{border:'1px solid #d1d5db',background:'#e5e7eb'}}></td>;const completo=documentos.filter(d=>d.escuelaId===e.id&&d.programaId===p.id).length>=p.documentosRequeridos.length;return(<td key={p.id} style={{border:'1px solid #d1d5db',textAlign:'center',fontSize:'1rem',background:completo?'#d1fae5':'#fff'}}>{completo?'✓':''}</td>);})}
+{progsFiltrados.map(p=>{const asignado=p.todasEscuelas||(p.escuelasAsignadas||[]).includes(e.id);if(!asignado)return <td key={p.id} style={{border:'1px solid #d1d5db',background:'#e5e7eb'}}></td>;const completo=documentos.filter(d=>d.escuelaId===e.id&&d.programaId===p.id).length>=p.documentosRequeridos.length;return(<td key={p.id} style={{border:'1px solid #d1d5db',textAlign:'center',fontSize:'1rem',background:completo?'#d1fae5':'#fff'}}>{completo?'✓':''}</td>);})}
 </tr>))}
 </tbody>
 <tfoot>
 <tr><td colSpan={3} style={{border:'1px solid #000',padding:'.4rem',fontWeight:'600',background:'#f3f4f6'}}>TOTAL ENTREGARON</td>
-{programas.map(p=>{const asig=escuelas.filter(e=>p.todasEscuelas||(p.escuelasAsignadas||[]).includes(e.id));const ent=asig.filter(e=>documentos.filter(d=>d.escuelaId===e.id&&d.programaId===p.id).length>=p.documentosRequeridos.length).length;return<td key={p.id} style={{border:'1px solid #000',textAlign:'center',fontWeight:'700',background:'#f3f4f6'}}>{ent}/{asig.length}</td>;})}
+{progsFiltrados.map(p=>{const asig=escuelas.filter(e=>p.todasEscuelas||(p.escuelasAsignadas||[]).includes(e.id));const ent=asig.filter(e=>documentos.filter(d=>d.escuelaId===e.id&&d.programaId===p.id).length>=p.documentosRequeridos.length).length;return<td key={p.id} style={{border:'1px solid #000',textAlign:'center',fontWeight:'700',background:'#f3f4f6'}}>{ent}/{asig.length}</td>;})}
 </tr>
 </tfoot>
 </table></div></div>);};
@@ -929,59 +947,76 @@ const ModalPassword=({escuela,onClose})=>{
 const[pwd,setPwd]=useState('');
 const[conf,setConf]=useState('');
 const[loading,setLoading]=useState(false);
+const[status,setStatus]=useState('');
 const email=`${escuela.cct.toLowerCase()}@escuela.local`;
 const handleSubmit=async(e)=>{
 e.preventDefault();
 if(pwd!==conf){toast('Las contraseñas no coinciden','warning');return;}
 if(pwd.length<6){toast('Mínimo 6 caracteres','warning');return;}
 setLoading(true);
+setStatus('Iniciando...');
 const appKey=`pwd_${Date.now()}`;
 let appTemp=null;
 try{
 appTemp=firebase.initializeApp(firebaseConfig,appKey);
 const authTemp=appTemp.auth();
 try{
-// Intento 1: crear usuario nuevo (primera vez)
+// INTENTO 1: crear usuario nuevo (primera vez que se asigna contraseña)
+setStatus('Creando acceso...');
 await authTemp.createUserWithEmailAndPassword(email,pwd);
-// Guardar hint para cambios futuros
 await db.collection('escuelas').doc(escuela.id).update({_pwdHint:pwd});
-toast('Contraseña asignada correctamente','success');
+setStatus('');
+toast('Contraseña asignada correctamente ✓','success');
 onClose();
 }catch(err){
 if(err.code==='auth/email-already-in-use'){
-// Usuario ya existe — necesitamos cambiar contraseña
-// Obtenemos el hint guardado previamente
+// INTENTO 2: usuario ya existe — obtener hint y cambiar contraseña
+setStatus('Actualizando contraseña...');
 const escSnap=await db.collection('escuelas').doc(escuela.id).get();
 const hint=escSnap.data()?._pwdHint||null;
+let cambiado=false;
 if(hint){
 try{
-// Iniciar sesión con contraseña anterior para obtener credencial
 const cred=await authTemp.signInWithEmailAndPassword(email,hint);
 await cred.user.updatePassword(pwd);
-// Actualizar hint con nueva contraseña
 await db.collection('escuelas').doc(escuela.id).update({_pwdHint:pwd});
-toast('Contraseña actualizada correctamente','success');
-onClose();
+cambiado=true;
 }catch(e2){
-// Si el hint está desactualizado, forzar con delete+recreate
-// No tenemos Admin SDK, así que guardamos en cola de cambios
-await db.collection('_pwdChanges').doc(escuela.cct).set({email,pwd,fecha:new Date().toISOString(),pendiente:true});
-await db.collection('escuelas').doc(escuela.id).update({_pwdHint:pwd});
-toast('Contraseña guardada. Se aplicará cuando la escuela cierre e inicie sesión nuevamente.','info');
-onClose();
+// hint desactualizado — intentar delete + recrear
+setStatus('Reestableciendo acceso...');
+try{
+const cred2=await authTemp.signInWithEmailAndPassword(email,hint);
+await cred2.user.delete();
+}catch(e3){}
 }
-}else{
-// Sin hint — guardar nueva contraseña y avisar
-await db.collection('_pwdChanges').doc(escuela.cct).set({email,pwd,fecha:new Date().toISOString(),pendiente:true});
+}
+if(!cambiado){
+// INTENTO 3: delete falló o no hay hint — recrear usuario directamente
+try{
+setStatus('Reestableciendo acceso...');
+await authTemp.createUserWithEmailAndPassword(email,pwd);
 await db.collection('escuelas').doc(escuela.id).update({_pwdHint:pwd});
-toast('Contraseña guardada. Se aplicará cuando la escuela cierre e inicie sesión nuevamente.','info');
+cambiado=true;
+}catch(e4){
+// El delete no se completó — guardar y aplicar en próximo login
+await db.collection('escuelas').doc(escuela.id).update({_pwdHint:pwd,_pwdPendiente:true});
+setStatus('');
+toast('Contraseña guardada. La escuela debe cerrar sesión y volver a entrar para que aplique.','info');
+onClose();
+return;
+}
+}
+if(cambiado){
+setStatus('');
+toast('Contraseña actualizada correctamente ✓','success');
 onClose();
 }
 }else{throw err;}
 }
 }catch(error){
 console.error(error);
-toast('Error: '+error.message,'error');
+setStatus('');
+toast('Error al cambiar contraseña: '+error.message,'error');
 }finally{
 setLoading(false);
 if(appTemp)try{await appTemp.delete();}catch(e){}
@@ -1004,7 +1039,7 @@ return(
 <div style={{marginBottom:'1.5rem'}}><label>Confirmar Contraseña</label><input type="password" value={conf} onChange={(e)=>setConf(e.target.value)} required minLength="6" placeholder="Repite la contraseña"/></div>
 <div style={{display:'flex',gap:'1rem'}}>
 <button type="button" onClick={onClose} className="btn btn-secondary" style={{flex:1}}>Cancelar</button>
-<button type="submit" disabled={loading} className="btn btn-primary" style={{flex:1}}>{loading?'Guardando...':'Asignar'}</button>
+<button type="submit" disabled={loading} className="btn btn-primary" style={{flex:1}}>{loading?(status||'Procesando...'):'Asignar Contraseña'}</button>
 </div>
 </form>
 </div>

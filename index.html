@@ -431,8 +431,8 @@ return(
 <button onClick={()=>exportExcel(escuelas,programas,documentos)} style={{padding:'.55rem 1.1rem',borderRadius:'10px',border:'1.5px solid #e2e8f0',background:'#fff',color:'#374151',fontWeight:'600',cursor:'pointer',fontSize:'.85rem'}}>📥 Excel</button>
 <button onClick={()=>window.print()} style={{padding:'.55rem 1.1rem',borderRadius:'10px',border:'1.5px solid #e2e8f0',background:'#fff',color:'#374151',fontWeight:'600',cursor:'pointer',fontSize:'.85rem'}}>🖨️ Imprimir</button>
 </div>
-<div style={{marginBottom:'1.5rem',borderBottom:'2px solid #e5e7eb',background:'#fff',borderRadius:'14px 14px 0 0',padding:'0 1.5rem',boxShadow:'0 2px 8px rgba(0,0,0,.04)'}} className="no-print">
-<div style={{display:'flex',gap:'0',overflowX:'auto'}}>
+<div style={{marginBottom:'1.5rem',borderBottom:'2px solid #e8edf3',background:'#fff',borderRadius:'14px 14px 0 0',padding:'.25rem 1rem 0',boxShadow:'0 2px 8px rgba(0,0,0,.04)'}} className="no-print">
+<div style={{display:'flex',gap:'.15rem',overflowX:'auto'}}>
 <Tab active={tab==='dashboard'} onClick={()=>setTab('dashboard')}>Dashboard</Tab>
 <Tab active={tab==='escuelas'} onClick={()=>setTab('escuelas')}>Escuelas ({escuelas.length})</Tab>
 <Tab active={tab==='programas'} onClick={()=>setTab('programas')}>Programas ({programas.length})</Tab>
@@ -441,7 +441,7 @@ return(
 <Tab active={tab==='reporte'} onClick={()=>setTab('reporte')}>📋 Rúbrica</Tab>
 </div>
 </div>
-{tab==='dashboard'&&<Dashboard escuelas={escuelas} programas={programas} documentos={documentos}/>}
+{tab==='dashboard'&&<Dashboard escuelas={escuelas} programas={programas} documentos={documentos} setDocumentos={setDocumentos}/>}
 {tab==='escuelas'&&<TabEscuelas escuelas={escuelas} programas={programas} documentos={documentos} onEdit={(e)=>{setEditData(e);setModal('escuela');}} onPassword={(e)=>{setEditData(e);setModal('password');}} onDelete={(id)=>delEscuela(id,escuelas,setEscuelas,documentos,setDocumentos)} onImport={(data)=>{data.forEach(async(e)=>{const ref=await db.collection('escuelas').add(e);setEscuelas(prev=>[...prev,{id:ref.id,...e}]);});}}  setEscuelas={setEscuelas}/>}
 {tab==='programas'&&<TabProgramas programas={programas} onEdit={(p)=>{setEditData(p);setModal('programa');}} onDelete={(id)=>delPrograma(id,programas,setProgramas,documentos,setDocumentos)}/>}
 {tab==='documentos'&&<TabDocumentos documentos={docsFiltrados} escuelas={escuelas} programas={programas} filtroEscuela={filtroEscuela} setFiltroEscuela={setFiltroEscuela} filtroPrograma={filtroPrograma} setFiltroPrograma={setFiltroPrograma} onDelete={(id)=>delDocumento(id,documentos,setDocumentos)}/>}
@@ -730,49 +730,93 @@ const StatCard=({titulo,valor,color})=>(
 );
 
 const Tab=({active,onClick,children})=>(
-<button onClick={onClick} style={{padding:'.75rem 0',border:'none',background:'none',fontSize:'.9375rem',fontWeight:'500',color:active?'#2563eb':'#6b7280',borderBottom:active?'2px solid #2563eb':'none',cursor:'pointer',marginBottom:'-2px',whiteSpace:'nowrap'}}>{children}</button>
+<button onClick={onClick} style={{padding:'.65rem 1.1rem',border:'none',borderBottom:active?'3px solid #2563eb':'3px solid transparent',background:active?'#eff6ff':'none',fontSize:'.83rem',fontWeight:active?'700':'500',color:active?'#1d4ed8':'#64748b',cursor:'pointer',marginBottom:'-2px',whiteSpace:'nowrap',borderRadius:'8px 8px 0 0',transition:'all .15s',letterSpacing:'-.01em'}}>{children}</button>
 );
 
-const DetalleEscuela=({escuela,programas,documentos,onClose})=>{
+const DetalleEscuela=({escuela,programas,documentos,setDocumentos,onClose})=>{
 const progs=programas.filter(p=>p.todasEscuelas||(p.escuelasAsignadas||[]).includes(escuela.id));
+const[verArch,setVerArch]=React.useState(null);
+const[selDet,setSelDet]=React.useState([]);
+const[confirmDel,setConfirmDel]=React.useState(null);
+const[confirmMulti,setConfirmMulti]=React.useState(false);
+const doEliminar=async(docId)=>{
+try{
+const doc=documentos.find(d=>d.id===docId);
+if(doc&&doc.url){try{await storage.refFromURL(doc.url).delete();}catch(er){}}
+await db.collection('documentos').doc(docId).delete();
+setDocumentos(documentos.filter(d=>d.id!==docId));
+setConfirmDel(null);setSelDet([]);
+toast('Archivo eliminado','success');
+}catch(er){toast('Error al eliminar','error');}
+};
+const doEliminarMulti=async()=>{
+for(const id of selDet){
+const doc=documentos.find(d=>d.id===id);
+if(doc&&doc.url){try{await storage.refFromURL(doc.url).delete();}catch(er){}}
+await db.collection('documentos').doc(id).delete();
+}
+setDocumentos(documentos.filter(d=>!selDet.includes(d.id)));
+setSelDet([]);setConfirmMulti(false);
+toast(selDet.length+' archivos eliminados','success');
+};
 return(
-<div style={{position:'fixed',inset:0,background:'rgba(15,23,42,.7)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:'1rem'}} onClick={onClose}>
-<div style={{background:'#fff',borderRadius:'20px',maxWidth:'640px',width:'100%',maxHeight:'85vh',overflow:'hidden',boxShadow:'0 30px 80px rgba(0,0,0,.4)'}} onClick={e=>e.stopPropagation()}>
-<div style={{background:'linear-gradient(135deg,#1a56db,#1e3a8a)',padding:'1.25rem 1.5rem',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-<div><p style={{color:'rgba(255,255,255,.7)',fontSize:'.72rem',fontWeight:'600',textTransform:'uppercase',letterSpacing:'.05em',margin:0}}>Detalle de escuela</p><h3 style={{color:'#fff',fontWeight:'800',fontSize:'1rem',margin:'2px 0 0'}}>{escuela.nombre}</h3></div>
+<div style={{position:'fixed',inset:0,background:'rgba(15,23,42,.7)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:'1rem'}} onClick={()=>{if(!verArch&&!confirmDel&&!confirmMulti)onClose();}}>
+{verArch&&(<div style={{position:'fixed',inset:0,background:'rgba(15,23,42,.92)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:10000,padding:'1rem'}} onClick={()=>setVerArch(null)}><div style={{background:'#fff',borderRadius:'16px',maxWidth:'860px',width:'100%',maxHeight:'90vh',overflow:'hidden',boxShadow:'0 25px 80px rgba(0,0,0,.6)'}} onClick={e=>e.stopPropagation()}><div style={{background:'linear-gradient(135deg,#1e3a8a,#1d4ed8)',padding:'1rem 1.25rem',display:'flex',alignItems:'center',justifyContent:'space-between'}}><span style={{color:'#fff',fontWeight:'700',fontSize:'.9rem'}}>{'👁 '+verArch.nombre}</span><button onClick={()=>setVerArch(null)} style={{background:'rgba(255,255,255,.15)',border:'none',color:'#fff',fontSize:'1.25rem',cursor:'pointer',width:'32px',height:'32px',borderRadius:'8px',display:'flex',alignItems:'center',justifyContent:'center'}}>×</button></div><div style={{padding:'1rem',display:'flex',alignItems:'center',justifyContent:'center',minHeight:'400px',background:'#f8fafc'}}>{verArch.tipo==='Imagen'?<img src={verArch.url} style={{maxWidth:'100%',maxHeight:'70vh',objectFit:'contain',borderRadius:'8px'}} alt={verArch.nombre}/>:verArch.tipo==='Excel'?<VisorExcel url={verArch.url}/>:<iframe src={'https://docs.google.com/gview?url='+encodeURIComponent(verArch.url)+'&embedded=true'} style={{width:'100%',height:'70vh',border:'none',borderRadius:'8px'}} title={verArch.nombre}/>}</div></div></div>)}
+{confirmDel&&(<div style={{position:'fixed',inset:0,background:'rgba(15,23,42,.8)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:10001,padding:'1rem'}} onClick={()=>setConfirmDel(null)}><div style={{background:'#fff',borderRadius:'16px',maxWidth:'360px',width:'100%',overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,.4)'}} onClick={e=>e.stopPropagation()}><div style={{background:'linear-gradient(135deg,#dc2626,#b91c1c)',padding:'1rem 1.25rem'}}><span style={{color:'#fff',fontWeight:'700',fontSize:'.875rem'}}>🗑 Confirmar eliminación</span></div><div style={{padding:'1.5rem',textAlign:'center'}}><p style={{fontWeight:'700',color:'#0f172a',marginBottom:'.5rem'}}>¿Eliminar este archivo?</p><p style={{color:'#64748b',fontSize:'.875rem',marginBottom:'1.25rem'}}>Esta acción no se puede deshacer.</p><div style={{display:'flex',gap:'.75rem',justifyContent:'flex-end'}}><button onClick={()=>setConfirmDel(null)} style={{padding:'.6rem 1.1rem',borderRadius:'9px',border:'1.5px solid #e2e8f0',background:'#fff',cursor:'pointer',fontWeight:'600',color:'#64748b'}}>Cancelar</button><button onClick={()=>doEliminar(confirmDel)} style={{padding:'.6rem 1.1rem',borderRadius:'9px',border:'none',background:'linear-gradient(135deg,#dc2626,#b91c1c)',color:'#fff',fontWeight:'700',cursor:'pointer'}}>Eliminar</button></div></div></div></div>)}
+{confirmMulti&&(<div style={{position:'fixed',inset:0,background:'rgba(15,23,42,.8)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:10001,padding:'1rem'}} onClick={()=>setConfirmMulti(false)}><div style={{background:'#fff',borderRadius:'16px',maxWidth:'360px',width:'100%',overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,.4)'}} onClick={e=>e.stopPropagation()}><div style={{background:'linear-gradient(135deg,#dc2626,#b91c1c)',padding:'1rem 1.25rem'}}><span style={{color:'#fff',fontWeight:'700',fontSize:'.875rem'}}>{'🗑 Eliminar '+selDet.length+' archivos'}</span></div><div style={{padding:'1.5rem',textAlign:'center'}}><p style={{fontWeight:'700',color:'#0f172a',marginBottom:'.5rem'}}>{'¿Eliminar '+selDet.length+' archivos?'}</p><p style={{color:'#64748b',fontSize:'.875rem',marginBottom:'1.25rem'}}>Esta acción no se puede deshacer.</p><div style={{display:'flex',gap:'.75rem',justifyContent:'flex-end'}}><button onClick={()=>setConfirmMulti(false)} style={{padding:'.6rem 1.1rem',borderRadius:'9px',border:'1.5px solid #e2e8f0',background:'#fff',cursor:'pointer',fontWeight:'600',color:'#64748b'}}>Cancelar</button><button onClick={doEliminarMulti} style={{padding:'.6rem 1.1rem',borderRadius:'9px',border:'none',background:'linear-gradient(135deg,#dc2626,#b91c1c)',color:'#fff',fontWeight:'700',cursor:'pointer'}}>Sí, eliminar</button></div></div></div></div>)}
+<div style={{background:'#fff',borderRadius:'20px',maxWidth:'680px',width:'100%',maxHeight:'88vh',overflow:'hidden',boxShadow:'0 30px 80px rgba(0,0,0,.4)',display:'flex',flexDirection:'column'}} onClick={e=>e.stopPropagation()}>
+<div style={{background:'linear-gradient(135deg,#1a56db,#1e3a8a)',padding:'1.1rem 1.5rem',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
+<div><p style={{color:'rgba(255,255,255,.7)',fontSize:'.7rem',fontWeight:'600',textTransform:'uppercase',letterSpacing:'.05em',margin:0}}>Detalle de escuela</p><h3 style={{color:'#fff',fontWeight:'800',fontSize:'1rem',margin:'2px 0 0'}}>{escuela.nombre}</h3></div>
 <button onClick={onClose} style={{background:'rgba(255,255,255,.15)',border:'none',color:'#fff',width:'32px',height:'32px',borderRadius:'8px',cursor:'pointer',fontSize:'1.1rem',display:'flex',alignItems:'center',justifyContent:'center'}}>×</button>
 </div>
-<div style={{padding:'1.25rem',overflowY:'auto',maxHeight:'calc(85vh - 80px)'}}>
-<div style={{display:'flex',gap:'.5rem',flexWrap:'wrap',marginBottom:'1.25rem'}}>
-<span style={{background:'#eff6ff',color:'#1d4ed8',borderRadius:'6px',padding:'3px 9px',fontSize:'.72rem',fontWeight:'700'}}>🪪 {escuela.cct}</span>
-{escuela.comunidad&&<span style={{background:'#f0fdf4',color:'#065f46',borderRadius:'6px',padding:'3px 9px',fontSize:'.72rem',fontWeight:'700'}}>📍 {escuela.comunidad}</span>}
-{escuela.director&&<span style={{background:'#faf5ff',color:'#6b21a8',borderRadius:'6px',padding:'3px 9px',fontSize:'.72rem',fontWeight:'700'}}>👤 {escuela.director}</span>}
+<div style={{padding:'1rem 1.25rem',overflowY:'auto',flex:1}}>
+<div style={{display:'flex',gap:'.5rem',flexWrap:'wrap',marginBottom:'1rem'}}>
+<span style={{background:'#eff6ff',color:'#1d4ed8',borderRadius:'6px',padding:'3px 9px',fontSize:'.72rem',fontWeight:'700'}}>{'🪪 '+escuela.cct}</span>
+{escuela.comunidad&&<span style={{background:'#f0fdf4',color:'#065f46',borderRadius:'6px',padding:'3px 9px',fontSize:'.72rem',fontWeight:'700'}}>{'📍 '+escuela.comunidad}</span>}
+{escuela.director&&<span style={{background:'#faf5ff',color:'#6b21a8',borderRadius:'6px',padding:'3px 9px',fontSize:'.72rem',fontWeight:'700'}}>{'👤 '+escuela.director}</span>}
 </div>
+{selDet.length>0&&<div style={{display:'flex',justifyContent:'flex-end',marginBottom:'.75rem'}}>
+<button onClick={()=>setConfirmMulti(true)} style={{padding:'.45rem 1rem',borderRadius:'9px',border:'none',background:'linear-gradient(135deg,#dc2626,#b91c1c)',color:'#fff',fontWeight:'700',cursor:'pointer',fontSize:'.8rem',boxShadow:'0 3px 10px rgba(220,38,38,.3)'}}>{'🗑 Eliminar '+selDet.length+' seleccionados'}</button>
+</div>}
 {progs.map((prog,pi)=>{
 const docs=documentos.filter(d=>d.escuelaId===escuela.id&&d.programaId===prog.id);
 const total=prog.documentosRequeridos.length;
 const ent=docs.length;
 const pct=total>0?Math.round((ent/total)*100):0;
 const colores=['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444','#06b6d4'];
-const c=colores[pi%colores.length];
+const col=colores[pi%colores.length];
 return(
 <div key={prog.id} style={{background:'#f8fafc',borderRadius:'12px',padding:'1rem',marginBottom:'.75rem',border:'1px solid #e8edf3'}}>
 <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'.5rem'}}>
 <span style={{fontWeight:'700',fontSize:'.875rem',color:'#0f172a'}}>{prog.nombre}</span>
-<span style={{fontSize:'.75rem',fontWeight:'800',padding:'2px 8px',borderRadius:'12px',background:pct===100?'#d1fae5':ent>0?'#fef3c7':'#fee2e2',color:pct===100?'#065f46':ent>0?'#92400e':'#991b1b'}}>{ent}/{total}</span>
+<span style={{fontSize:'.75rem',fontWeight:'800',padding:'2px 8px',borderRadius:'12px',background:pct===100?'#d1fae5':ent>0?'#fef3c7':'#fee2e2',color:pct===100?'#065f46':ent>0?'#92400e':'#991b1b'}}>{ent+'/'+total}</span>
 </div>
 <div style={{height:'5px',background:'#e2e8f0',borderRadius:'3px',overflow:'hidden',marginBottom:'.75rem'}}>
-<div style={{width:pct+'%',height:'100%',background:pct===100?'#10b981':c,borderRadius:'3px',transition:'width .4s'}}/>
+<div style={{width:pct+'%',height:'100%',background:pct===100?'#10b981':col,borderRadius:'3px',transition:'width .4s'}}/>
 </div>
 <div style={{display:'flex',flexDirection:'column',gap:'.4rem'}}>
 {prog.documentosRequeridos.map(doc=>{
 const d=docs.find(x=>x.nombreDocumento===doc);
+const tipo=d&&d.tipo||'';
+const esPDF=['PDF','pdf'].includes(tipo);
+const esWord=['Word','docx','doc'].includes(tipo);
+const esExcel=['Excel','xlsx','xls'].includes(tipo);
+const esImg=['Imagen','jpg','jpeg','png'].includes(tipo);
+const icoTxt=esPDF?'PDF':esWord?'W':esExcel?'X':esImg?'🖼':'📄';
+const icoBg=esPDF?['#fee2e2','#dc2626']:esWord?['#dbeafe','#1d4ed8']:esExcel?['#d1fae5','#059669']:esImg?['#fef3c7','#d97706']:['#f1f5f9','#64748b'];
 return(
-<div key={doc} style={{display:'flex',alignItems:'center',gap:'.6rem',padding:'.5rem .75rem',borderRadius:'8px',background:d?'#f0fdf4':'#fff9f9',border:d?'1px solid #bbf7d0':'1px dashed #fca5a5'}}>
-{d?<span style={{width:'20px',height:'20px',borderRadius:'50%',background:'#10b981',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:'.65rem',fontWeight:'800',flexShrink:0}}>✓</span>:<span style={{width:'20px',height:'20px',borderRadius:'50%',border:'1.5px dashed #fca5a5',flexShrink:0}}/>}
-<span style={{fontSize:'.8rem',fontWeight:'600',color:'#0f172a',flex:1}}>{doc}</span>
-{d&&<span style={{fontSize:'.65rem',color:'#64748b',background:'#f1f5f9',padding:'1px 6px',borderRadius:'4px'}}>{d.tipo}</span>}
-{d&&d.fecha&&<span style={{fontSize:'.62rem',color:'#94a3b8',marginLeft:'4px'}}>📅 {(()=>{const dt=new Date(d.fecha);return dt.toLocaleDateString('es-MX',{day:'2-digit',month:'short'})+' '+dt.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});})()}</span>}
+<div key={doc} style={{display:'flex',alignItems:'center',gap:'.6rem',padding:'.6rem .8rem',borderRadius:'9px',background:d?'#f0fdf4':'#fff9f9',border:d?'1px solid #bbf7d0':'1.5px dashed #fca5a5'}}>
+{d?<div style={{width:'28px',height:'28px',borderRadius:'7px',background:icoBg[0],display:'flex',alignItems:'center',justifyContent:'center',fontWeight:'800',fontSize:'.62rem',color:icoBg[1],flexShrink:0}}>{icoTxt}</div>:<div style={{width:'28px',height:'28px',borderRadius:'7px',background:'#fee2e2',border:'1.5px dashed #fca5a5',flexShrink:0}}/>}
+<div style={{flex:1,minWidth:0}}>
+<p style={{fontSize:'.8rem',fontWeight:'600',color:'#0f172a',margin:0,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{doc}</p>
+{d&&<p style={{fontSize:'.68rem',color:'#64748b',margin:'1px 0 0',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{d.nombreArchivo}</p>}
+{d&&d.fecha&&<p style={{fontSize:'.62rem',color:'#94a3b8',margin:'1px 0 0'}}>{'📅 '+(()=>{const dt=new Date(d.fecha);return dt.toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'2-digit'})+' '+dt.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});})()}</p>}
+</div>
+{d&&<div style={{display:'flex',alignItems:'center',gap:'.35rem',flexShrink:0}}>
+<input type="checkbox" checked={selDet.includes(d.id)} onChange={ev=>{if(ev.target.checked){setSelDet([...selDet,d.id]);}else{setSelDet(selDet.filter(x=>x!==d.id));}}} style={{width:'14px',height:'14px',cursor:'pointer'}}/>
+<button onClick={()=>setVerArch({url:d.url,nombre:d.nombreArchivo,tipo:d.tipo})} style={{padding:'.3rem .6rem',borderRadius:'7px',border:'1px solid #e2e8f0',background:'#fff',color:'#1d4ed8',fontWeight:'700',cursor:'pointer',fontSize:'.7rem'}}>{'👁 Ver'}</button>
+<button onClick={()=>setConfirmDel(d.id)} style={{padding:'.3rem .55rem',borderRadius:'7px',border:'none',background:'#fee2e2',color:'#dc2626',fontWeight:'700',cursor:'pointer',fontSize:'.7rem'}}>🗑</button>
+</div>}
 </div>
 );
 })}
@@ -785,12 +829,11 @@ return(
 </div>
 );
 };
-
-const Dashboard=({escuelas,programas,documentos})=>{
+const Dashboard=({escuelas,programas,documentos,setDocumentos})=>{
 const[detalle,setDetalle]=React.useState(null);
 return(
 <div>
-{detalle&&<DetalleEscuela escuela={detalle} programas={programas} documentos={documentos} onClose={()=>setDetalle(null)}/>}
+{detalle&&<DetalleEscuela escuela={detalle} programas={programas} documentos={documentos} setDocumentos={setDocumentos} onClose={()=>setDetalle(null)}/>}
 <div style={{display:'flex',alignItems:'center',gap:'.5rem',marginBottom:'1.25rem'}}>
 <div style={{width:'3px',height:'18px',background:'linear-gradient(180deg,#2563eb,#1d4ed8)',borderRadius:'2px'}}/>
 <h2 style={{fontSize:'.9rem',fontWeight:'800',color:'#0f172a',textTransform:'uppercase',letterSpacing:'.05em',margin:0}}>Resumen por Escuela</h2>
@@ -980,7 +1023,7 @@ return(<div>
 <div style={{marginBottom:'1rem',display:'flex',alignItems:'center',justifyContent:'space-between',gap:'1rem',flexWrap:'wrap'}} className="no-print">
 <div style={{display:'flex',alignItems:'flex-start',gap:'.75rem',flexWrap:'wrap'}}>
 <label style={{fontWeight:'700',fontSize:'.8rem',color:'#475569',paddingTop:'.45rem',textTransform:'uppercase',letterSpacing:'.04em'}}>📋 Filtrar:</label>
-<div style={{display:'flex',flexWrap:'wrap',gap:'.4rem'}}>
+<div style={{display:'flex',flexWrap:'wrap',gap:'.4rem',maxWidth:'calc(100vw - 300px)'}}>
 <button onClick={()=>setFiltroP([])} style={{padding:'.4rem .9rem',borderRadius:'20px',border:'2px solid '+(filtroP.length===0?'#2563eb':'#e2e8f0'),background:filtroP.length===0?'#eff6ff':'#f8fafc',color:filtroP.length===0?'#1d4ed8':'#64748b',fontSize:'.78rem',fontWeight:'700',cursor:'pointer',display:'flex',alignItems:'center',gap:'4px'}}>{filtroP.length===0&&'✓ '}Todos los programas</button>
 {programas.map(p=>{const sel=filtroP.includes(p.id);return(<button key={p.id} onClick={()=>setFiltroP(sel?filtroP.filter(x=>x!==p.id):[...filtroP,p.id])} style={{padding:'.4rem .9rem',borderRadius:'20px',border:'2px solid '+(sel?'#2563eb':'#e2e8f0'),background:sel?'#eff6ff':'#f8fafc',color:sel?'#1d4ed8':'#64748b',fontSize:'.78rem',fontWeight:'700',cursor:'pointer',display:'flex',alignItems:'center',gap:'4px'}}>{sel&&'✓ '}{p.nombre}</button>);})}
 </div>
@@ -993,15 +1036,15 @@ return(<div>
 <thead>
 <tr><th colSpan={3+progsFiltrados.length} style={{padding:'1rem',textAlign:'center',borderBottom:'2px solid #000',borderTop:'2px solid #000'}}><div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'1rem'}}>{config.logoUrl&&<img src={config.logoUrl} alt="Logo" style={{height:'40px',objectFit:'contain'}}/>}<div><div style={{fontSize:'1rem',fontWeight:'700'}}>{config.nombreZona||'ZONA ESCOLAR'}{filtroP.length>0?` — ${programas.filter(p=>filtroP.includes(p.id)).map(p=>p.nombre).join(', ')}`:''}</div><div style={{fontSize:'.8rem'}}>{fecha}</div></div></div></th></tr>
 <tr>
-<th style={{border:'1px solid #000',padding:'.4rem',background:'#f3f4f6',textAlign:'center'}}>No.</th>
-<th style={{border:'1px solid #000',padding:'.4rem',background:'#f3f4f6'}}>CLAVE</th>
-<th style={{border:'1px solid #000',padding:'.4rem',background:'#f3f4f6'}}>ESCUELA</th>
+<th style={{border:'1px solid #000',padding:'.3rem .2rem',background:'#f3f4f6',textAlign:'center',width:'28px'}}>No.</th>
+<th style={{border:'1px solid #000',padding:'.3rem .4rem',background:'#f3f4f6',width:'82px',whiteSpace:'nowrap'}}>CLAVE</th>
+<th style={{border:'1px solid #000',padding:'.3rem .4rem',background:'#f3f4f6'}}>ESCUELA</th>
 {progsFiltrados.map(p=>(<th key={p.id} style={{border:'1px solid #000',padding:'.2rem',background:'#f3f4f6',textAlign:'center',width:'54px',maxWidth:'70px'}}><div style={{writingMode:'vertical-rl',transform:'rotate(180deg)',whiteSpace:'normal',fontSize:'.65rem',fontWeight:'600',maxHeight:'120px',overflow:'hidden',wordBreak:'break-word',lineHeight:'1.2'}}>{p.nombre}</div></th>))}
 </tr>
 </thead>
 <tbody>
 {escuelas.map((e,i)=>(<tr key={e.id} style={{background:i%2===0?'#fff':'#f9fafb'}}>
-<td style={{border:'1px solid #d1d5db',padding:'.4rem',textAlign:'center',fontWeight:'600'}}>{i+1}</td>
+<td style={{border:'1px solid #d1d5db',padding:'.3rem .2rem',textAlign:'center',fontWeight:'700',width:'28px'}}>{i+1}</td>
 <td style={{border:'1px solid #d1d5db',padding:'.4rem',fontFamily:'monospace',fontSize:'.75rem'}}>{e.cct}</td>
 <td style={{border:'1px solid #d1d5db',padding:'.4rem',fontWeight:'500'}}>{e.nombre}</td>
 {progsFiltrados.map(p=>{const asignado=p.todasEscuelas||(p.escuelasAsignadas||[]).includes(e.id);if(!asignado)return <td key={p.id} style={{border:'1px solid #d1d5db',background:'#e5e7eb'}}></td>;const completo=documentos.filter(d=>d.escuelaId===e.id&&d.programaId===p.id).length>=p.documentosRequeridos.length;return(<td key={p.id} style={{border:'1px solid #d1d5db',textAlign:'center',fontSize:'1rem',background:completo?'#d1fae5':'#fff'}}>{completo?'✓':''}</td>);})}
@@ -1469,7 +1512,7 @@ root.render(<App/>);
 </html>
 <!-- ==================== VERSIÓN MÓVIL ADMIN ==================== -->
 <div id="mobile-root" style="display:none"></div>
-<style>#mobile-root{font-family:'Inter',sans-serif;background:#f1f5f9;min-height:100vh}.m-header{background:linear-gradient(135deg,#1a56db 0%,#1e3a8a 100%);padding:48px 16px 12px;border-bottom:none;position:sticky;top:0;z-index:50;box-shadow:0 4px 20px rgba(30,58,138,.4)}.m-header-row{display:flex;align-items:center;justify-content:space-between}.m-logo{width:38px;height:38px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:.8rem;flex-shrink:0}.m-title{font-size:.95rem;font-weight:800;color:#fff;letter-spacing:-.01em}.m-sub{font-size:.7rem;color:rgba(255,255,255,.65);font-weight:500}.m-btn-out{padding:.35rem .75rem;border-radius:8px;border:1.5px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);font-size:.7rem;color:#fff;cursor:pointer;font-family:inherit;font-weight:600;backdrop-filter:blur(8px)}.m-tabs{display:flex;overflow-x:auto;background:#fff;border-bottom:2px solid #e2e8f0;scrollbar-width:none;box-shadow:0 2px 8px rgba(0,0,0,.04)}.m-tabs::-webkit-scrollbar{display:none}.m-tab{padding:.6rem 1rem;font-size:.75rem;font-weight:600;color:#94a3b8;border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;cursor:pointer;font-family:inherit;background:none;border-top:none;border-left:none;border-right:none}.m-tab.on{color:#3b82f6;border-bottom-color:#3b82f6}.m-content{padding:1rem;padding-bottom:80px;min-height:calc(100vh - 120px)}.m-stats{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1.25rem}.m-stat{border-radius:14px;padding:1rem;color:#fff}.m-stat-lbl{font-size:.7rem;opacity:.85;margin-bottom:.2rem}.m-stat-val{font-size:1.75rem;font-weight:700}.m-card{background:#fff;border-radius:14px;padding:1rem;margin-bottom:.75rem;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid #f1f5f9}.m-card-hd{display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem}.m-avatar{width:40px;height:40px;border-radius:12px;background:#dbeafe;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:#1d4ed8;flex-shrink:0}.m-name{font-size:.875rem;font-weight:700;color:#0f172a}.m-cct{font-size:.7rem;color:#94a3b8;font-family:monospace}.m-dir{font-size:.7rem;color:#64748b;margin-top:.1rem}.m-card-ft{display:flex;align-items:center;gap:.5rem}.m-prog-b{font-size:.7rem;color:#64748b;background:#f1f5f9;padding:.2rem .5rem;border-radius:6px;white-space:nowrap}.m-pbar-w{flex:1}.m-pbar{height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden}.m-pfill{height:100%;border-radius:3px;background:linear-gradient(90deg,#10b981,#3b82f6)}.m-pct{font-size:.7rem;font-weight:700;white-space:nowrap}.m-card-btns{display:flex;gap:.4rem;margin-top:.75rem;border-top:1px solid #f1f5f9;padding-top:.75rem}.m-btn{padding:.35rem .65rem;border-radius:7px;border:1px solid #e2e8f0;background:#fff;font-size:.7rem;cursor:pointer;font-family:inherit;font-weight:500}.m-btn-r{padding:.35rem .65rem;border-radius:7px;border:none;background:#fee2e2;color:#dc2626;font-size:.7rem;cursor:pointer;font-family:inherit}.m-btn-p{background:#2563eb;color:#fff;border-color:#2563eb}.m-filters{display:flex;gap:.5rem;overflow-x:auto;margin-bottom:1rem;scrollbar-width:none;padding-bottom:.25rem}.m-filters::-webkit-scrollbar{display:none}.m-chip{padding:.35rem .75rem;border-radius:20px;border:1px solid #e2e8f0;background:#fff;font-size:.7rem;color:#64748b;white-space:nowrap;cursor:pointer;font-family:inherit}.m-chip.on{background:#3b82f6;color:#fff;border-color:#3b82f6}.m-doc-card{background:#fff;border-radius:14px;padding:.875rem;margin-bottom:.75rem;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid #f1f5f9}.m-doc-hd{display:flex;gap:.75rem;margin-bottom:.75rem}.m-doc-ico{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex-shrink:0}.m-doc-name{font-size:.8rem;font-weight:600;color:#0f172a;margin-bottom:.15rem;word-break:break-all}.m-doc-esc{font-size:.7rem;color:#64748b}.m-doc-prog{font-size:.65rem;color:#94a3b8}.m-doc-ft{display:flex;align-items:center;justify-content:space-between}.m-doc-date{font-size:.65rem;color:#94a3b8}.m-prog-card{background:#fff;border-radius:14px;padding:1rem;margin-bottom:.75rem;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid #f1f5f9}.m-prog-name{font-size:.9rem;font-weight:700;color:#0f172a;margin-bottom:.25rem}.m-prog-date{font-size:.7rem;color:#f59e0b;font-weight:600;margin-bottom:.5rem}.m-prog-docs{display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:.75rem}.m-prog-doc{font-size:.65rem;background:#f1f5f9;color:#374151;padding:.2rem .5rem;border-radius:6px}.m-section{font-size:.8rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.75rem}.m-action-row{display:flex;gap:.5rem;margin-bottom:1rem}.m-action-btn{flex:1;padding:.65rem;border-radius:10px;border:none;font-weight:600;font-size:.8rem;cursor:pointer;font-family:inherit}.m-bnav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e2e8f0;display:flex;padding:.5rem 0 1rem;z-index:50}.m-bnav-i{flex:1;display:flex;flex-direction:column;align-items:center;gap:.2rem;cursor:pointer;border:none;background:none;font-family:inherit}.m-bnav-ic{font-size:1.1rem}.m-bnav-lb{font-size:.6rem;color:#94a3b8;font-weight:500}.m-bnav-i.on .m-bnav-lb{color:#3b82f6}.m-rubrica{background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.06)}.m-rubrica table{width:100%;border-collapse:collapse;font-size:.7rem}.m-rubrica th{background:#f8fafc;padding:.5rem .4rem;text-align:center;border:1px solid #e2e8f0;font-weight:600;color:#64748b}.m-rubrica td{padding:.5rem .4rem;border:1px solid #e2e8f0;text-align:center}.m-empty{text-align:center;padding:3rem 1rem;color:#94a3b8}.m-badge{padding:.2rem .5rem;border-radius:6px;font-size:.65rem;font-weight:600}</style>
+<style>#mobile-root{font-family:'Inter',sans-serif;background:#f1f5f9;min-height:100vh}.m-header{background:linear-gradient(135deg,#1a56db 0%,#1e3a8a 100%);padding:48px 16px 12px;border-bottom:none;position:sticky;top:0;z-index:50;box-shadow:0 4px 20px rgba(30,58,138,.4)}.m-header-row{display:flex;align-items:center;justify-content:space-between}.m-logo{width:38px;height:38px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:.8rem;flex-shrink:0}.m-title{font-size:.95rem;font-weight:800;color:#fff;letter-spacing:-.01em}.m-sub{font-size:.7rem;color:rgba(255,255,255,.65);font-weight:500}.m-btn-out{padding:.35rem .75rem;border-radius:8px;border:1.5px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);font-size:.7rem;color:#fff;cursor:pointer;font-family:inherit;font-weight:600;backdrop-filter:blur(8px)}.m-tabs{display:flex;overflow-x:auto;background:#fff;border-bottom:2px solid #e2e8f0;scrollbar-width:none;box-shadow:0 2px 8px rgba(0,0,0,.04)}.m-tabs::-webkit-scrollbar{display:none}.m-tab{padding:.55rem .9rem;font-size:.73rem;font-weight:600;color:#94a3b8;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;cursor:pointer;font-family:inherit;background:none;border-top:none;border-left:none;border-right:none;border-radius:6px 6px 0 0;transition:all .15s}.m-tab.on{color:#2563eb;border-bottom-color:#2563eb;background:#eff6ff;font-weight:700}.m-content{padding:1rem;padding-bottom:80px;min-height:calc(100vh - 120px)}.m-stats{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1.25rem}.m-stat{border-radius:14px;padding:1rem;color:#fff}.m-stat-lbl{font-size:.7rem;opacity:.85;margin-bottom:.2rem}.m-stat-val{font-size:1.75rem;font-weight:700}.m-card{background:#fff;border-radius:14px;padding:1rem;margin-bottom:.75rem;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid #f1f5f9}.m-card-hd{display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem}.m-avatar{width:40px;height:40px;border-radius:12px;background:#dbeafe;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:#1d4ed8;flex-shrink:0}.m-name{font-size:.875rem;font-weight:700;color:#0f172a}.m-cct{font-size:.7rem;color:#94a3b8;font-family:monospace}.m-dir{font-size:.7rem;color:#64748b;margin-top:.1rem}.m-card-ft{display:flex;align-items:center;gap:.5rem}.m-prog-b{font-size:.7rem;color:#64748b;background:#f1f5f9;padding:.2rem .5rem;border-radius:6px;white-space:nowrap}.m-pbar-w{flex:1}.m-pbar{height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden}.m-pfill{height:100%;border-radius:3px;background:linear-gradient(90deg,#10b981,#3b82f6)}.m-pct{font-size:.7rem;font-weight:700;white-space:nowrap}.m-card-btns{display:flex;gap:.4rem;margin-top:.75rem;border-top:1px solid #f1f5f9;padding-top:.75rem}.m-btn{padding:.35rem .65rem;border-radius:7px;border:1px solid #e2e8f0;background:#fff;font-size:.7rem;cursor:pointer;font-family:inherit;font-weight:500}.m-btn-r{padding:.35rem .65rem;border-radius:7px;border:none;background:#fee2e2;color:#dc2626;font-size:.7rem;cursor:pointer;font-family:inherit}.m-btn-p{background:#2563eb;color:#fff;border-color:#2563eb}.m-filters{display:flex;gap:.5rem;overflow-x:auto;margin-bottom:1rem;scrollbar-width:none;padding-bottom:.25rem}.m-filters::-webkit-scrollbar{display:none}.m-chip{padding:.35rem .75rem;border-radius:20px;border:1px solid #e2e8f0;background:#fff;font-size:.7rem;color:#64748b;white-space:nowrap;cursor:pointer;font-family:inherit}.m-chip.on{background:#3b82f6;color:#fff;border-color:#3b82f6}.m-doc-card{background:#fff;border-radius:14px;padding:.875rem;margin-bottom:.75rem;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid #f1f5f9}.m-doc-hd{display:flex;gap:.75rem;margin-bottom:.75rem}.m-doc-ico{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex-shrink:0}.m-doc-name{font-size:.8rem;font-weight:600;color:#0f172a;margin-bottom:.15rem;word-break:break-all}.m-doc-esc{font-size:.7rem;color:#64748b}.m-doc-prog{font-size:.65rem;color:#94a3b8}.m-doc-ft{display:flex;align-items:center;justify-content:space-between}.m-doc-date{font-size:.65rem;color:#94a3b8}.m-prog-card{background:#fff;border-radius:14px;padding:1rem;margin-bottom:.75rem;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid #f1f5f9}.m-prog-name{font-size:.9rem;font-weight:700;color:#0f172a;margin-bottom:.25rem}.m-prog-date{font-size:.7rem;color:#f59e0b;font-weight:600;margin-bottom:.5rem}.m-prog-docs{display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:.75rem}.m-prog-doc{font-size:.65rem;background:#f1f5f9;color:#374151;padding:.2rem .5rem;border-radius:6px}.m-section{font-size:.8rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.75rem}.m-action-row{display:flex;gap:.5rem;margin-bottom:1rem}.m-action-btn{flex:1;padding:.65rem;border-radius:10px;border:none;font-weight:600;font-size:.8rem;cursor:pointer;font-family:inherit}.m-bnav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e2e8f0;display:flex;padding:.5rem 0 1rem;z-index:50}.m-bnav-i{flex:1;display:flex;flex-direction:column;align-items:center;gap:.2rem;cursor:pointer;border:none;background:none;font-family:inherit}.m-bnav-ic{font-size:1.1rem}.m-bnav-lb{font-size:.6rem;color:#94a3b8;font-weight:500}.m-bnav-i.on .m-bnav-lb{color:#3b82f6}.m-rubrica{background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.06)}.m-rubrica table{width:100%;border-collapse:collapse;font-size:.7rem}.m-rubrica th{background:#f8fafc;padding:.5rem .4rem;text-align:center;border:1px solid #e2e8f0;font-weight:600;color:#64748b}.m-rubrica td{padding:.5rem .4rem;border:1px solid #e2e8f0;text-align:center}.m-empty{text-align:center;padding:3rem 1rem;color:#94a3b8}.m-badge{padding:.2rem .5rem;border-radius:6px;font-size:.65rem;font-weight:600}</style>
 
 <script>
 const esCelular=()=>window.innerWidth<=768||/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
@@ -1927,15 +1970,15 @@ async function iniciarMovil(){
       <table>
         <thead>
           <tr><th colspan="${3+progsFiltrados.length}" style="padding:.75rem;text-align:center">${config.nombreZona||'ZONA ESCOLAR'}<br><small>${labelFiltro} — ${fecha}</small></th></tr>
-          <tr><th>#</th><th>CCT</th><th style="text-align:left">Escuela</th>
+          <tr><th style="width:22px">#</th><th style="width:70px;white-space:nowrap">Clave</th><th style="text-align:left">Escuela</th>
           ${progsFiltrados.map(p=>`<th style="max-width:54px;width:54px"><div style="writing-mode:vertical-rl;transform:rotate(180deg);white-space:normal;font-size:.6rem;max-height:110px;overflow:hidden;word-break:break-word;line-height:1.2;font-weight:600">${p.nombre}</div></th>`).join('')}
           </tr>
         </thead>
         <tbody>
           ${escuelas.map((e,i)=>`<tr style="background:${i%2?'#f8fafc':'#fff'}">
-            <td>${i+1}</td>
-            <td style="font-family:monospace;font-size:.65rem">${e.cct}</td>
-            <td style="text-align:left;font-size:.75rem">${e.nombre}</td>
+            <td style="padding:.35rem .2rem">${i+1}</td>
+            <td style="font-family:monospace;font-size:.6rem;white-space:nowrap;padding:.35rem .3rem">${e.cct}</td>
+            <td style="text-align:left;font-size:.72rem;padding:.35rem .3rem">${e.nombre}</td>
             ${progsFiltrados.map(p=>{
               const asig=p.todasEscuelas||(p.escuelasAsignadas||[]).includes(e.id);
               if(!asig)return`<td style="background:#e5e7eb"></td>`;

@@ -162,6 +162,7 @@ const[escuelas,setEscuelas]=useState([]);
 const[programas,setProgramas]=useState([]);
 const[documentos,setDocumentos]=useState([]);
 const[compartidos,setCompartidos]=useState([]);
+const[enlaces,setEnlaces]=useState([]);
 const[escuelaActual,setEscuelaActual]=useState(null);
 const[error,setError]=useState(null);
 
@@ -196,12 +197,13 @@ unsubscribePromise.then(unsub=>unsub&&unsub());
 
 const cargarDatos=async(user,admin)=>{
 try{
-const[configSnap,escuelasSnap,programasSnap,docsSnap,compSnap]=await Promise.all([
+const[configSnap,escuelasSnap,programasSnap,docsSnap,compSnap,enlacesSnap]=await Promise.all([
   db.collection('configuracion').doc('general').get(),
   db.collection('escuelas').orderBy('cct').get(),
   db.collection('programas').orderBy('fechaLimite','desc').get(),
   db.collection('documentos').get(),
-  db.collection('compartidos').get()
+  db.collection('compartidos').get(),
+  db.collection('enlaces').orderBy('fecha','desc').get()
 ]);
 if(configSnap.exists)setConfig({nombreZona:'',logoUrl:'',permitirBorradoEscuelas:false,...configSnap.data()});
 const escuelasData=escuelasSnap.docs.map(d=>({id:d.id,...d.data()}));
@@ -213,6 +215,7 @@ setEscuelaActual(escuela);
 setProgramas(programasSnap.docs.map(d=>({id:d.id,...d.data()})));
 setDocumentos(docsSnap.docs.map(d=>({id:d.id,...d.data()})));
 setCompartidos(compSnap.docs.map(d=>({id:d.id,...d.data()})));
+setEnlaces(enlacesSnap.docs.map(d=>({id:d.id,...d.data()})));
 }catch(error){
 console.error('Error cargando:',error);
 setError('Error al cargar datos. Verifica tu conexión.');
@@ -225,8 +228,8 @@ if(error)return <Error mensaje={error}/>;
 return(
 <>
 {vista==='login'&&<Login config={config} escuelas={escuelas} configCargada={configCargada}/>}
-{vista==='admin'&&<Admin usuario={usuario} config={config} setConfig={setConfig} escuelas={escuelas} setEscuelas={setEscuelas} programas={programas} setProgramas={setProgramas} documentos={documentos} setDocumentos={setDocumentos} compartidos={compartidos} setCompartidos={setCompartidos} onLogout={()=>auth.signOut()}/>}
-{vista==='escuela'&&<Escuela usuario={usuario} escuela={escuelaActual} config={config} programas={programas} documentos={documentos} setDocumentos={setDocumentos} compartidos={compartidos} onLogout={()=>auth.signOut()}/>}
+{vista==='admin'&&<Admin usuario={usuario} config={config} setConfig={setConfig} escuelas={escuelas} setEscuelas={setEscuelas} programas={programas} setProgramas={setProgramas} documentos={documentos} setDocumentos={setDocumentos} compartidos={compartidos} setCompartidos={setCompartidos} enlaces={enlaces} setEnlaces={setEnlaces} onLogout={()=>auth.signOut()}/>}
+{vista==='escuela'&&<Escuela usuario={usuario} escuela={escuelaActual} config={config} programas={programas} documentos={documentos} setDocumentos={setDocumentos} compartidos={compartidos} enlaces={enlaces} onLogout={()=>auth.signOut()}/>}
 </>
 );
 };
@@ -384,7 +387,7 @@ return(
 );
 };
 
-const Admin=({usuario,config,setConfig,escuelas,setEscuelas,programas,setProgramas,documentos,setDocumentos,compartidos,setCompartidos,onLogout})=>{
+const Admin=({usuario,config,setConfig,escuelas,setEscuelas,programas,setProgramas,documentos,setDocumentos,compartidos,setCompartidos,enlaces,setEnlaces,onLogout})=>{
 const[tab,setTab]=useState('dashboard');
 const[modal,setModal]=useState(null);
 const[editData,setEditData]=useState(null);
@@ -428,6 +431,7 @@ return(
 <button onClick={()=>{setEditData(null);setModal('escuela');}} style={{padding:'.55rem 1.1rem',borderRadius:'10px',border:'none',background:'linear-gradient(135deg,#2563eb,#1d4ed8)',color:'#fff',fontWeight:'700',cursor:'pointer',fontSize:'.85rem',boxShadow:'0 4px 12px rgba(37,99,235,.35)'}}>＋ Escuela</button>
 <button onClick={()=>{setEditData(null);setModal('programa');}} style={{padding:'.55rem 1.1rem',borderRadius:'10px',border:'none',background:'linear-gradient(135deg,#10b981,#059669)',color:'#fff',fontWeight:'700',cursor:'pointer',fontSize:'.85rem',boxShadow:'0 4px 12px rgba(16,185,129,.3)'}}>＋ Programa</button>
 <button onClick={()=>setModal('compartido')} style={{padding:'.55rem 1.1rem',borderRadius:'10px',border:'1.5px solid #e2e8f0',background:'#fff',color:'#374151',fontWeight:'600',cursor:'pointer',fontSize:'.85rem'}}>📤 Subir Archivo</button>
+<button onClick={()=>{setEditData(null);setModal('enlace');}} style={{padding:'.55rem 1.1rem',borderRadius:'10px',border:'1.5px solid #e2e8f0',background:'#fff',color:'#374151',fontWeight:'600',cursor:'pointer',fontSize:'.85rem'}}>🔗 Agregar Enlace</button>
 <button onClick={()=>exportExcel(escuelas,programas,documentos)} style={{padding:'.55rem 1.1rem',borderRadius:'10px',border:'1.5px solid #e2e8f0',background:'#fff',color:'#374151',fontWeight:'600',cursor:'pointer',fontSize:'.85rem'}}>📥 Excel</button>
 <button onClick={()=>window.print()} style={{padding:'.55rem 1.1rem',borderRadius:'10px',border:'1.5px solid #e2e8f0',background:'#fff',color:'#374151',fontWeight:'600',cursor:'pointer',fontSize:'.85rem'}}>🖨️ Imprimir</button>
 </div>
@@ -438,6 +442,7 @@ return(
 <Tab active={tab==='programas'} onClick={()=>setTab('programas')}>Programas ({programas.length})</Tab>
 <Tab active={tab==='documentos'} onClick={()=>setTab('documentos')}>Documentos ({documentos.length})</Tab>
 <Tab active={tab==='compartidos'} onClick={()=>setTab('compartidos')}>Archivos ({compartidos.length})</Tab>
+<Tab active={tab==='enlaces'} onClick={()=>setTab('enlaces')}>🔗 Enlaces ({enlaces.length})</Tab>
 <Tab active={tab==='reporte'} onClick={()=>setTab('reporte')}>📋 Rúbrica</Tab>
 </div>
 </div>
@@ -447,12 +452,14 @@ return(
 {tab==='documentos'&&<TabDocumentos documentos={docsFiltrados} escuelas={escuelas} programas={programas} filtroEscuela={filtroEscuela} setFiltroEscuela={setFiltroEscuela} filtroPrograma={filtroPrograma} setFiltroPrograma={setFiltroPrograma} onDelete={(id)=>delDocumento(id,documentos,setDocumentos)}/>}
 {tab==='reporte'&&<TabRubrica escuelas={escuelas} programas={programas} documentos={documentos} config={config}/>}
 {tab==='compartidos'&&<TabCompartidos compartidos={compartidos} onDelete={(id)=>delCompartido(id,compartidos,setCompartidos)}/>}
+{tab==='enlaces'&&<TabEnlaces enlaces={enlaces} programas={programas} onEdit={(e)=>{setEditData(e);setModal('enlace');}} onDelete={(id)=>delEnlace(id,enlaces,setEnlaces)}/>}
 </div>
 {modal==='escuela'&&<ModalEscuela data={editData} onClose={()=>setModal(null)} onSave={(d)=>saveEscuela(d,escuelas,setEscuelas,()=>setModal(null))}/>}
 {modal==='programa'&&<ModalPrograma data={editData} escuelas={escuelas} onClose={()=>setModal(null)} onSave={(d)=>savePrograma(d,programas,setProgramas,()=>setModal(null))}/>}
 {modal==='password'&&<ModalPassword escuela={editData} onClose={()=>setModal(null)}/>}
 {modal==='config'&&<ModalConfig config={config} onSave={(c)=>{saveConfig(c,setConfig);setModal(null);}} onClose={()=>setModal(null)}/>}
 {modal==='compartido'&&<ModalCompartido programas={programas} onClose={()=>setModal(null)} onSave={(d)=>saveCompartido(d,compartidos,setCompartidos,()=>setModal(null))}/>}
+{modal==='enlace'&&<ModalEnlace data={editData} programas={programas} onClose={()=>setModal(null)} onSave={(d)=>saveEnlace(d,editData,enlaces,setEnlaces,()=>setModal(null))}/>}
 </div>
 );
 };
@@ -484,7 +491,7 @@ function confirmar(msg, sub, onOk, textoOk='Eliminar', icono='🗑️'){
   cancel.onclick=close;
   ov.onclick=(e)=>{if(e.target===ov)close();};
 }
-const Escuela=({usuario,escuela,config,programas,documentos,setDocumentos,compartidos,onLogout})=>{
+const Escuela=({usuario,escuela,config,programas,documentos,setDocumentos,compartidos,enlaces,onLogout})=>{
 const[subiendo,setSubiendo]=useState(false);
 const[progreso,setProgreso]=useState(0);
 const[previa,setPrevia]=useState(null);
@@ -717,6 +724,31 @@ return(
 </div>
 </div>
 )}
+</div>
+{(()=>{
+const enlacesEscuela=(enlaces||[]).filter(e=>!e.programaId||progEscuela.some(p=>p.id===e.programaId));
+if(enlacesEscuela.length===0)return null;
+return(
+<div style={{marginTop:'2rem'}}>
+<div style={{display:'flex',alignItems:'center',gap:'.5rem',marginBottom:'1rem'}}>
+<div style={{width:'3px',height:'18px',background:'linear-gradient(180deg,#6366f1,#4f46e5)',borderRadius:'2px'}}/>
+<h3 style={{fontSize:'.9rem',fontWeight:'800',color:'#0f172a',textTransform:'uppercase',letterSpacing:'.04em',margin:0}}>🔗 Enlaces Compartidos</h3>
+</div>
+<div style={{display:'flex',flexDirection:'column',gap:'.75rem'}}>
+{enlacesEscuela.map(e=>(
+<div key={e.id} style={{background:'#fff',borderRadius:'14px',border:'1px solid #e8edf3',boxShadow:'0 2px 8px rgba(0,0,0,.05)',padding:'1rem',display:'flex',gap:'1rem',alignItems:'center'}}>
+<div style={{width:'48px',height:'48px',borderRadius:'14px',background:'linear-gradient(135deg,#6366f1,#4f46e5)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'1.3rem',flexShrink:0}}>🔗</div>
+<div style={{flex:1,minWidth:0}}>
+<p style={{fontWeight:'700',fontSize:'.9rem',color:'#0f172a',margin:0}}>{e.titulo}</p>
+{e.descripcion&&<p style={{fontSize:'.78rem',color:'#64748b',margin:'3px 0 0',lineHeight:1.4}}>{e.descripcion}</p>}
+</div>
+<a href={e.url} target="_blank" rel="noopener" style={{padding:'.5rem 1.1rem',borderRadius:'10px',background:'linear-gradient(135deg,#6366f1,#4f46e5)',color:'#fff',fontWeight:'700',fontSize:'.78rem',textDecoration:'none',flexShrink:0,boxShadow:'0 3px 10px rgba(99,102,241,.35)',display:'flex',alignItems:'center',gap:'5px'}}>↗ Abrir</a>
+</div>
+))}
+</div>
+</div>
+);
+})()}
 </div>
 </div>
 );
@@ -1010,6 +1042,72 @@ const TabCompartidos=({compartidos,onDelete})=>(
 )}
 </div>
 );
+const TabEnlaces=({enlaces,programas,onEdit,onDelete})=>(
+<div className="card">
+{enlaces.length===0?<div style={{textAlign:'center',padding:'3rem',color:'#94a3b8'}}><div style={{fontSize:'2.5rem',marginBottom:'.75rem'}}>🔗</div><p style={{fontWeight:'600'}}>No hay enlaces compartidos</p><p style={{fontSize:'.8rem',marginTop:'.25rem'}}>Haz clic en "Agregar Enlace" para compartir un link con las escuelas</p></div>:(
+<div style={{display:'flex',flexDirection:'column',gap:'.75rem'}}>
+{enlaces.map(e=>{
+const prog=programas.find(p=>p.id===e.programaId);
+return(
+<div key={e.id} style={{display:'flex',alignItems:'center',gap:'1rem',padding:'1rem',border:'1px solid #e8edf3',borderRadius:'12px',background:'#f8fafc'}}>
+<div style={{width:'44px',height:'44px',borderRadius:'12px',background:'linear-gradient(135deg,#6366f1,#4f46e5)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'1.2rem',flexShrink:0}}>🔗</div>
+<div style={{flex:1,minWidth:0}}>
+<p style={{fontWeight:'700',fontSize:'.9rem',color:'#0f172a',margin:0}}>{e.titulo}</p>
+{e.descripcion&&<p style={{fontSize:'.78rem',color:'#64748b',margin:'2px 0 0',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{e.descripcion}</p>}
+<div style={{display:'flex',gap:'.5rem',marginTop:'4px',flexWrap:'wrap'}}>
+{prog&&<span style={{fontSize:'.68rem',background:'#eff6ff',color:'#1d4ed8',padding:'1px 7px',borderRadius:'10px',fontWeight:'600'}}>📋 {prog.nombre}</span>}
+<span style={{fontSize:'.68rem',color:'#94a3b8'}}>{e.url.length>50?e.url.slice(0,50)+'…':e.url}</span>
+</div>
+</div>
+<div style={{display:'flex',gap:'.5rem',flexShrink:0}}>
+<a href={e.url} target="_blank" rel="noopener" style={{padding:'.4rem .85rem',borderRadius:'8px',border:'1px solid #bfdbfe',background:'#eff6ff',color:'#1d4ed8',fontWeight:'700',fontSize:'.78rem',textDecoration:'none',display:'flex',alignItems:'center',gap:'4px'}}>↗ Abrir</a>
+<button onClick={()=>onEdit(e)} style={{padding:'.4rem .75rem',borderRadius:'8px',border:'1px solid #e2e8f0',background:'#fff',color:'#374151',fontWeight:'600',fontSize:'.78rem',cursor:'pointer'}}>✏️</button>
+<button onClick={()=>onDelete(e.id)} style={{padding:'.4rem .75rem',borderRadius:'8px',border:'none',background:'#fee2e2',color:'#dc2626',fontWeight:'700',fontSize:'.78rem',cursor:'pointer'}}>🗑️</button>
+</div>
+</div>
+);
+})}
+</div>
+)}
+</div>
+);
+
+const ModalEnlace=({data,programas,onClose,onSave})=>{
+const[form,setForm]=useState({titulo:data?.titulo||'',descripcion:data?.descripcion||'',url:data?.url||'',programaId:data?.programaId||''});
+const handleSubmit=async(ev)=>{
+ev.preventDefault();
+if(!form.titulo||!form.url){toast('Título y URL son obligatorios','warning');return;}
+let url=form.url.trim();
+if(!/^https?:\/\//i.test(url))url='https://'+url;
+onSave({...form,url});
+};
+return(
+<div className="modal-overlay">
+<div className="modal">
+<div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'1.5rem'}}>
+<h2 style={{fontSize:'1.25rem',fontWeight:'700'}}>{data?'Editar Enlace':'🔗 Agregar Enlace'}</h2>
+<button onClick={onClose} style={{border:'none',background:'none',fontSize:'1.5rem',cursor:'pointer'}}>×</button>
+</div>
+<form onSubmit={handleSubmit}>
+<div style={{marginBottom:'1rem'}}><label>Título *</label><input type="text" value={form.titulo} onChange={e=>setForm({...form,titulo:e.target.value})} placeholder="Ej: Circular de Inicio de Ciclo" required/></div>
+<div style={{marginBottom:'1rem'}}><label>URL del enlace *</label><input type="text" value={form.url} onChange={e=>setForm({...form,url:e.target.value})} placeholder="https://drive.google.com/..." required/></div>
+<div style={{marginBottom:'1rem'}}><label>Descripción</label><textarea value={form.descripcion} onChange={e=>setForm({...form,descripcion:e.target.value})} rows="2" placeholder="Describe brevemente el contenido del enlace..."/></div>
+<div style={{marginBottom:'1.5rem'}}>
+<label>Programa (opcional)</label>
+<select value={form.programaId} onChange={e=>setForm({...form,programaId:e.target.value})}>
+<option value="">Todos los programas</option>
+{programas.map(p=><option key={p.id} value={p.id}>{p.nombre}</option>)}
+</select>
+</div>
+<div style={{display:'flex',gap:'1rem'}}>
+<button type="button" onClick={onClose} className="btn btn-secondary" style={{flex:1}}>Cancelar</button>
+<button type="submit" className="btn btn-primary" style={{flex:1}}>{data?'Guardar cambios':'Agregar enlace'}</button>
+</div>
+</form>
+</div>
+</div>
+);
+};
 const TabRubrica=({escuelas,programas,documentos,config})=>{
 const[filtroP,setFiltroP]=React.useState([]);
 const fecha=new Date().toLocaleDateString('es-MX',{year:'numeric',month:'long',day:'numeric'});
@@ -1471,6 +1569,32 @@ toast('Error al eliminar','error');
 },'Eliminar','🗑️');
 };
 
+const saveEnlace=async(data,editData,enlaces,setEnlaces,onClose)=>{
+try{
+const payload={titulo:data.titulo,descripcion:data.descripcion||'',url:data.url,programaId:data.programaId||'',fecha:editData?.fecha||new Date().toISOString()};
+if(editData?.id){
+await db.collection('enlaces').doc(editData.id).update(payload);
+setEnlaces(enlaces.map(e=>e.id===editData.id?{...e,...payload}:e));
+toast('Enlace actualizado','success');
+}else{
+const ref=await db.collection('enlaces').add(payload);
+setEnlaces([{id:ref.id,...payload},...enlaces]);
+toast('Enlace agregado','success');
+}
+onClose();
+}catch(error){console.error(error);toast('Error al guardar enlace','error');}
+};
+
+const delEnlace=async(id,enlaces,setEnlaces)=>{
+confirmar('¿Eliminar este enlace?','El enlace se eliminará permanentemente.',async()=>{
+try{
+await db.collection('enlaces').doc(id).delete();
+setEnlaces(enlaces.filter(e=>e.id!==id));
+toast('Enlace eliminado','success');
+}catch(error){console.error(error);toast('Error al eliminar','error');}
+},'Eliminar','🗑️');
+};
+
 const delCompartido=async(id,compartidos,setCompartidos)=>{
 confirmar('¿Eliminar este archivo compartido?','El archivo se eliminará permanentemente.',async()=>{
 try{
@@ -1537,7 +1661,7 @@ async function iniciarMovil(){
   let estado={
     usuario:null,esAdmin:false,
     config:{nombreZona:'',logoUrl:'',cicloEscolar:''},
-    escuelas:[],programas:[],documentos:[],compartidos:[],
+    escuelas:[],programas:[],documentos:[],compartidos:[],enlaces:[],
     tab:'dashboard',
     filtroEsc:'',filtroProg:'',filtroRubrica:[],dashboardTodas:false,
     modal:null,modalData:null
@@ -1570,18 +1694,20 @@ async function iniciarMovil(){
 
   async function cargarDatos(){
     try{
-      const[cfgSnap,escSnap,progSnap,docSnap,compSnap]=await Promise.all([
+      const[cfgSnap,escSnap,progSnap,docSnap,compSnap,enlSnap]=await Promise.all([
         db.collection('configuracion').doc('general').get(),
         db.collection('escuelas').orderBy('cct').get(),
         db.collection('programas').orderBy('fechaLimite','desc').get(),
         db.collection('documentos').get(),
-        db.collection('compartidos').get()
+        db.collection('compartidos').get(),
+        db.collection('enlaces').orderBy('fecha','desc').get()
       ]);
       if(cfgSnap.exists)estado.config={...estado.config,...cfgSnap.data()};
       estado.escuelas=escSnap.docs.map(d=>({id:d.id,...d.data()}));
       estado.programas=progSnap.docs.map(d=>({id:d.id,...d.data()}));
       estado.documentos=docSnap.docs.map(d=>({id:d.id,...d.data()}));
       estado.compartidos=compSnap.docs.map(d=>({id:d.id,...d.data()}));
+      estado.enlaces=enlSnap.docs.map(d=>({id:d.id,...d.data()}));
     }catch(e){console.error(e);}
   }
 
@@ -1708,6 +1834,7 @@ async function iniciarMovil(){
       <button class="m-tab ${tab==='programas'?'on':''}" onclick="mTab('programas')">Programas (${estado.programas.length})</button>
       <button class="m-tab ${tab==='documentos'?'on':''}" onclick="mTab('documentos')">Documentos (${estado.documentos.length})</button>
       <button class="m-tab ${tab==='compartidos'?'on':''}" onclick="mTab('compartidos')">Archivos (${estado.compartidos.length})</button>
+      <button class="m-tab ${tab==='enlaces'?'on':''}" onclick="mTab('enlaces')">🔗 Enlaces (${estado.enlaces.length})</button>
       <button class="m-tab ${tab==='rubrica'?'on':''}" onclick="mTab('rubrica')">📋 Rúbrica</button>
     </div>
     <div class="m-content" id="m-content"></div>
@@ -1729,6 +1856,7 @@ async function iniciarMovil(){
     else if(tab==='programas')c.innerHTML=htmlProgramas();
     else if(tab==='documentos')c.innerHTML=htmlDocumentos();
     else if(tab==='compartidos')c.innerHTML=htmlCompartidos();
+    else if(tab==='enlaces')c.innerHTML=htmlEnlaces();
     else if(tab==='rubrica')c.innerHTML=htmlRubrica();
     else if(tab==='config')c.innerHTML=htmlConfig();
   }
@@ -1952,6 +2080,97 @@ async function iniciarMovil(){
         </div>
       </div>`;}).join('')}`;
   }
+
+  function htmlEnlaces(){
+    const progsOpts=`<option value="">Todos los programas</option>`+
+      estado.programas.map(p=>`<option value="${p.id}">${p.nombre}</option>`).join('');
+    const lista=estado.enlaces.length===0?`<div class="m-empty">🔗<br>Sin enlaces compartidos</div>`:
+    estado.enlaces.map(e=>{
+      const p=estado.programas.find(x=>x.id===e.programaId);
+      return`<div class="m-card" style="border-left:3px solid #6366f1">
+        <div style="display:flex;align-items:flex-start;gap:.75rem">
+          <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#6366f1,#4f46e5);display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0">🔗</div>
+          <div style="flex:1;min-width:0">
+            <div class="m-name" style="margin-bottom:.2rem">${e.titulo}</div>
+            ${e.descripcion?`<div style="font-size:.75rem;color:#64748b;margin-bottom:.3rem">${e.descripcion}</div>`:''}
+            ${p?`<div style="font-size:.68rem;color:#6366f1;font-weight:600">📋 ${p.nombre}</div>`:''}
+          </div>
+        </div>
+        <div class="m-card-btns" style="margin-top:.75rem">
+          <a href="${e.url}" target="_blank" class="m-btn m-btn-p" style="flex:1;text-align:center;text-decoration:none;display:block;padding:.4rem .65rem">↗ Abrir</a>
+          <button class="m-btn" onclick="mEditarEnlace('${e.id}')">✏️</button>
+          <button class="m-btn-r" onclick="mBorrarEnlace('${e.id}')">🗑️</button>
+        </div>
+      </div>`;}).join('');
+    return`<div class="m-action-row">
+      <button class="m-action-btn m-btn-p" onclick="mNuevoEnlace()">🔗 Agregar Enlace</button>
+    </div>${lista}`;
+  }
+
+  window.mNuevoEnlace=()=>{
+    const progsOpts=`<option value="">Sin programa específico</option>`+
+      estado.programas.map(p=>`<option value="${p.id}">${p.nombre}</option>`).join('');
+    document.getElementById('m-content').innerHTML=`<div class="m-card">
+      <div class="m-section">Agregar Enlace</div>
+      <div style="margin-bottom:.75rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">Título *</label><input id="mf-etit" placeholder="Ej: Circular de Inicio de Ciclo" style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit"></div>
+      <div style="margin-bottom:.75rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">URL del enlace *</label><input id="mf-eurl" type="url" placeholder="https://..." style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit"></div>
+      <div style="margin-bottom:.75rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">Descripción</label><textarea id="mf-edesc" rows="2" style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit"></textarea></div>
+      <div style="margin-bottom:1rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">📋 Programa (opcional)</label>
+      <select id="mf-eprog" style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit">${progsOpts}</select></div>
+      <div style="display:flex;gap:.5rem">
+        <button onclick="mTab('enlaces')" class="m-action-btn" style="background:#f1f5f9;color:#374151">Cancelar</button>
+        <button onclick="mGuardarEnlace()" class="m-action-btn m-btn-p">Guardar</button>
+      </div></div>`;
+  };
+
+  window.mGuardarEnlace=async()=>{
+    let titulo=document.getElementById('mf-etit').value.trim();
+    let url=document.getElementById('mf-eurl').value.trim();
+    if(!titulo||!url){toast('Título y URL son obligatorios','warning');return;}
+    if(!/^https?:\/\//i.test(url))url='https://'+url;
+    const data={titulo,descripcion:document.getElementById('mf-edesc').value.trim(),url,programaId:document.getElementById('mf-eprog').value||'',fecha:new Date().toISOString()};
+    try{const r=await db.collection('enlaces').add(data);estado.enlaces.unshift({id:r.id,...data});toast('Enlace agregado','success');mTab('enlaces');}
+    catch(e){toast('Error al guardar','error');}
+  };
+
+  window.mEditarEnlace=id=>{
+    const e=estado.enlaces.find(x=>x.id===id);
+    if(!e)return;
+    const progsOpts=`<option value="">Sin programa específico</option>`+
+      estado.programas.map(p=>`<option value="${p.id}"${p.id===e.programaId?' selected':''}>${p.nombre}</option>`).join('');
+    document.getElementById('m-content').innerHTML=`<div class="m-card">
+      <div class="m-section">Editar Enlace</div>
+      <div style="margin-bottom:.75rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">Título *</label><input id="mf-etit" value="${e.titulo}" style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit"></div>
+      <div style="margin-bottom:.75rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">URL del enlace *</label><input id="mf-eurl" value="${e.url}" style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit"></div>
+      <div style="margin-bottom:.75rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">Descripción</label><textarea id="mf-edesc" rows="2" style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit">${e.descripcion||''}</textarea></div>
+      <div style="margin-bottom:1rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">📋 Programa (opcional)</label>
+      <select id="mf-eprog" style="width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit">${progsOpts}</select></div>
+      <div style="display:flex;gap:.5rem">
+        <button onclick="mTab('enlaces')" class="m-action-btn" style="background:#f1f5f9;color:#374151">Cancelar</button>
+        <button onclick="mActualizarEnlace('${id}')" class="m-action-btn m-btn-p">Guardar cambios</button>
+      </div></div>`;
+  };
+
+  window.mActualizarEnlace=async id=>{
+    let titulo=document.getElementById('mf-etit').value.trim();
+    let url=document.getElementById('mf-eurl').value.trim();
+    if(!titulo||!url){toast('Título y URL son obligatorios','warning');return;}
+    if(!/^https?:\/\//i.test(url))url='https://'+url;
+    const e=estado.enlaces.find(x=>x.id===id);
+    const data={...e,titulo,descripcion:document.getElementById('mf-edesc').value.trim(),url,programaId:document.getElementById('mf-eprog').value||''};
+    try{await db.collection('enlaces').doc(id).update(data);estado.enlaces=estado.enlaces.map(x=>x.id===id?data:x);toast('Enlace actualizado','success');mTab('enlaces');}
+    catch(e){toast('Error al guardar','error');}
+  };
+
+  window.mBorrarEnlace=async id=>{
+    confirmar('¿Eliminar este enlace?','El enlace se eliminará permanentemente.',async()=>{
+    try{
+      await db.collection('enlaces').doc(id).delete();
+      estado.enlaces=estado.enlaces.filter(x=>x.id!==id);
+      renderTab();
+    }catch(e){toast('Error al eliminar','error');}
+    },'Eliminar','🗑️');
+  };
 
   function htmlRubrica(){
     const{escuelas,programas,documentos,config}=estado;

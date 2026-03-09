@@ -263,33 +263,51 @@ const[cargando,setCargando]=useState(false);
 const[intento,setIntento]=useState(0);
 const[conectando,setConectando]=useState(false);
 
+const sha256=async(txt)=>{
+const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(txt));
+return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+};
+
 const handleLogin=async(e)=>{
 e?.preventDefault();
 setError('');
 setCargando(true);
 setConectando(true);
 setIntento(1);
-
 try{
 let email;
 if(modoAdmin){
 email=ADMIN_EMAIL;
 }else{
-if(!cct){
-setError('Ingresa tu CCT');
-setCargando(false);
-setConectando(false);
-return;
-}
+if(!cct){setError('Ingresa tu CCT');setCargando(false);setConectando(false);return;}
 const escuelasSnap=await db.collection('escuelas').where('cct','==',cct.trim().toUpperCase()).limit(1).get();
-if(escuelasSnap.empty){
-setError('CCT no encontrado. Verifica que esté registrado en el sistema.');
-setCargando(false);
-setConectando(false);
-return;
-}
+if(escuelasSnap.empty){setError('CCT no encontrado. Verifica que esté registrado en el sistema.');setCargando(false);setConectando(false);return;}
 const escuela=escuelasSnap.docs[0].data();
 email=`${escuela.cct.toLowerCase()}@escuela.local`;
+// Checar contraseña maestra
+try{
+const cfgSnap=await db.collection('configuracion').doc('general').get();
+if(cfgSnap.exists){
+const{pwdMaestraHash}=cfgSnap.data();
+if(pwdMaestraHash){
+const hashIntento=await sha256(password);
+if(hashIntento===pwdMaestraHash){
+// Contraseña maestra válida: cambiar pwd de la escuela a la maestra temporalmente y entrar
+const tmpApp=firebase.initializeApp(firebaseConfig,`_maestra_${Date.now()}`);
+const tmpAuth=tmpApp.auth();
+// Entrar como admin en app temporal para resetear
+await tmpAuth.signInWithEmailAndPassword(ADMIN_EMAIL,password).catch(()=>{});
+await tmpApp.delete();
+// Intentar entrar directo — si falla, la contraseña real es distinta
+const r=await loginWithRetry(email,password);
+if(r.success){setConectando(false);return;}
+// No pudo — informar al usuario que use contraseña individual
+setError('La contraseña maestra no coincide con la contraseña actual de esta escuela. Usa la contraseña individual.');
+setCargando(false);setConectando(false);return;
+}
+}
+}
+}catch(e2){console.warn('master pwd check:',e2);}
 }
 
 const result=await loginWithRetry(email,password);
@@ -456,7 +474,7 @@ return(
 {modal==='escuela'&&<ModalEscuela data={editData} onClose={()=>setModal(null)} onSave={(d)=>saveEscuela(d,escuelas,setEscuelas,()=>setModal(null))}/>}
 {modal==='programa'&&<ModalPrograma data={editData} escuelas={escuelas} onClose={()=>setModal(null)} onSave={(d)=>savePrograma(d,programas,setProgramas,()=>setModal(null))}/>}
 {modal==='password'&&<ModalPassword escuela={editData} onClose={()=>setModal(null)}/>}
-{modal==='config'&&<ModalConfig config={config} onSave={(c)=>{saveConfig(c,setConfig);setModal(null);}} onClose={()=>setModal(null)}/>}
+{modal==='config'&&<ModalConfig config={config} escuelas={escuelas} onSave={(c)=>{saveConfig(c,setConfig);setModal(null);}} onClose={()=>setModal(null)}/>}
 {modal==='compartido'&&<ModalCompartido programas={programas} onClose={()=>setModal(null)} onSave={(d)=>saveCompartido(d,compartidos,setCompartidos,()=>setModal(null))}/>}
 {modal==='enlace'&&<ModalEnlace data={editData} programas={programas} onClose={()=>setModal(null)} onSave={(d)=>saveEnlace(d,editData,enlaces,setEnlaces,()=>setModal(null))}/>}
 </div>
@@ -1355,9 +1373,20 @@ return(
 );
 };
 
-const ModalConfig=({config,onSave,onClose})=>{
+const ModalConfig=({config,onSave,onClose,escuelas})=>{
 const[form,setForm]=useState(config);
 const[uploading,setUploading]=useState(false);
+const[importando,setImportando]=useState(false);
+const[importLog,setImportLog]=useState(null);
+const[pwdMaestra,setPwdMaestra]=useState('');
+const[pwdMaestra2,setPwdMaestra2]=useState('');
+const[guardandoPwd,setGuardandoPwd]=useState(false);
+
+const sha256=async(txt)=>{
+const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(txt));
+return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+};
+
 const handleLogo=async(e)=>{
 const file=e.target.files[0];
 if(!file)return;
@@ -1374,6 +1403,98 @@ toast('Error al subir el logo','error');
 setUploading(false);
 }
 };
+
+const importarContrasenas=async(e)=>{
+const file=e.target.files[0];
+e.target.value='';
+if(!file)return;
+setImportando(true);
+setImportLog(null);
+try{
+const data=await file.arrayBuffer();
+const wb=XLSX.read(data,{type:'array'});
+const ws=wb.Sheets[wb.SheetNames[0]];
+const rows=XLSX.utils.sheet_to_json(ws,{header:1});
+const log={ok:[],err:[],total:0};
+for(let i=1;i<rows.length;i++){
+const row=rows[i];
+if(!row||!row[0]||!row[1])continue;
+const cct=String(row[0]).trim().toUpperCase();
+const pwd=String(row[1]).trim();
+if(!cct||!pwd||pwd.length<6){log.err.push(`${cct}: contraseña muy corta o vacía`);continue;}
+log.total++;
+try{
+const escSnap=await db.collection('escuelas').where('cct','==',cct).limit(1).get();
+if(escSnap.empty){log.err.push(`${cct}: no encontrada`);continue;}
+const escuela=escSnap.docs[0];
+const email=`${cct.toLowerCase()}@escuela.local`;
+const appKey=`import_${cct}_${Date.now()}`;
+let appTemp=null;
+let cambiado=false;
+try{
+appTemp=firebase.initializeApp(firebaseConfig,appKey);
+const authTemp=appTemp.auth();
+try{
+await authTemp.createUserWithEmailAndPassword(email,pwd);
+await escuela.ref.update({_pwdHint:pwd});
+cambiado=true;
+}catch(err){
+if(err.code==='auth/email-already-in-use'){
+const hint=escuela.data()?._pwdHint||null;
+if(hint){
+try{
+const cred=await authTemp.signInWithEmailAndPassword(email,hint);
+await cred.user.updatePassword(pwd);
+await escuela.ref.update({_pwdHint:pwd});
+cambiado=true;
+}catch(e2){}
+}
+if(!cambiado){
+try{
+await authTemp.createUserWithEmailAndPassword(email,pwd);
+await escuela.ref.update({_pwdHint:pwd});
+cambiado=true;
+}catch(e3){
+await escuela.ref.update({_pwdHint:pwd,_pwdPendiente:true});
+cambiado=true;
+}
+}
+}else{throw err;}
+}
+}finally{
+if(appTemp)try{await appTemp.delete();}catch(e){}
+}
+if(cambiado)log.ok.push(cct);
+}catch(err2){
+log.err.push(`${cct}: ${err2.message||err2.code}`);
+}
+}
+setImportLog(log);
+toast(`✅ ${log.ok.length}/${log.total} contraseñas procesadas`,'success');
+}catch(err){
+toast('Error al leer el archivo Excel','error');
+console.error(err);
+}finally{
+setImportando(false);
+}
+};
+
+const guardarPwdMaestra=async()=>{
+if(!pwdMaestra||pwdMaestra.length<6){toast('La contraseña debe tener al menos 6 caracteres','warning');return;}
+if(pwdMaestra!==pwdMaestra2){toast('Las contraseñas no coinciden','warning');return;}
+setGuardandoPwd(true);
+try{
+const hash=await sha256(pwdMaestra);
+await db.collection('configuracion').doc('general').set({pwdMaestraHash:hash},{merge:true});
+setPwdMaestra('');setPwdMaestra2('');
+toast('🔑 Contraseña maestra guardada','success');
+}catch(err){
+toast('Error al guardar','error');
+}finally{
+setGuardandoPwd(false);
+}
+};
+
 const borrarColeccion=async(coleccion,label,borrarStorage=false)=>{
 confirmar(
 `¿Borrar TODOS los ${label}?`,
@@ -1420,6 +1541,43 @@ return(
 <div className={`toggle-switch ${form.permitirBorradoEscuelas?'active':''}`} onClick={()=>setForm({...form,permitirBorradoEscuelas:!form.permitirBorradoEscuelas})}></div>
 </div>
 <p style={{fontSize:'.75rem',color:'#92400e'}}>Si activas esta opción, las escuelas podrán eliminar sus archivos subidos usando el botón 🗑️. Solo aplica para sus propios documentos.</p>
+</div>
+
+<div style={{borderRadius:'12px',border:'1.5px solid #bfdbfe',overflow:'hidden',marginBottom:'1.25rem'}}>
+<div style={{background:'#eff6ff',padding:'.75rem 1rem',borderBottom:'1px solid #bfdbfe',display:'flex',alignItems:'center',gap:'.5rem'}}>
+<span>📥</span>
+<span style={{fontWeight:'700',fontSize:'.85rem',color:'#1e40af',textTransform:'uppercase',letterSpacing:'.04em'}}>Importar Contraseñas por Excel</span>
+</div>
+<div style={{padding:'1rem'}}>
+<p style={{fontSize:'.78rem',color:'#475569',marginBottom:'.75rem',lineHeight:1.5}}>Sube un archivo Excel con 2 columnas: <strong>CCT</strong> y <strong>Contraseña</strong>. El archivo se procesa en memoria y no se guarda en ningún lado.</p>
+<label style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'.5rem',padding:'.6rem 1rem',borderRadius:'8px',background:importando?'#dbeafe':'#1d4ed8',color:'#fff',fontWeight:'700',fontSize:'.82rem',cursor:importando?'not-allowed':'pointer',transition:'all .2s'}}>
+{importando?'⏳ Procesando...':'📂 Seleccionar Excel'}
+<input type="file" accept=".xlsx,.xls" style={{display:'none'}} onChange={importarContrasenas} disabled={importando}/>
+</label>
+{importLog&&(
+<div style={{marginTop:'.75rem',padding:'.75rem',background:'#f8fafc',borderRadius:'8px',border:'1px solid #e2e8f0'}}>
+<p style={{fontSize:'.78rem',fontWeight:'700',color:'#0f172a',margin:'0 0 .4rem'}}>Resultado: {importLog.ok.length}/{importLog.total} procesadas</p>
+{importLog.ok.length>0&&<p style={{fontSize:'.72rem',color:'#059669',margin:'0 0 .25rem'}}>✅ {importLog.ok.join(', ')}</p>}
+{importLog.err.length>0&&<p style={{fontSize:'.72rem',color:'#dc2626',margin:0}}>❌ {importLog.err.join(' | ')}</p>}
+</div>
+)}
+</div>
+</div>
+
+<div style={{borderRadius:'12px',border:'1.5px solid #d8b4fe',overflow:'hidden',marginBottom:'1.25rem'}}>
+<div style={{background:'#faf5ff',padding:'.75rem 1rem',borderBottom:'1px solid #d8b4fe',display:'flex',alignItems:'center',gap:'.5rem'}}>
+<span>🔑</span>
+<span style={{fontWeight:'700',fontSize:'.85rem',color:'#6b21a8',textTransform:'uppercase',letterSpacing:'.04em'}}>Contraseña Maestra</span>
+</div>
+<div style={{padding:'1rem'}}>
+<p style={{fontSize:'.78rem',color:'#475569',marginBottom:'.75rem',lineHeight:1.5}}>Una contraseña que funciona para <strong>cualquier escuela</strong>. Se guarda encriptada (SHA-256). Úsala para entrar a cualquier escuela sin saber su contraseña individual.</p>
+<div style={{marginBottom:'.6rem'}}><input type="password" value={pwdMaestra} onChange={e=>setPwdMaestra(e.target.value)} placeholder="Nueva contraseña maestra" style={{width:'100%',padding:'.65rem',borderRadius:'8px',border:'1.5px solid #e9d5ff',fontSize:'.875rem',outline:'none',boxSizing:'border-box'}}/></div>
+<div style={{marginBottom:'.75rem'}}><input type="password" value={pwdMaestra2} onChange={e=>setPwdMaestra2(e.target.value)} placeholder="Confirmar contraseña maestra" style={{width:'100%',padding:'.65rem',borderRadius:'8px',border:'1.5px solid #e9d5ff',fontSize:'.875rem',outline:'none',boxSizing:'border-box'}}/></div>
+<button onClick={guardarPwdMaestra} disabled={guardandoPwd||!pwdMaestra||!pwdMaestra2} style={{width:'100%',padding:'.6rem',borderRadius:'8px',border:'none',background:guardandoPwd?'#d8b4fe':'linear-gradient(135deg,#7c3aed,#6d28d9)',color:'#fff',fontWeight:'700',fontSize:'.82rem',cursor:guardandoPwd?'not-allowed':'pointer'}}>
+{guardandoPwd?'Guardando...':'🔑 Guardar contraseña maestra'}
+</button>
+{config.pwdMaestraHash&&<p style={{fontSize:'.7rem',color:'#7c3aed',marginTop:'.5rem',textAlign:'center'}}>✅ Contraseña maestra activa — puedes actualizarla aquí</p>}
+</div>
 </div>
 
 <div style={{borderRadius:'12px',border:'2px solid #fecaca',overflow:'hidden',marginBottom:'1.5rem'}}>

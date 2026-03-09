@@ -197,13 +197,12 @@ unsubscribePromise.then(unsub=>unsub&&unsub());
 
 const cargarDatos=async(user,admin)=>{
 try{
-const[configSnap,escuelasSnap,programasSnap,docsSnap,compSnap,enlacesSnap]=await Promise.all([
+const[configSnap,escuelasSnap,programasSnap,docsSnap,compSnap]=await Promise.all([
   db.collection('configuracion').doc('general').get(),
   db.collection('escuelas').orderBy('cct').get(),
   db.collection('programas').orderBy('fechaLimite','desc').get(),
   db.collection('documentos').get(),
-  db.collection('compartidos').get(),
-  db.collection('enlaces').get()
+  db.collection('compartidos').get()
 ]);
 if(configSnap.exists)setConfig({nombreZona:'',logoUrl:'',permitirBorradoEscuelas:false,...configSnap.data()});
 const escuelasData=escuelasSnap.docs.map(d=>({id:d.id,...d.data()}));
@@ -215,7 +214,7 @@ setEscuelaActual(escuela);
 setProgramas(programasSnap.docs.map(d=>({id:d.id,...d.data()})));
 setDocumentos(docsSnap.docs.map(d=>({id:d.id,...d.data()})));
 setCompartidos(compSnap.docs.map(d=>({id:d.id,...d.data()})));
-setEnlaces(enlacesSnap.docs.map(d=>({id:d.id,...d.data()})));
+try{const enlSnap=await db.collection('enlaces').get();setEnlaces(enlSnap.docs.map(d=>({id:d.id,...d.data()})));}catch(e){setEnlaces([]);}
 }catch(error){
 console.error('Error cargando:',error);
 setError('Error al cargar datos. Verifica tu conexión.');
@@ -1693,20 +1692,19 @@ async function iniciarMovil(){
 
   async function cargarDatos(){
     try{
-      const[cfgSnap,escSnap,progSnap,docSnap,compSnap,enlSnap]=await Promise.all([
+      const[cfgSnap,escSnap,progSnap,docSnap,compSnap]=await Promise.all([
         db.collection('configuracion').doc('general').get(),
         db.collection('escuelas').orderBy('cct').get(),
         db.collection('programas').orderBy('fechaLimite','desc').get(),
         db.collection('documentos').get(),
-        db.collection('compartidos').get(),
-        db.collection('enlaces').get()
+        db.collection('compartidos').get()
       ]);
       if(cfgSnap.exists)estado.config={...estado.config,...cfgSnap.data()};
       estado.escuelas=escSnap.docs.map(d=>({id:d.id,...d.data()}));
       estado.programas=progSnap.docs.map(d=>({id:d.id,...d.data()}));
       estado.documentos=docSnap.docs.map(d=>({id:d.id,...d.data()}));
       estado.compartidos=compSnap.docs.map(d=>({id:d.id,...d.data()}));
-      estado.enlaces=enlSnap.docs.map(d=>({id:d.id,...d.data()}));
+      try{const enlSnap=await db.collection('enlaces').get();estado.enlaces=enlSnap.docs.map(d=>({id:d.id,...d.data()}));}catch(e){estado.enlaces=[];}
     }catch(e){console.error(e);}
   }
 

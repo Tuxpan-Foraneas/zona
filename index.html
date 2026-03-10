@@ -80,9 +80,6 @@ return false;
 initFirebase();
 
 const ADMIN_EMAIL='admin@sistema.local';
-// Cuenta compartida para todas las escuelas — autenticación real va contra Firestore
-const ESCUELA_SHARED_EMAIL='escuelas@sistema.local';
-const ESCUELA_SHARED_PWD='DocuEscuela_Shared_2024!';
 const MAX_LOGIN_RETRIES=3;
 const RETRY_DELAY=2000;
 const INACTIVIDAD_MS=10*60*1000;
@@ -211,10 +208,7 @@ if(configSnap.exists)setConfig({nombreZona:'',logoUrl:'',permitirBorradoEscuelas
 const escuelasData=escuelasSnap.docs.map(d=>({id:d.id,...d.data()}));
 setEscuelas(escuelasData);
 if(!admin){
-const cctSesion=sessionStorage.getItem('_escuelaCCT');
-const escuela=cctSesion
-?escuelasData.find(e=>e.cct===cctSesion)
-:escuelasData.find(e=>`${e.cct.toLowerCase()}@escuela.local`===user.email);
+const escuela=escuelasData.find(e=>`${e.cct.toLowerCase()}@escuela.local`===user.email);
 setEscuelaActual(escuela);
 }
 setProgramas(programasSnap.docs.map(d=>({id:d.id,...d.data()})));
@@ -233,8 +227,8 @@ if(error)return <Error mensaje={error}/>;
 return(
 <>
 {vista==='login'&&<Login config={config} escuelas={escuelas} configCargada={configCargada}/>}
-{vista==='admin'&&<Admin usuario={usuario} config={config} setConfig={setConfig} escuelas={escuelas} setEscuelas={setEscuelas} programas={programas} setProgramas={setProgramas} documentos={documentos} setDocumentos={setDocumentos} compartidos={compartidos} setCompartidos={setCompartidos} enlaces={enlaces} setEnlaces={setEnlaces} onLogout={()=>{sessionStorage.removeItem('_escuelaCCT');auth.signOut();}}/>}
-{vista==='escuela'&&<Escuela usuario={usuario} escuela={escuelaActual} config={config} programas={programas} documentos={documentos} setDocumentos={setDocumentos} compartidos={compartidos} enlaces={enlaces} onLogout={()=>{sessionStorage.removeItem('_escuelaCCT');auth.signOut();}}/>}
+{vista==='admin'&&<Admin usuario={usuario} config={config} setConfig={setConfig} escuelas={escuelas} setEscuelas={setEscuelas} programas={programas} setProgramas={setProgramas} documentos={documentos} setDocumentos={setDocumentos} compartidos={compartidos} setCompartidos={setCompartidos} enlaces={enlaces} setEnlaces={setEnlaces} onLogout={()=>auth.signOut()}/>}
+{vista==='escuela'&&<Escuela usuario={usuario} escuela={escuelaActual} config={config} programas={programas} documentos={documentos} setDocumentos={setDocumentos} compartidos={compartidos} enlaces={enlaces} onLogout={()=>auth.signOut()}/>}
 </>
 );
 };
@@ -269,11 +263,6 @@ const[cargando,setCargando]=useState(false);
 const[intento,setIntento]=useState(0);
 const[conectando,setConectando]=useState(false);
 
-const sha256=async(txt)=>{
-const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(txt));
-return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-};
-
 const handleLogin=async(e)=>{
 e?.preventDefault();
 setError('');
@@ -281,67 +270,37 @@ setCargando(true);
 setConectando(true);
 setIntento(1);
 try{
+let email;
 if(modoAdmin){
-// ── ADMIN: igual que antes ────────────────────────────────────
-const result=await loginWithRetry(ADMIN_EMAIL,password);
-if(result.success){setConectando(false);}
-else{
-setConectando(false);setCargando(false);
-if(result.error==='auth/wrong-password'||result.error==='auth/user-not-found')setError('Contraseña incorrecta');
-else if(result.error==='auth/network-request-failed')setError('Error de conexión. Verifica tu internet.');
-else if(result.error==='auth/too-many-requests')setError('Demasiados intentos. Espera un momento.');
-else setError('Error al iniciar sesión. Intenta de nuevo.');
-}
+email=ADMIN_EMAIL;
 }else{
-// ── ESCUELA: validar en Firestore, entrar con cuenta compartida ──
 if(!cct){setError('Ingresa tu CCT');setCargando(false);setConectando(false);return;}
 const escuelasSnap=await db.collection('escuelas').where('cct','==',cct.trim().toUpperCase()).limit(1).get();
-if(escuelasSnap.empty){setError('CCT no encontrado. Verifica que esté registrado.');setCargando(false);setConectando(false);return;}
+if(escuelasSnap.empty){setError('CCT no encontrado. Verifica que esté registrado en el sistema.');setCargando(false);setConectando(false);return;}
 const escuelaData=escuelasSnap.docs[0].data();
-
-// 1. Checar contraseña maestra
-let pwdOk=false;
-try{
-const cfgSnap=await db.collection('configuracion').doc('general').get();
-if(cfgSnap.exists){
-const{pwdMaestraHash}=cfgSnap.data();
-if(pwdMaestraHash){
-const hashIntento=await sha256(password);
-if(hashIntento===pwdMaestraHash)pwdOk=true;
+email=`${escuelaData.cct.toLowerCase()}@escuela.local`;
 }
-}
-}catch(e2){console.warn('master check:',e2);}
-
-// 2. Checar contraseña individual (guardada en Firestore)
-if(!pwdOk){
-if(escuelaData._pwdHint&&password===escuelaData._pwdHint)pwdOk=true;
-}
-
-if(!pwdOk){
-setError('CCT o contraseña incorrectos');
-setCargando(false);setConectando(false);return;
-}
-
-// 3. Contraseña válida — entrar con cuenta compartida
-sessionStorage.setItem('_escuelaCCT',escuelaData.cct);
-try{
-await auth.signInWithEmailAndPassword(ESCUELA_SHARED_EMAIL,ESCUELA_SHARED_PWD);
-}catch(eShared){
-if(eShared.code==='auth/user-not-found'){
-// Primera vez — crear la cuenta compartida
-await auth.createUserWithEmailAndPassword(ESCUELA_SHARED_EMAIL,ESCUELA_SHARED_PWD);
-}else if(eShared.code==='auth/wrong-password'){
-setError('Error interno de configuración. Contacta al administrador.');
-setCargando(false);setConectando(false);return;
-}else{throw eShared;}
-}
+const result=await loginWithRetry(email,password);
+if(result.success){
 setConectando(false);
+}else{
+setConectando(false);
+setCargando(false);
+if(result.error==='auth/wrong-password'||result.error==='auth/user-not-found'){
+setError('CCT o contraseña incorrectos');
+}else if(result.error==='auth/network-request-failed'){
+setError('Error de conexión. Verifica tu internet e intenta de nuevo.');
+}else if(result.error==='auth/too-many-requests'){
+setError('Demasiados intentos. Espera un momento e intenta de nuevo.');
+}else{
+setError('Error al iniciar sesión. Intenta de nuevo.');
+}
 }
 }catch(err){
-setConectando(false);setCargando(false);
-if(err.code==='auth/network-request-failed')setError('Error de conexión. Verifica tu internet.');
-else if(err.code==='auth/too-many-requests')setError('Demasiados intentos. Espera un momento.');
-else{setError('Error inesperado. Intenta de nuevo.');console.error('Login error:',err);}
+setConectando(false);
+setCargando(false);
+setError('Error inesperado. Intenta de nuevo.');
+console.error('Error login:',err);
 }
 };
 
@@ -1289,18 +1248,72 @@ e.preventDefault();
 if(pwd!==conf){toast('Las contraseñas no coinciden','warning');return;}
 if(pwd.length<6){toast('Mínimo 6 caracteres','warning');return;}
 setLoading(true);
-setStatus('Guardando...');
+setStatus('Iniciando...');
+const appKey=`pwd_${Date.now()}`;
+let appTemp=null;
 try{
-await db.collection('escuelas').doc(escuela.id).update({_pwdHint:pwd,_pwdPendiente:false});
+appTemp=firebase.initializeApp(firebaseConfig,appKey);
+const authTemp=appTemp.auth();
+try{
+// INTENTO 1: crear usuario nuevo (primera vez que se asigna contraseña)
+setStatus('Creando acceso...');
+await authTemp.createUserWithEmailAndPassword(email,pwd);
+await db.collection('escuelas').doc(escuela.id).update({_pwdHint:pwd});
 setStatus('');
 toast('Contraseña asignada correctamente ✓','success');
 onClose();
+}catch(err){
+if(err.code==='auth/email-already-in-use'){
+// INTENTO 2: usuario ya existe — obtener hint y cambiar contraseña
+setStatus('Actualizando contraseña...');
+const escSnap=await db.collection('escuelas').doc(escuela.id).get();
+const hint=escSnap.data()?._pwdHint||null;
+let cambiado=false;
+if(hint){
+try{
+const cred=await authTemp.signInWithEmailAndPassword(email,hint);
+await cred.user.updatePassword(pwd);
+await db.collection('escuelas').doc(escuela.id).update({_pwdHint:pwd});
+cambiado=true;
+}catch(e2){
+// hint desactualizado — intentar delete + recrear
+setStatus('Reestableciendo acceso...');
+try{
+const cred2=await authTemp.signInWithEmailAndPassword(email,hint);
+await cred2.user.delete();
+}catch(e3){}
+}
+}
+if(!cambiado){
+// INTENTO 3: delete falló o no hay hint — recrear usuario directamente
+try{
+setStatus('Reestableciendo acceso...');
+await authTemp.createUserWithEmailAndPassword(email,pwd);
+await db.collection('escuelas').doc(escuela.id).update({_pwdHint:pwd});
+cambiado=true;
+}catch(e4){
+// El delete no se completó — guardar y aplicar en próximo login
+await db.collection('escuelas').doc(escuela.id).update({_pwdHint:pwd,_pwdPendiente:true});
+setStatus('');
+toast('Contraseña guardada. La escuela debe cerrar sesión y volver a entrar para que aplique.','info');
+onClose();
+return;
+}
+}
+if(cambiado){
+setStatus('');
+toast('Contraseña actualizada correctamente ✓','success');
+onClose();
+}
+}else{throw err;}
+}
 }catch(error){
 console.error(error);
 setStatus('');
-toast('Error al guardar: '+error.message,'error');
+toast('Error al cambiar contraseña: '+error.message,'error');
 }finally{
 setLoading(false);
+if(appTemp)try{await appTemp.delete();}catch(e){}
 }
 };
 return(
@@ -1333,14 +1346,6 @@ const[form,setForm]=useState(config);
 const[uploading,setUploading]=useState(false);
 const[importando,setImportando]=useState(false);
 const[importLog,setImportLog]=useState(null);
-const[pwdMaestra,setPwdMaestra]=useState('');
-const[pwdMaestra2,setPwdMaestra2]=useState('');
-const[guardandoPwd,setGuardandoPwd]=useState(false);
-
-const sha256=async(txt)=>{
-const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(txt));
-return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-};
 
 const handleLogo=async(e)=>{
 const file=e.target.files[0];
@@ -1370,46 +1375,82 @@ const data=await file.arrayBuffer();
 const wb=XLSX.read(data,{type:'array'});
 const ws=wb.Sheets[wb.SheetNames[0]];
 const rows=XLSX.utils.sheet_to_json(ws,{header:1});
-const log={ok:[],err:[],total:0};
+const log={ok:[],err:[],pendiente:[]};
+let total=0;
 for(let i=1;i<rows.length;i++){
 const row=rows[i];
 if(!row||!row[0]||!row[1])continue;
 const cct=String(row[0]).trim().toUpperCase();
 const pwd=String(row[1]).trim();
 if(!cct||!pwd||pwd.length<6){log.err.push(`${cct}: contraseña vacía o menor a 6 caracteres`);continue;}
-log.total++;
+total++;
 try{
 const escSnap=await db.collection('escuelas').where('cct','==',cct).limit(1).get();
-if(escSnap.empty){log.err.push(`${cct}: no encontrada en el sistema`);continue;}
-await escSnap.docs[0].ref.update({_pwdHint:pwd,_pwdPendiente:false});
+if(escSnap.empty){log.err.push(`${cct}: CCT no encontrado`);continue;}
+const escRef=escSnap.docs[0].ref;
+const escData=escSnap.docs[0].data();
+const email=`${cct.toLowerCase()}@escuela.local`;
+const appKey=`imp_${cct}_${Date.now()}`;
+let appTemp=null;
+let exitoAuth=false;
+try{
+appTemp=firebase.initializeApp(firebaseConfig,appKey);
+const authTemp=appTemp.auth();
+// Intento 1: crear usuario nuevo
+try{
+await authTemp.createUserWithEmailAndPassword(email,pwd);
+exitoAuth=true;
+}catch(e1){
+if(e1.code!=='auth/email-already-in-use')throw e1;
+// Usuario ya existe — intentar con hint actual
+const hintActual=escData._pwdHint||null;
+// Intento 2a: sign in con nueva contraseña (quizás ya la tiene)
+try{
+await authTemp.signInWithEmailAndPassword(email,pwd);
+exitoAuth=true; // ya tiene esa contraseña
+}catch(e2a){
+if(e2a.code==='auth/wrong-password'){
+// Intento 2b: sign in con hint → cambiar contraseña
+let cambiado=false;
+if(hintActual){
+try{
+const cred=await authTemp.signInWithEmailAndPassword(email,hintActual);
+await cred.user.updatePassword(pwd);
+cambiado=true;
+exitoAuth=true;
+}catch(e2b){}
+}
+if(!cambiado){
+// Hint incorrecto y no podemos entrar — marcar pendiente
+await escRef.update({_pwdHint:pwd,_pwdPendiente:true});
+log.pendiente.push(cct);
+continue;
+}
+}
+}
+}
+}finally{
+if(appTemp)try{await appTemp.delete();}catch(ex){}
+}
+// Si llegamos aquí y exitoAuth=true → actualizar hint en Firestore
+if(exitoAuth){
+await escRef.update({_pwdHint:pwd,_pwdPendiente:false});
 log.ok.push(cct);
+}
 }catch(err2){
 log.err.push(`${cct}: ${err2.message||err2.code}`);
 }
 }
-setImportLog(log);
-toast(`✅ ${log.ok.length}/${log.total} contraseñas actualizadas`,'success');
+setImportLog({...log,total});
+const msg=log.pendiente.length>0
+?`✅ ${log.ok.length} actualizadas, ⚠️ ${log.pendiente.length} pendientes de reset manual`
+:`✅ ${log.ok.length}/${total} contraseñas actualizadas`;
+toast(msg,'success');
 }catch(err){
 toast('Error al leer el archivo Excel','error');
 console.error(err);
 }finally{
 setImportando(false);
-}
-};
-
-const guardarPwdMaestra=async()=>{
-if(!pwdMaestra||pwdMaestra.length<6){toast('La contraseña debe tener al menos 6 caracteres','warning');return;}
-if(pwdMaestra!==pwdMaestra2){toast('Las contraseñas no coinciden','warning');return;}
-setGuardandoPwd(true);
-try{
-const hash=await sha256(pwdMaestra);
-await db.collection('configuracion').doc('general').set({pwdMaestraHash:hash},{merge:true});
-setPwdMaestra('');setPwdMaestra2('');
-toast('🔑 Contraseña maestra guardada','success');
-}catch(err){
-toast('Error al guardar','error');
-}finally{
-setGuardandoPwd(false);
 }
 };
 
@@ -1496,27 +1537,12 @@ XLSX.writeFile(wb,'plantilla_contrasenas.xlsx');
 </div>
 {importLog&&(
 <div style={{padding:'.75rem',background:'#f8fafc',borderRadius:'8px',border:'1px solid #e2e8f0'}}>
-<p style={{fontSize:'.78rem',fontWeight:'700',color:'#0f172a',margin:'0 0 .4rem'}}>Resultado: {importLog.ok.length}/{importLog.total} procesadas</p>
+<p style={{fontSize:'.78rem',fontWeight:'700',color:'#0f172a',margin:'0 0 .4rem'}}>Resultado: {importLog.ok.length}/{importLog.total} actualizadas en Firebase</p>
 {importLog.ok.length>0&&<p style={{fontSize:'.72rem',color:'#059669',margin:'0 0 .25rem'}}>✅ {importLog.ok.join(', ')}</p>}
+{importLog.pendiente&&importLog.pendiente.length>0&&<p style={{fontSize:'.72rem',color:'#d97706',margin:'0 0 .25rem',lineHeight:1.4}}>⚠️ Estas necesitan reset manual en Firebase Console:<br/><strong>{importLog.pendiente.join(', ')}</strong></p>}
 {importLog.err.length>0&&<p style={{fontSize:'.72rem',color:'#dc2626',margin:0,wordBreak:'break-all'}}>❌ {importLog.err.join(' | ')}</p>}
 </div>
 )}
-</div>
-</div>
-
-<div style={{borderRadius:'12px',border:'1.5px solid #d8b4fe',overflow:'hidden',marginBottom:'1.25rem'}}>
-<div style={{background:'#faf5ff',padding:'.75rem 1rem',borderBottom:'1px solid #d8b4fe',display:'flex',alignItems:'center',gap:'.5rem'}}>
-<span>🔑</span>
-<span style={{fontWeight:'700',fontSize:'.85rem',color:'#6b21a8',textTransform:'uppercase',letterSpacing:'.04em'}}>Contraseña Maestra</span>
-</div>
-<div style={{padding:'1rem'}}>
-<p style={{fontSize:'.78rem',color:'#475569',marginBottom:'.75rem',lineHeight:1.5}}>Una contraseña que funciona para <strong>cualquier escuela</strong>. Se guarda encriptada (SHA-256). Úsala para entrar a cualquier escuela sin saber su contraseña individual.</p>
-<div style={{marginBottom:'.6rem'}}><input type="password" value={pwdMaestra} onChange={e=>setPwdMaestra(e.target.value)} placeholder="Nueva contraseña maestra" style={{width:'100%',padding:'.65rem',borderRadius:'8px',border:'1.5px solid #e9d5ff',fontSize:'.875rem',outline:'none',boxSizing:'border-box'}}/></div>
-<div style={{marginBottom:'.75rem'}}><input type="password" value={pwdMaestra2} onChange={e=>setPwdMaestra2(e.target.value)} placeholder="Confirmar contraseña maestra" style={{width:'100%',padding:'.65rem',borderRadius:'8px',border:'1.5px solid #e9d5ff',fontSize:'.875rem',outline:'none',boxSizing:'border-box'}}/></div>
-<button onClick={guardarPwdMaestra} disabled={guardandoPwd||!pwdMaestra||!pwdMaestra2} style={{width:'100%',padding:'.6rem',borderRadius:'8px',border:'none',background:guardandoPwd?'#d8b4fe':'linear-gradient(135deg,#7c3aed,#6d28d9)',color:'#fff',fontWeight:'700',fontSize:'.82rem',cursor:guardandoPwd?'not-allowed':'pointer'}}>
-{guardandoPwd?'Guardando...':'🔑 Guardar contraseña maestra'}
-</button>
-{config.pwdMaestraHash&&<p style={{fontSize:'.7rem',color:'#7c3aed',marginTop:'.5rem',textAlign:'center'}}>✅ Contraseña maestra activa — puedes actualizarla aquí</p>}
 </div>
 </div>
 
@@ -1827,8 +1853,6 @@ async function iniciarMovil(){
   const db=firebase.firestore();
   const storage=firebase.storage();
   const ADMIN_EMAIL='admin@sistema.local';
-  const ESCUELA_SHARED_EMAIL='escuelas@sistema.local';
-  const ESCUELA_SHARED_PWD='DocuEscuela_Shared_2024!';
 
   let estado={
     usuario:null,esAdmin:false,
@@ -1950,10 +1974,12 @@ async function iniciarMovil(){
     const pwd=document.getElementById('m-pwd')?document.getElementById('m-pwd').value:'';
     const err=document.getElementById('m-login-err');
     if(err)err.style.display='none';
+    // Mostrar spinner de carga mientras se autentica
     const btn=document.querySelector('[onclick="mLogin()"]');
     if(btn){btn.disabled=true;btn.textContent='Entrando...';}
     try{
       if(modo==='admin'){
+        // Ocultar root de React ANTES de signIn para evitar pantalla en blanco
         document.getElementById('root').style.display='none';
         document.getElementById('mobile-root').style.display='block';
         await auth.signInWithEmailAndPassword(ADMIN_EMAIL,pwd);
@@ -1963,41 +1989,16 @@ async function iniciarMovil(){
         if(!cct){if(err){err.style.display='block';err.textContent='Ingresa tu CCT';}if(btn){btn.disabled=false;btn.textContent='Ingresar';}return;}
         const snap=await db.collection('escuelas').where('cct','==',cct).limit(1).get();
         if(snap.empty){if(err){err.style.display='block';err.textContent='CCT no encontrado en el sistema';}if(btn){btn.disabled=false;btn.textContent='Ingresar';}return;}
-        const escuelaData=snap.docs[0].data();
-
-        // Validar contraseña en Firestore
-        let pwdOk=false;
-        try{
-          const cfgSnap=await db.collection('configuracion').doc('general').get();
-          if(cfgSnap.exists){
-            const{pwdMaestraHash}=cfgSnap.data();
-            if(pwdMaestraHash){
-              const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(pwd));
-              const hex=Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-              if(hex===pwdMaestraHash)pwdOk=true;
-            }
-          }
-        }catch(e2){}
-        if(!pwdOk&&escuelaData._pwdHint&&pwd===escuelaData._pwdHint)pwdOk=true;
-
-        if(!pwdOk){
-          if(err){err.style.display='block';const sp=document.getElementById('m-login-err-txt');if(sp)sp.textContent='CCT o contraseña incorrectos';else err.textContent='CCT o contraseña incorrectos';}
-          if(btn){btn.disabled=false;btn.textContent='Ingresar';}
-          return;
-        }
-
-        sessionStorage.setItem('_escuelaCCT',cct);
-        try{
-          await auth.signInWithEmailAndPassword(ESCUELA_SHARED_EMAIL,ESCUELA_SHARED_PWD);
-        }catch(eShared){
-          if(eShared.code==='auth/user-not-found'){
-            await auth.createUserWithEmailAndPassword(ESCUELA_SHARED_EMAIL,ESCUELA_SHARED_PWD);
-          }else{throw eShared;}
-        }
+        const email=cct.toLowerCase()+'@escuela.local';
+        await auth.signInWithEmailAndPassword(email,pwd);
       }
     }catch(e){
+      // Solo mostrar React si es modo escuela (admin usa versión móvil)
+      if(estado._modoLogin!=='admin'){
+        document.getElementById('root').style.display='block';
+      }
       const msg=e.code==='auth/wrong-password'||e.code==='auth/user-not-found'
-        ?'Contraseña de administrador incorrecta'
+        ?'CCT o contraseña incorrectos'
         :e.code==='auth/too-many-requests'
         ?'Demasiados intentos, espera un momento'
         :'Error de conexión. Intenta de nuevo.';
@@ -2018,7 +2019,7 @@ async function iniciarMovil(){
         </div>
         <div style="display:flex;gap:.5rem;align-items:center">
           <button onclick="mTab('config')" style="width:32px;height:32px;border-radius:8px;border:1.5px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);font-size:.875rem;cursor:pointer;backdrop-filter:blur(8px)">⚙️</button>
-          <button class="m-btn-out" onclick="sessionStorage.removeItem('_escuelaCCT');auth.signOut().then(()=>{document.getElementById('mobile-root').style.display='none';document.getElementById('root').style.display='block';})">Salir</button>
+          <button class="m-btn-out" onclick="auth.signOut().then(()=>{document.getElementById('mobile-root').style.display='none';document.getElementById('root').style.display='block';})">Salir</button>
         </div>
       </div>
     </div>
@@ -2748,13 +2749,38 @@ async function iniciarMovil(){
     if(pwd.length<6){toast('Mínimo 6 caracteres','warning');return;}
     const btn=document.querySelector('[onclick*="mGuardarPwd"]');
     if(btn){btn.textContent='Guardando...';btn.disabled=true;}
+    const appKey=`pwd_${Date.now()}`;
+    let appTemp=null;
     try{
-      await db.collection('escuelas').doc(escuelaId).update({_pwdHint:pwd,_pwdPendiente:false});
-      toast('Contraseña asignada correctamente ✓','success');
-      mTab('escuelas');
+      appTemp=firebase.initializeApp(firebaseConfig,appKey);
+      const authTemp=appTemp.auth();
+      try{
+        await authTemp.createUserWithEmailAndPassword(email,pwd);
+        await db.collection('escuelas').doc(escuelaId).update({_pwdHint:pwd});
+        toast('Contraseña asignada correctamente','success');
+        mTab('escuelas');
+      }catch(err){
+        if(err.code==='auth/email-already-in-use'){
+          const escSnap=await db.collection('escuelas').doc(escuelaId).get();
+          const hint=escSnap.data()?._pwdHint||null;
+          let cambiado=false;
+          if(hint){
+            try{
+              const cred=await authTemp.signInWithEmailAndPassword(email,hint);
+              await cred.user.updatePassword(pwd);
+              cambiado=true;
+            }catch(e2){console.warn('hint desactualizado',e2.code);}
+          }
+          await db.collection('escuelas').doc(escuelaId).update({_pwdHint:pwd});
+          toast(cambiado?'Contraseña actualizada correctamente':'Contraseña guardada. Se aplicará en el próximo acceso.',cambiado?'success':'info');
+          mTab('escuelas');
+        }else{throw err;}
+      }
     }catch(e){
       toast('Error: '+e.message,'error');
       if(btn){btn.textContent='Asignar';btn.disabled=false;}
+    }finally{
+      if(appTemp)try{await appTemp.delete();}catch(e){}
     }
   };
 

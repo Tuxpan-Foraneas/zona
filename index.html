@@ -282,9 +282,13 @@ email=ADMIN_EMAIL;
 if(!cct){setError('Ingresa tu CCT');setCargando(false);setConectando(false);return;}
 const escuelasSnap=await db.collection('escuelas').where('cct','==',cct.trim().toUpperCase()).limit(1).get();
 if(escuelasSnap.empty){setError('CCT no encontrado. Verifica que esté registrado en el sistema.');setCargando(false);setConectando(false);return;}
-const escuela=escuelasSnap.docs[0].data();
-email=`${escuela.cct.toLowerCase()}@escuela.local`;
-// Checar contraseña maestra
+const escuelaData=escuelasSnap.docs[0].data();
+email=`${escuelaData.cct.toLowerCase()}@escuela.local`;
+
+// ── CONTRASEÑA MAESTRA ──────────────────────────────────────────
+// Si el hash de lo que escribió == hash maestro guardado en Firebase,
+// usamos el _pwdHint (contraseña real de la escuela) para entrar.
+// Así nunca necesitamos saber la contraseña individual de cada escuela.
 try{
 const cfgSnap=await db.collection('configuracion').doc('general').get();
 if(cfgSnap.exists){
@@ -292,26 +296,25 @@ const{pwdMaestraHash}=cfgSnap.data();
 if(pwdMaestraHash){
 const hashIntento=await sha256(password);
 if(hashIntento===pwdMaestraHash){
-// Contraseña maestra válida: cambiar pwd de la escuela a la maestra temporalmente y entrar
-const tmpApp=firebase.initializeApp(firebaseConfig,`_maestra_${Date.now()}`);
-const tmpAuth=tmpApp.auth();
-// Entrar como admin en app temporal para resetear
-await tmpAuth.signInWithEmailAndPassword(ADMIN_EMAIL,password).catch(()=>{});
-await tmpApp.delete();
-// Intentar entrar directo — si falla, la contraseña real es distinta
-const r=await loginWithRetry(email,password);
-if(r.success){setConectando(false);return;}
-// No pudo — informar al usuario que use contraseña individual
-setError('La contraseña maestra no coincide con la contraseña actual de esta escuela. Usa la contraseña individual.');
+const pwdReal=escuelaData._pwdHint;
+if(!pwdReal){
+setError('Esta escuela no tiene contraseña asignada todavía. Asígnala desde ⚙️ Configuración → Importar Excel o uno por uno.');
+setCargando(false);setConectando(false);return;
+}
+// Entrar con la contraseña real de la escuela
+const rMaestra=await loginWithRetry(email,pwdReal);
+if(rMaestra.success){setConectando(false);return;}
+// Si falla (hint desactualizado) avisar
+setError('La contraseña de esta escuela está desactualizada. Reasígnala desde Configuración.');
 setCargando(false);setConectando(false);return;
 }
 }
 }
-}catch(e2){console.warn('master pwd check:',e2);}
+}catch(e2){console.warn('master check:',e2);}
+// ────────────────────────────────────────────────────────────────
 }
 
 const result=await loginWithRetry(email,password);
-
 if(result.success){
 setConectando(false);
 }else{
@@ -326,7 +329,6 @@ setError('Demasiados intentos. Espera un momento e intenta de nuevo.');
 }else{
 setError('Error al iniciar sesión. Intenta de nuevo.');
 }
-console.error('Error login:',result);
 }
 }catch(err){
 setConectando(false);
@@ -1549,16 +1551,38 @@ return(
 <span style={{fontWeight:'700',fontSize:'.85rem',color:'#1e40af',textTransform:'uppercase',letterSpacing:'.04em'}}>Importar Contraseñas por Excel</span>
 </div>
 <div style={{padding:'1rem'}}>
-<p style={{fontSize:'.78rem',color:'#475569',marginBottom:'.75rem',lineHeight:1.5}}>Sube un archivo Excel con 2 columnas: <strong>CCT</strong> y <strong>Contraseña</strong>. El archivo se procesa en memoria y no se guarda en ningún lado.</p>
-<label style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'.5rem',padding:'.6rem 1rem',borderRadius:'8px',background:importando?'#dbeafe':'#1d4ed8',color:'#fff',fontWeight:'700',fontSize:'.82rem',cursor:importando?'not-allowed':'pointer',transition:'all .2s'}}>
+<p style={{fontSize:'.78rem',color:'#475569',marginBottom:'.75rem',lineHeight:1.5}}>Sube un Excel con 2 columnas: <strong>CCT</strong> y <strong>Contraseña</strong>. Se procesa en memoria y no se guarda en ningún lugar.</p>
+{escuelas&&escuelas.length>0&&(()=>{
+const sinPwd=escuelas.filter(e=>!e._pwdHint);
+const conPwd=escuelas.filter(e=>e._pwdHint);
+return(
+<div style={{marginBottom:'.75rem',padding:'.6rem .75rem',background:'#f8fafc',borderRadius:'8px',border:'1px solid #e2e8f0',fontSize:'.72rem'}}>
+<div style={{display:'flex',gap:'1rem',marginBottom:'.3rem'}}>
+<span style={{color:'#059669',fontWeight:'700'}}>✅ Con contraseña: {conPwd.length}</span>
+<span style={{color:sinPwd.length>0?'#dc2626':'#94a3b8',fontWeight:'700'}}>{sinPwd.length>0?`⚠️ Sin contraseña: ${sinPwd.length}`:'✅ Todas tienen contraseña'}</span>
+</div>
+{sinPwd.length>0&&<p style={{color:'#dc2626',margin:0}}>Sin asignar: {sinPwd.map(e=>e.cct).join(', ')}</p>}
+</div>
+);
+})()}
+<div style={{display:'flex',gap:'.5rem',marginBottom:'.5rem'}}>
+<label style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',gap:'.5rem',padding:'.6rem 1rem',borderRadius:'8px',background:importando?'#dbeafe':'#1d4ed8',color:'#fff',fontWeight:'700',fontSize:'.82rem',cursor:importando?'not-allowed':'pointer'}}>
 {importando?'⏳ Procesando...':'📂 Seleccionar Excel'}
 <input type="file" accept=".xlsx,.xls" style={{display:'none'}} onChange={importarContrasenas} disabled={importando}/>
 </label>
+<button onClick={()=>{
+if(!escuelas||!escuelas.length)return;
+const ws=XLSX.utils.aoa_to_sheet([['CCT','Contraseña'],...escuelas.map(e=>[e.cct,''])]);
+const wb=XLSX.utils.book_new();
+XLSX.utils.book_append_sheet(wb,ws,'Contraseñas');
+XLSX.writeFile(wb,'plantilla_contrasenas.xlsx');
+}} style={{padding:'.6rem .9rem',borderRadius:'8px',border:'1.5px solid #bfdbfe',background:'#fff',color:'#1d4ed8',fontWeight:'700',fontSize:'.78rem',cursor:'pointer',flexShrink:0}}>📄 Plantilla</button>
+</div>
 {importLog&&(
-<div style={{marginTop:'.75rem',padding:'.75rem',background:'#f8fafc',borderRadius:'8px',border:'1px solid #e2e8f0'}}>
+<div style={{padding:'.75rem',background:'#f8fafc',borderRadius:'8px',border:'1px solid #e2e8f0'}}>
 <p style={{fontSize:'.78rem',fontWeight:'700',color:'#0f172a',margin:'0 0 .4rem'}}>Resultado: {importLog.ok.length}/{importLog.total} procesadas</p>
 {importLog.ok.length>0&&<p style={{fontSize:'.72rem',color:'#059669',margin:'0 0 .25rem'}}>✅ {importLog.ok.join(', ')}</p>}
-{importLog.err.length>0&&<p style={{fontSize:'.72rem',color:'#dc2626',margin:0}}>❌ {importLog.err.join(' | ')}</p>}
+{importLog.err.length>0&&<p style={{fontSize:'.72rem',color:'#dc2626',margin:0,wordBreak:'break-all'}}>❌ {importLog.err.join(' | ')}</p>}
 </div>
 )}
 </div>

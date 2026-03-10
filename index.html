@@ -1580,6 +1580,53 @@ XLSX.writeFile(wb,'plantilla_contrasenas.xlsx');
 </div>
 <button onClick={()=>borrarColeccion('enlaces','Enlaces compartidos')} style={{padding:'.4rem .85rem',borderRadius:'8px',border:'none',background:'#ef4444',color:'#fff',fontWeight:'700',fontSize:'.75rem',cursor:'pointer',flexShrink:0}}>🗑️ Borrar</button>
 </div>
+
+<div style={{marginTop:'.5rem',borderTop:'2px dashed #fecaca',paddingTop:'.75rem'}}>
+<div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'.75rem',background:'#fff1f2',borderRadius:'8px',border:'2px solid #ef4444'}}>
+<div>
+<p style={{fontWeight:'800',fontSize:'.85rem',color:'#7f1d1d',margin:0}}>💣 RESET TOTAL — Iniciar desde cero</p>
+<p style={{fontSize:'.72rem',color:'#991b1b',margin:'2px 0 0',lineHeight:1.4}}>Borra escuelas, programas, documentos, compartidos y enlaces.<br/>La configuración (nombre, logo) se conserva.</p>
+</div>
+<button onClick={async()=>{
+confirmar(
+'¿BORRAR TODO Y EMPEZAR DESDE CERO?',
+'Se eliminarán TODAS las escuelas, programas, documentos, archivos compartidos y enlaces. Esta acción es IRREVERSIBLE.',
+async()=>{
+try{
+toast('Borrando todo...','info',8000);
+const colecciones=[
+{nombre:'escuelas',storage:false},
+{nombre:'documentos',storage:true},
+{nombre:'compartidos',storage:true},
+{nombre:'programas',storage:false},
+{nombre:'enlaces',storage:false},
+];
+for(const col of colecciones){
+const snap=await db.collection(col.nombre).get();
+if(snap.empty)continue;
+const batch=db.batch();
+for(const doc of snap.docs){
+if(col.storage){
+const d=doc.data();
+if(d.url){try{await storage.refFromURL(d.url).delete();}catch(e){}}
+}
+batch.delete(doc.ref);
+}
+await batch.commit();
+}
+toast('✅ Reset completo. Recarga la página.','success',4000);
+setTimeout(()=>window.location.reload(),2000);
+}catch(err){
+console.error(err);
+toast('Error durante el reset: '+err.message,'error');
+}
+},
+'SÍ, BORRAR TODO','💣'
+);
+}} style={{padding:'.5rem .85rem',borderRadius:'8px',border:'none',background:'#7f1d1d',color:'#fff',fontWeight:'800',fontSize:'.75rem',cursor:'pointer',flexShrink:0,whiteSpace:'nowrap'}}>💣 Reset Total</button>
+</div>
+</div>
+
 </div>
 </div>
 

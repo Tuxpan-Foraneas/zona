@@ -367,12 +367,12 @@ return(
 {!modoAdmin&&(
 <div style={{marginBottom:'1.1rem'}}>
 <label style={{display:'block',fontSize:'.75rem',fontWeight:'700',color:'#475569',marginBottom:'.4rem',letterSpacing:'.03em',textTransform:'uppercase'}}>CCT de tu escuela</label>
-<input type="text" value={cct} onChange={(e)=>setCct(e.target.value.trim().toUpperCase())} placeholder="30EPR0000A" required disabled={cargando} style={{width:'100%',padding:'.75rem 1rem',borderRadius:'10px',border:'1.5px solid #e2e8f0',fontSize:'.95rem',fontFamily:'monospace',letterSpacing:'.05em',outline:'none',textTransform:'uppercase',boxSizing:'border-box',background:cargando?'#f9fafb':'#fff',transition:'border .2s'}}/>
+<input type="text" value={cct} onChange={(e)=>setCct(e.target.value.trim().toUpperCase())} placeholder="30EPR0000A" autoComplete="username" required disabled={cargando} style={{width:'100%',padding:'.75rem 1rem',borderRadius:'10px',border:'1.5px solid #e2e8f0',fontSize:'.95rem',fontFamily:'monospace',letterSpacing:'.05em',outline:'none',textTransform:'uppercase',boxSizing:'border-box',background:cargando?'#f9fafb':'#fff',transition:'border .2s'}}/>
 </div>
 )}
 <div style={{marginBottom:'1.5rem'}}>
 <label style={{display:'block',fontSize:'.75rem',fontWeight:'700',color:'#475569',marginBottom:'.4rem',letterSpacing:'.03em',textTransform:'uppercase'}}>Contraseña</label>
-<input type="password" value={password} onChange={(e)=>setPassword(e.target.value)} placeholder="••••••••" required disabled={cargando} style={{width:'100%',padding:'.75rem 1rem',borderRadius:'10px',border:'1.5px solid #e2e8f0',fontSize:'1rem',outline:'none',boxSizing:'border-box',background:cargando?'#f9fafb':'#fff',transition:'border .2s'}}/>
+<input type="password" value={password} onChange={(e)=>setPassword(e.target.value)} placeholder="••••••••" autoComplete="current-password" required disabled={cargando} style={{width:'100%',padding:'.75rem 1rem',borderRadius:'10px',border:'1.5px solid #e2e8f0',fontSize:'1rem',outline:'none',boxSizing:'border-box',background:cargando?'#f9fafb':'#fff',transition:'border .2s'}}/>
 </div>
 <button type="submit" disabled={cargando} style={{width:'100%',padding:'.85rem',borderRadius:'12px',border:'none',background:cargando?'#93c5fd':'linear-gradient(135deg,#2563eb,#1e3a8a)',color:'#fff',fontWeight:'800',fontSize:'1rem',cursor:cargando?'not-allowed':'pointer',boxShadow:cargando?'none':'0 6px 20px rgba(37,99,235,.45)',transition:'all .2s',letterSpacing:'.01em'}}>
 {cargando?(

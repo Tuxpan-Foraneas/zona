@@ -453,6 +453,7 @@ return(
 <Tab active={tab==='compartidos'} onClick={()=>setTab('compartidos')}>Archivos ({compartidos.length})</Tab>
 <Tab active={tab==='enlaces'} onClick={()=>setTab('enlaces')}>🔗 Enlaces ({enlaces.length})</Tab>
 <Tab active={tab==='reporte'} onClick={()=>setTab('reporte')}>📋 Rúbrica</Tab>
+<Tab active={tab==='bitacora'} onClick={()=>setTab('bitacora')}>📒 Bitácora</Tab>
 </div>
 </div>
 {tab==='dashboard'&&<Dashboard escuelas={escuelas} programas={programas} documentos={documentos} setDocumentos={setDocumentos}/>}
@@ -460,6 +461,7 @@ return(
 {tab==='programas'&&<TabProgramas programas={programas} onEdit={(p)=>{setEditData(p);setModal('programa');}} onDelete={(id)=>delPrograma(id,programas,setProgramas,documentos,setDocumentos)}/>}
 {tab==='documentos'&&<TabDocumentos documentos={docsFiltrados} escuelas={escuelas} programas={programas} filtroEscuela={filtroEscuela} setFiltroEscuela={setFiltroEscuela} filtroPrograma={filtroPrograma} setFiltroPrograma={setFiltroPrograma} onDelete={(id)=>delDocumento(id,documentos,setDocumentos)}/>}
 {tab==='reporte'&&<TabRubrica escuelas={escuelas} programas={programas} documentos={documentos} config={config}/>}
+{tab==='bitacora'&&<TabBitacora/>}
 {tab==='compartidos'&&<TabCompartidos compartidos={compartidos} onDelete={(id)=>delCompartido(id,compartidos,setCompartidos)}/>}
 {tab==='enlaces'&&<TabEnlaces enlaces={enlaces} programas={programas} onEdit={(e)=>{setEditData(e);setModal('enlace');}} onDelete={(id)=>delEnlace(id,enlaces,setEnlaces)}/>}
 </div>
@@ -530,7 +532,7 @@ const url=await ref.getDownloadURL();
 const data={escuelaId:escuela.id,programaId:programa.id,nombreDocumento:doc,nombreArchivo:file.name,url,tipo:getTipo(file),fecha:new Date().toISOString(),por:escuela.nombre};
 const docRef=await db.collection('documentos').add(data);
 setDocumentos([...documentos,{id:docRef.id,...data}]);
-await db.collection('bitacora').add({accion:'SUBIDA',descripcion:`${escuela.nombre} subió "${file.name}" en ${programa.nombre} (${doc})`,usuario:escuela.nombre,cct:escuela.cct,fecha:new Date().toISOString()}).catch(()=>{});
+await db.collection('bitacora').add({accion:'SUBIDA',descripcion:`${escuela.nombre} subió "${file.name}" en ${programa.nombre} (${doc})`,usuario:escuela.nombre,cct:escuela.cct,fecha:new Date().toISOString()});
 setPrevia(null);
 toast('Archivo subido correctamente','success');
 }catch(error){console.error(error);toast('Error al subir archivo','error');}
@@ -544,7 +546,7 @@ const doc=documentos.find(d=>d.id===docId);
 if(doc.url){const ref=storage.refFromURL(doc.url);await ref.delete().catch(()=>{});}
 await db.collection('documentos').doc(docId).delete();
 setDocumentos(documentos.filter(d=>d.id!==docId));
-await db.collection('bitacora').add({accion:'ELIMINACIÓN',descripcion:`${escuela.nombre} eliminó "${doc.nombreArchivo}"`,usuario:escuela.nombre,cct:escuela.cct,fecha:new Date().toISOString()}).catch(()=>{});
+await db.collection('bitacora').add({accion:'ELIMINACIÓN',descripcion:`${escuela.nombre} eliminó "${doc.nombreArchivo}"`,usuario:escuela.nombre,cct:escuela.cct,fecha:new Date().toISOString()});
 setModalBorrar(null);
 toast('Archivo eliminado','success');
 }catch(error){console.error(error);toast('Error al eliminar','error');}
@@ -1173,6 +1175,84 @@ return(<div>
 </tr>
 </tfoot>
 </table></div></div>);};
+const TabBitacora=()=>{
+const[logs,setLogs]=useState([]);
+const[cargando,setCargando]=useState(true);
+const[filtro,setFiltro]=useState('TODOS');
+React.useEffect(()=>{
+setCargando(true);
+db.collection('bitacora').orderBy('fecha','desc').limit(200).get()
+.then(snap=>{setLogs(snap.docs.map(d=>({id:d.id,...d.data()})));})
+.catch(()=>{toast('Error al cargar bitácora','error');})
+.finally(()=>setCargando(false));
+},[]);
+const limpiarBitacora=async()=>{
+if(!window.confirm('¿Eliminar todos los registros de la bitácora? Esta acción no se puede deshacer.'))return;
+const snap=await db.collection('bitacora').get();
+for(const doc of snap.docs){await db.collection('bitacora').doc(doc.id).delete();}
+setLogs([]);
+toast('Bitácora limpiada','success');
+};
+const acciones=['TODOS','SUBIDA','ELIMINACIÓN','LOGIN','ADMIN'];
+const logsFiltrados=filtro==='TODOS'?logs:logs.filter(l=>l.accion===filtro);
+const colorAccion=(accion)=>{
+if(accion==='SUBIDA')return{bg:'#d1fae5',color:'#065f46'};
+if(accion==='ELIMINACIÓN')return{bg:'#fee2e2',color:'#991b1b'};
+if(accion==='LOGIN')return{bg:'#dbeafe',color:'#1e40af'};
+return{bg:'#f1f5f9',color:'#475569'};
+};
+return(
+<div style={{background:'#fff',borderRadius:'0 0 14px 14px',padding:'1.5rem',boxShadow:'0 2px 8px rgba(0,0,0,.04)'}}>
+<div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'1.25rem',flexWrap:'wrap',gap:'1rem'}}>
+<div>
+<h3 style={{fontSize:'1.1rem',fontWeight:'700',color:'#1e3a8a',margin:'0 0 .25rem'}}>📒 Bitácora de Actividad</h3>
+<p style={{fontSize:'.8rem',color:'#94a3b8',margin:0}}>Registro de acciones realizadas en el sistema</p>
+</div>
+<button onClick={limpiarBitacora} style={{padding:'.45rem .9rem',borderRadius:'8px',border:'1.5px solid #fecaca',background:'#fff',color:'#dc2626',fontWeight:'600',cursor:'pointer',fontSize:'.8rem'}}>🗑️ Limpiar</button>
+</div>
+<div style={{display:'flex',gap:'.5rem',marginBottom:'1.25rem',flexWrap:'wrap'}}>
+{acciones.map(a=>(
+<button key={a} onClick={()=>setFiltro(a)} style={{padding:'.35rem .85rem',borderRadius:'20px',border:'2px solid '+(filtro===a?'#2563eb':'#e2e8f0'),background:filtro===a?'#eff6ff':'#f8fafc',color:filtro===a?'#1d4ed8':'#64748b',fontSize:'.78rem',fontWeight:'700',cursor:'pointer'}}>{a}</button>
+))}
+</div>
+{cargando?(
+<div style={{textAlign:'center',padding:'2rem',color:'#94a3b8'}}>Cargando bitácora...</div>
+):logsFiltrados.length===0?(
+<div style={{textAlign:'center',padding:'2rem',color:'#94a3b8'}}>
+<div style={{fontSize:'2rem',marginBottom:'.5rem'}}>📋</div>
+<p>No hay registros{filtro!=='TODOS'?' de este tipo':''}.</p>
+</div>
+):(
+<div style={{overflowX:'auto'}}>
+<table style={{width:'100%',borderCollapse:'collapse',fontSize:'.82rem'}}>
+<thead>
+<tr style={{background:'#f8fafc'}}>
+<th style={{padding:'.6rem .75rem',textAlign:'left',fontWeight:'700',color:'#475569',borderBottom:'2px solid #e2e8f0',whiteSpace:'nowrap'}}>Fecha y Hora</th>
+<th style={{padding:'.6rem .75rem',textAlign:'left',fontWeight:'700',color:'#475569',borderBottom:'2px solid #e2e8f0'}}>Acción</th>
+<th style={{padding:'.6rem .75rem',textAlign:'left',fontWeight:'700',color:'#475569',borderBottom:'2px solid #e2e8f0'}}>Usuario</th>
+<th style={{padding:'.6rem .75rem',textAlign:'left',fontWeight:'700',color:'#475569',borderBottom:'2px solid #e2e8f0'}}>Descripción</th>
+</tr>
+</thead>
+<tbody>
+{logsFiltrados.map((log,i)=>{
+const c=colorAccion(log.accion);
+const fecha=new Date(log.fecha).toLocaleString('es-MX',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+return(
+<tr key={log.id} style={{background:i%2===0?'#fff':'#f9fafb',borderBottom:'1px solid #f1f5f9'}}>
+<td style={{padding:'.6rem .75rem',color:'#64748b',whiteSpace:'nowrap',fontFamily:'monospace',fontSize:'.78rem'}}>{fecha}</td>
+<td style={{padding:'.6rem .75rem'}}><span style={{padding:'.25rem .6rem',borderRadius:'20px',fontSize:'.72rem',fontWeight:'700',background:c.bg,color:c.color}}>{log.accion}</span></td>
+<td style={{padding:'.6rem .75rem',fontWeight:'600',color:'#374151'}}>{log.usuario||'—'}{log.cct&&<span style={{display:'block',fontSize:'.72rem',color:'#94a3b8',fontFamily:'monospace'}}>{log.cct}</span>}</td>
+<td style={{padding:'.6rem .75rem',color:'#374151'}}>{log.descripcion||'—'}</td>
+</tr>
+);
+})}
+</tbody>
+</table>
+<p style={{fontSize:'.75rem',color:'#94a3b8',textAlign:'right',marginTop:'.75rem'}}>{logsFiltrados.length} registro{logsFiltrados.length!==1?'s':''}</p>
+</div>
+)}
+</div>
+);};
 const ModalEscuela=({data,onClose,onSave})=>{
 const[form,setForm]=useState(data||{nombre:'',cct:'',comunidad:'',director:''});
 const handleSubmit=(e)=>{
@@ -1802,8 +1882,8 @@ const docsEscuela=documentos.filter(d=>d.escuelaId===id);
 for(const doc of docsEscuela){if(doc.url){try{await storage.refFromURL(doc.url).delete();}catch(e){}}await db.collection('documentos').doc(doc.id).delete();}
 await db.collection('escuelas').doc(id).delete();
 setDocumentos(documentos.filter(d=>d.escuelaId!==id));
-setEscuelas(escuelas.filter(e=>e.id!==id));
 const escuelaBorrada=escuelas.find(e=>e.id===id);
+setEscuelas(escuelas.filter(e=>e.id!==id));
 await db.collection('bitacora').add({accion:'ADMIN',descripcion:`Escuela eliminada: ${escuelaBorrada?.nombre||id} (${escuelaBorrada?.cct||''})`,usuario:'Administrador',cct:'ADMIN',fecha:new Date().toISOString()}).catch(()=>{});
 }catch(error){
 console.error(error);
@@ -1818,8 +1898,8 @@ const docsPrograma=documentos.filter(d=>d.programaId===id);
 for(const doc of docsPrograma){if(doc.url){try{await storage.refFromURL(doc.url).delete();}catch(e){}}await db.collection('documentos').doc(doc.id).delete();}
 await db.collection('programas').doc(id).delete();
 setDocumentos(documentos.filter(d=>d.programaId!==id));
-setProgramas(programas.filter(p=>p.id!==id));
 const progBorrado=programas.find(p=>p.id===id);
+setProgramas(programas.filter(p=>p.id!==id));
 await db.collection('bitacora').add({accion:'ADMIN',descripcion:`Programa eliminado: ${progBorrado?.nombre||id}`,usuario:'Administrador',cct:'ADMIN',fecha:new Date().toISOString()}).catch(()=>{});
 }catch(error){console.error(error);
 toast('Error al eliminar','error');

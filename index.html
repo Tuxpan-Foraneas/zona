@@ -367,7 +367,7 @@ return(
 {!modoAdmin&&(
 <div style={{marginBottom:'1.1rem'}}>
 <label style={{display:'block',fontSize:'.75rem',fontWeight:'700',color:'#475569',marginBottom:'.4rem',letterSpacing:'.03em',textTransform:'uppercase'}}>CCT de tu escuela</label>
-<input type="text" value={cct} onChange={(e)=>setCct(e.target.value.trim().toUpperCase())} placeholder="30EPR0000A" autoComplete="off" required disabled={cargando} style={{width:'100%',padding:'.75rem 1rem',borderRadius:'10px',border:'1.5px solid #e2e8f0',fontSize:'.95rem',fontFamily:'monospace',letterSpacing:'.05em',outline:'none',textTransform:'uppercase',boxSizing:'border-box',background:cargando?'#f9fafb':'#fff',transition:'border .2s'}}/>
+<input type="text" value={cct} onChange={(e)=>setCct(e.target.value.trim().toUpperCase())} placeholder="30EPR0000A" autoComplete="username" required disabled={cargando} style={{width:'100%',padding:'.75rem 1rem',borderRadius:'10px',border:'1.5px solid #e2e8f0',fontSize:'.95rem',fontFamily:'monospace',letterSpacing:'.05em',outline:'none',textTransform:'uppercase',boxSizing:'border-box',background:cargando?'#f9fafb':'#fff',transition:'border .2s'}}/>
 </div>
 )}
 <div style={{marginBottom:'1.5rem'}}>

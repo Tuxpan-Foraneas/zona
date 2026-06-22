@@ -58,6 +58,7 @@ appId:"1:108501130433:web:1d10ee28e7142169a18840"
 
 let app,auth,db,storage;
 let firebaseInitialized=false;
+let configPromise=null;
 
 const initFirebase=async()=>{
 if(firebaseInitialized)return true;
@@ -68,6 +69,8 @@ app=firebase.initializeApp(firebaseConfig);
 auth=firebase.auth();
 db=firebase.firestore();
 storage=firebase.storage();
+// Disparar la carga de configuracion (logo/nombre) en paralelo, sin esperar setPersistence
+if(!configPromise)configPromise=db.collection('configuracion').doc('general').get();
 await auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
 firebaseInitialized=true;
 return true;
@@ -193,7 +196,7 @@ useEffect(()=>{
 let mounted=true;
 const initAuth=async()=>{
 await initFirebase();
-try{const configSnap=await db.collection('configuracion').doc('general').get();if(configSnap.exists&&mounted){const c={nombreZona:'',logoUrl:'',permitirBorradoEscuelas:false,cicloEscolar:'',...configSnap.data()};setConfig(c);}setConfigCargada(true);}catch(e){setConfigCargada(true);}const unsubscribe=auth.onAuthStateChanged(async(user)=>{
+try{const configSnap=await (configPromise||db.collection('configuracion').doc('general').get());if(configSnap.exists&&mounted){const c={nombreZona:'',logoUrl:'',permitirBorradoEscuelas:false,cicloEscolar:'',...configSnap.data()};setConfig(c);}setConfigCargada(true);}catch(e){setConfigCargada(true);}const unsubscribe=auth.onAuthStateChanged(async(user)=>{
 if(!mounted)return;
 if(user){
 setUsuario(user);

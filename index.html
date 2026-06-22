@@ -887,6 +887,49 @@ const[detalle,setDetalle]=React.useState(null);
 return(
 <div>
 {detalle&&<DetalleEscuela escuela={detalle} programas={programas} documentos={documentos} setDocumentos={setDocumentos} onClose={()=>setDetalle(null)}/>}
+{programas.length>0&&(
+<div style={{background:'#fff',borderRadius:'16px',padding:'1.25rem 1.5rem',marginBottom:'1.5rem',boxShadow:'0 2px 8px rgba(0,0,0,.06)',border:'1px solid #e8edf3'}}>
+<div style={{display:'flex',alignItems:'center',gap:'.5rem',marginBottom:'1.25rem'}}>
+<div style={{width:'3px',height:'18px',background:'linear-gradient(180deg,#2563eb,#1d4ed8)',borderRadius:'2px'}}/>
+<h2 style={{fontSize:'.9rem',fontWeight:'800',color:'#0f172a',textTransform:'uppercase',letterSpacing:'.05em',margin:0}}>Avance por programa</h2>
+</div>
+<div style={{display:'flex',flexDirection:'column',gap:'1rem'}}>
+{programas.map(p=>{
+const escuelasAsig=escuelas.filter(e=>p.todasEscuelas||(p.escuelasAsignadas||[]).includes(e.id));
+const total=escuelasAsig.length;
+let completas=0,pendDocs=0;
+escuelasAsig.forEach(e=>{
+const docsEsc=documentos.filter(d=>d.escuelaId===e.id&&d.programaId===p.id);
+const entregados=docsEsc.length;
+const requeridos=p.documentosRequeridos.length;
+if(entregados>=requeridos)completas++;
+pendDocs+=(requeridos-Math.min(entregados,requeridos));
+});
+const pct=total>0?Math.round((completas/total)*100):0;
+const color=pct===100?'#10b981':pct>=50?'#f59e0b':'#ef4444';
+const bgBadge=pct===100?'#d1fae5':pct>=50?'#fef3c7':'#fee2e2';
+const txBadge=pct===100?'#065f46':pct>=50?'#92400e':'#991b1b';
+return(
+<div key={p.id}>
+<div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'6px',flexWrap:'wrap',gap:'.5rem'}}>
+<div style={{display:'flex',alignItems:'center',gap:'.5rem',flex:1,minWidth:0}}>
+<span style={{fontSize:'.875rem',fontWeight:'700',color:'#0f172a',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{p.nombre}</span>
+<span style={{fontSize:'.72rem',fontWeight:'700',padding:'2px 8px',borderRadius:'20px',background:bgBadge,color:txBadge,flexShrink:0}}>{completas}/{total} escuelas</span>
+</div>
+<div style={{display:'flex',alignItems:'center',gap:'1rem',flexShrink:0}}>
+{pendDocs>0&&<span style={{fontSize:'.75rem',color:'#64748b'}}>{pendDocs} doc{pendDocs!==1?'s':''} pendiente{pendDocs!==1?'s':''}</span>}
+<span style={{fontSize:'.875rem',fontWeight:'700',color:'#0f172a',minWidth:'38px',textAlign:'right'}}>{pct}%</span>
+</div>
+</div>
+<div style={{height:'8px',background:'#f1f5f9',borderRadius:'4px',overflow:'hidden'}}>
+<div style={{width:pct+'%',height:'100%',background:color,borderRadius:'4px',transition:'width .5s ease'}}/>
+</div>
+</div>
+);
+})}
+</div>
+</div>
+)}
 <div style={{display:'flex',alignItems:'center',gap:'.5rem',marginBottom:'1.25rem'}}>
 <div style={{width:'3px',height:'18px',background:'linear-gradient(180deg,#2563eb,#1d4ed8)',borderRadius:'2px'}}/>
 <h2 style={{fontSize:'.9rem',fontWeight:'800',color:'#0f172a',textTransform:'uppercase',letterSpacing:'.05em',margin:0}}>Resumen por Escuela</h2>
@@ -2251,6 +2294,39 @@ async function iniciarMovil(){
       <div class="m-stat" style="background:linear-gradient(135deg,#10b981,#059669)"><div class="m-stat-lbl">Avance</div><div class="m-stat-val">${s.avance}%</div></div>
       <div class="m-stat" style="background:linear-gradient(135deg,#059669,#047857)"><div class="m-stat-lbl">Completas</div><div class="m-stat-val">${s.completas}</div></div>
       <div class="m-stat" style="background:linear-gradient(135deg,#f59e0b,#d97706)"><div class="m-stat-lbl">Pendientes</div><div class="m-stat-val">${s.pendientes}</div></div>
+    </div>
+    <div style="background:#fff;border-radius:14px;padding:1rem 1.25rem;margin-bottom:1rem;border:1px solid #f1f5f9;box-shadow:0 1px 3px rgba(0,0,0,.06)">
+      <div style="font-size:.75rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.875rem">Avance por programa</div>
+      ${estado.programas.map(p=>{
+        const escAsig=estado.escuelas.filter(e=>p.todasEscuelas||(p.escuelasAsignadas||[]).includes(e.id));
+        const tot=escAsig.length;
+        let comp=0,pend=0;
+        escAsig.forEach(e=>{
+          const de=estado.documentos.filter(d=>d.escuelaId===e.id&&d.programaId===p.id).length;
+          const re=p.documentosRequeridos.length;
+          if(de>=re)comp++;
+          pend+=(re-Math.min(de,re));
+        });
+        const pp=tot>0?Math.round((comp/tot)*100):0;
+        const col=pp===100?'#10b981':pp>=50?'#f59e0b':'#ef4444';
+        const bgB=pp===100?'#d1fae5':pp>=50?'#fef3c7':'#fee2e2';
+        const txB=pp===100?'#065f46':pp>=50?'#92400e':'#991b1b';
+        return`<div style="margin-bottom:.75rem">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;gap:.5rem">
+            <div style="display:flex;align-items:center;gap:.4rem;flex:1;min-width:0">
+              <span style="font-size:.8rem;font-weight:700;color:#0f172a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.nombre}</span>
+              <span style="font-size:.65rem;font-weight:700;padding:1px 6px;border-radius:10px;background:${bgB};color:${txB};flex-shrink:0">${comp}/${tot}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:.5rem;flex-shrink:0">
+              ${pend>0?`<span style="font-size:.65rem;color:#64748b">${pend} pend.</span>`:''}
+              <span style="font-size:.8rem;font-weight:700;color:#0f172a">${pp}%</span>
+            </div>
+          </div>
+          <div style="height:6px;background:#f1f5f9;border-radius:3px;overflow:hidden">
+            <div style="width:${pp}%;height:100%;background:${col};border-radius:3px"></div>
+          </div>
+        </div>`;
+      }).join('')}
     </div>
     <div class="m-section">Resumen por escuela — toca para ver detalle</div>
     ${esc.map((e,i)=>{const pct=getPct(e);const c=getColor(i);return`

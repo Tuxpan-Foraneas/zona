@@ -205,7 +205,7 @@ setEsAdmin(admin);
 await cargarDatos(user,admin);
 setVista(admin?'admin':'escuela');
 iniciarMonitorInactividad();
-db.collection('bitacora').add({accion:'LOGIN',descripcion:admin?'Inicio de sesión administrador':`Inicio de sesión escuela (${user.email})`,usuario:admin?'Administrador':user.email,cct:admin?'ADMIN':user.email.replace('@sistema.local','').toUpperCase(),fecha:new Date().toISOString()}).catch(()=>{});
+if(!admin)db.collection('bitacora').add({accion:'LOGIN',descripcion:`Inicio de sesión escuela (${user.email})`,usuario:user.email,cct:user.email.replace('@sistema.local','').toUpperCase(),fecha:new Date().toISOString()}).catch(()=>{});
 }else{
 setUsuario(null);
 setVista('login');
@@ -1177,8 +1177,10 @@ return(
 };
 const TabRubrica=({escuelas,programas,documentos,config})=>{
 const[filtroP,setFiltroP]=React.useState([]);
+const[filtroE,setFiltroE]=React.useState([]);
 const fecha=new Date().toLocaleDateString('es-MX',{year:'numeric',month:'long',day:'numeric'});
 const progsFiltrados=filtroP.length>0?programas.filter(p=>filtroP.includes(p.id)):programas;
+const escFiltradas=filtroE.length>0?escuelas.filter(e=>filtroE.includes(e.id)):escuelas;
 const imprimir=()=>{
 const w=window.open('','_blank');
 w.document.write('<html><head><title>Rúbrica</title><style>body{font-family:Arial,sans-serif}table{width:100%;border-collapse:collapse;font-size:.8rem}th,td{border:1px solid #000;padding:.4rem}@media print{button{display:none}}</style></head><body>'+document.getElementById('rubrica-contenido').innerHTML+'<script>window.print()<\/script></body></html>');
@@ -1196,6 +1198,14 @@ return(<div>
 </div>
 <button onClick={imprimir} className="btn btn-primary">🖨️ Imprimir Rúbrica</button>
 </div>
+<div style={{marginBottom:'1rem',display:'flex',alignItems:'flex-start',gap:'.75rem',flexWrap:'wrap'}} className="no-print">
+<label style={{fontWeight:'700',fontSize:'.8rem',color:'#475569',paddingTop:'.45rem',textTransform:'uppercase',letterSpacing:'.04em'}}>🏫 Escuela:</label>
+<div style={{display:'flex',flexWrap:'wrap',gap:'.4rem',maxWidth:'calc(100vw - 300px)'}}>
+<button onClick={()=>setFiltroE([])} style={{padding:'.4rem .9rem',borderRadius:'20px',border:'2px solid '+(filtroE.length===0?'#2563eb':'#e2e8f0'),background:filtroE.length===0?'#eff6ff':'#f8fafc',color:filtroE.length===0?'#1d4ed8':'#64748b',fontSize:'.78rem',fontWeight:'700',cursor:'pointer',display:'flex',alignItems:'center',gap:'4px'}}>{filtroE.length===0&&'✓ '}Todas las escuelas</button>
+{escuelas.map(e=>{const sel=filtroE.includes(e.id);return(<button key={e.id} onClick={()=>setFiltroE(sel?filtroE.filter(x=>x!==e.id):[...filtroE,e.id])} style={{padding:'.4rem .9rem',borderRadius:'20px',border:'2px solid '+(sel?'#2563eb':'#e2e8f0'),background:sel?'#eff6ff':'#f8fafc',color:sel?'#1d4ed8':'#64748b',fontSize:'.78rem',fontWeight:'700',cursor:'pointer',display:'flex',alignItems:'center',gap:'4px'}}>{sel&&'✓ '}{e.cct}</button>);})}
+</div>
+{filtroE.length>0&&<span style={{fontSize:'.75rem',color:'#94a3b8',paddingTop:'.45rem'}}>{filtroE.length} seleccionada{filtroE.length>1?'s':''}</span>}
+</div>
 <div id="rubrica-contenido" style={{background:'#fff',padding:'1.5rem',borderRadius:'12px',overflowX:'auto'}}>
 <table style={{width:'100%',borderCollapse:'collapse',fontSize:'.8rem'}}>
 <thead>
@@ -1208,7 +1218,7 @@ return(<div>
 </tr>
 </thead>
 <tbody>
-{escuelas.map((e,i)=>(<tr key={e.id} style={{background:i%2===0?'#fff':'#f9fafb'}}>
+{escFiltradas.map((e,i)=>(<tr key={e.id} style={{background:i%2===0?'#fff':'#f9fafb'}}>
 <td style={{border:'1px solid #d1d5db',padding:'.3rem .2rem',textAlign:'center',fontWeight:'700',width:'28px'}}>{i+1}</td>
 <td style={{border:'1px solid #d1d5db',padding:'.4rem',fontFamily:'monospace',fontSize:'.75rem'}}>{e.cct}</td>
 <td style={{border:'1px solid #d1d5db',padding:'.4rem',fontWeight:'500'}}>{e.nombre}</td>
@@ -1868,11 +1878,11 @@ try{
 if(data.id){
 await db.collection('escuelas').doc(data.id).update(data);
 setEscuelas(escuelas.map(e=>e.id===data.id?data:e));
-await db.collection('bitacora').add({accion:'ADMIN',descripcion:`Escuela editada: ${data.nombre} (${data.cct})`,usuario:'Administrador',cct:'ADMIN',fecha:new Date().toISOString()}).catch(()=>{});
+/* Registro de acción admin desactivado */
 }else{
 const ref=await db.collection('escuelas').add(data);
 setEscuelas([...escuelas,{id:ref.id,...data}]);
-await db.collection('bitacora').add({accion:'ADMIN',descripcion:`Nueva escuela creada: ${data.nombre} (${data.cct})`,usuario:'Administrador',cct:'ADMIN',fecha:new Date().toISOString()}).catch(()=>{});
+/* Registro de acción admin desactivado */
 }
 onClose();
 }catch(error){
@@ -1886,11 +1896,11 @@ try{
 if(data.id){
 await db.collection('programas').doc(data.id).update(data);
 setProgramas(programas.map(p=>p.id===data.id?data:p));
-await db.collection('bitacora').add({accion:'ADMIN',descripcion:`Programa editado: ${data.nombre}`,usuario:'Administrador',cct:'ADMIN',fecha:new Date().toISOString()}).catch(()=>{});
+/* Registro de acción admin desactivado */
 }else{
 const ref=await db.collection('programas').add(data);
 setProgramas([...programas,{id:ref.id,...data}]);
-await db.collection('bitacora').add({accion:'ADMIN',descripcion:`Nuevo programa creado: ${data.nombre}`,usuario:'Administrador',cct:'ADMIN',fecha:new Date().toISOString()}).catch(()=>{});
+/* Registro de acción admin desactivado */
 }
 onClose();
 }catch(error){
@@ -1930,7 +1940,7 @@ await db.collection('escuelas').doc(id).delete();
 setDocumentos(documentos.filter(d=>d.escuelaId!==id));
 const escuelaBorrada=escuelas.find(e=>e.id===id);
 setEscuelas(escuelas.filter(e=>e.id!==id));
-await db.collection('bitacora').add({accion:'ADMIN',descripcion:`Escuela eliminada: ${escuelaBorrada?.nombre||id} (${escuelaBorrada?.cct||''})`,usuario:'Administrador',cct:'ADMIN',fecha:new Date().toISOString()}).catch(()=>{});
+/* Registro de acción admin desactivado */
 }catch(error){
 console.error(error);
 toast('Error al eliminar','error');
@@ -1946,7 +1956,7 @@ await db.collection('programas').doc(id).delete();
 setDocumentos(documentos.filter(d=>d.programaId!==id));
 const progBorrado=programas.find(p=>p.id===id);
 setProgramas(programas.filter(p=>p.id!==id));
-await db.collection('bitacora').add({accion:'ADMIN',descripcion:`Programa eliminado: ${progBorrado?.nombre||id}`,usuario:'Administrador',cct:'ADMIN',fecha:new Date().toISOString()}).catch(()=>{});
+/* Registro de acción admin desactivado */
 }catch(error){console.error(error);
 toast('Error al eliminar','error');
 }
@@ -2063,7 +2073,7 @@ async function iniciarMovil(){
     config:{nombreZona:'',logoUrl:'',cicloEscolar:''},
     escuelas:[],programas:[],documentos:[],compartidos:[],enlaces:[],
     tab:'dashboard',
-    filtroEsc:'',filtroProg:'',filtroRubrica:[],dashboardTodas:false,
+    filtroEsc:'',filtroProg:'',filtroRubrica:[],filtroRubricaEsc:[],dashboardTodas:false,
     modal:null,modalData:null
   };
   window._mEstado=estado;
@@ -2608,14 +2618,22 @@ async function iniciarMovil(){
     const{escuelas,programas,documentos,config}=estado;
     const fecha=new Date().toLocaleDateString('es-MX',{year:'numeric',month:'long',day:'numeric'});
     const progsFiltrados=estado.filtroRubrica.length>0?programas.filter(p=>estado.filtroRubrica.includes(p.id)):programas;
+    const escFiltradas=estado.filtroRubricaEsc.length>0?escuelas.filter(e=>estado.filtroRubricaEsc.includes(e.id)):escuelas;
     const selCount=estado.filtroRubrica.length;
     const labelFiltro=selCount===0?'Todos los programas':selCount===1?programas.find(p=>p.id===estado.filtroRubrica[0])?.nombre:`${selCount} programas`;
+    const selCountE=estado.filtroRubricaEsc.length;
+    const labelFiltroE=selCountE===0?'Todas las escuelas':selCountE===1?escuelas.find(e=>e.id===estado.filtroRubricaEsc[0])?.cct:`${selCountE} escuelas`;
     return`
-    <div style="display:flex;gap:.5rem;margin-bottom:1rem;align-items:center">
+    <div style="display:flex;gap:.5rem;margin-bottom:.5rem;align-items:center">
       <button onclick="mFiltroRubricaModal()" style="flex:1;padding:.6rem 1rem;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-weight:600;cursor:pointer;font-size:.8rem;display:flex;align-items:center;justify-content:space-between;gap:.5rem;font-family:inherit">
         <span>📋 ${labelFiltro}</span><span style="color:#94a3b8">▼</span>
       </button>
       <button onclick="window.print()" class="m-btn m-btn-p" style="flex-shrink:0">🖨️</button>
+    </div>
+    <div style="margin-bottom:1rem">
+      <button onclick="mFiltroRubricaEscModal()" style="width:100%;padding:.6rem 1rem;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-weight:600;cursor:pointer;font-size:.8rem;display:flex;align-items:center;justify-content:space-between;gap:.5rem;font-family:inherit">
+        <span>🏫 ${labelFiltroE}</span><span style="color:#94a3b8">▼</span>
+      </button>
     </div>
     <div class="m-rubrica" style="overflow-x:auto">
       <table>
@@ -2626,7 +2644,7 @@ async function iniciarMovil(){
           </tr>
         </thead>
         <tbody>
-          ${escuelas.map((e,i)=>`<tr style="background:${i%2?'#f8fafc':'#fff'}">
+          ${escFiltradas.map((e,i)=>`<tr style="background:${i%2?'#f8fafc':'#fff'}">
             <td style="padding:.35rem .2rem">${i+1}</td>
             <td style="font-family:monospace;font-size:.6rem;white-space:nowrap;padding:.35rem .3rem">${e.cct}</td>
             <td style="text-align:left;font-size:.72rem;padding:.35rem .3rem">${e.nombre}</td>
@@ -2711,6 +2729,43 @@ async function iniciarMovil(){
     }
     // Re-render el modal para actualizar checks sin cerrarlo
     window.mFiltroRubricaModal();
+  };
+
+  window.mFiltroRubricaEscModal=()=>{
+    const{escuelas}=estado;
+    let modal=document.getElementById('m-rubrica-esc-modal');
+    if(!modal){modal=document.createElement('div');modal.id='m-rubrica-esc-modal';document.body.appendChild(modal);}
+    const sel=estado.filtroRubricaEsc||[];
+    const isTodos=sel.length===0;
+    const btnsTodos=`<button data-esc="__todos__" onclick="mSelRubricaEsc(this)" style="padding:.75rem 1rem;border-radius:10px;border:2px solid ${isTodos?'#2563eb':'#e5e7eb'};background:${isTodos?'#eff6ff':'#fff'};font-weight:600;cursor:pointer;text-align:left;font-family:inherit;font-size:.875rem;color:${isTodos?'#2563eb':'#374151'};width:100%;display:flex;align-items:center;justify-content:space-between">🏫 Todas las escuelas<span>${isTodos?'✓':''}</span></button>`;
+    const btnsEsc=escuelas.map(e=>{const activo=sel.includes(e.id);return`<button data-esc="${e.id}" onclick="mSelRubricaEsc(this)" style="padding:.75rem 1rem;border-radius:10px;border:2px solid ${activo?'#2563eb':'#e5e7eb'};background:${activo?'#eff6ff':'#fff'};font-weight:600;cursor:pointer;text-align:left;font-family:inherit;font-size:.875rem;color:${activo?'#2563eb':'#374151'};width:100%;display:flex;align-items:center;justify-content:space-between"><span>${e.nombre}<span style="font-size:.7rem;color:#94a3b8;display:block;font-weight:400;font-family:monospace">${e.cct}</span></span><span>${activo?'✓':''}</span></button>`;}).join('');
+    modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center;z-index:99999;';
+    modal.innerHTML=`<div style="background:#fff;border-radius:20px 20px 0 0;padding:1.5rem;width:100%;max-width:480px;max-height:70vh;overflow-y:auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+        <h3 style="font-weight:700;font-size:1rem">🏫 Filtrar por escuela</h3>
+        <button onclick="document.getElementById('m-rubrica-esc-modal').style.display='none'" style="border:none;background:none;font-size:1.5rem;cursor:pointer;color:#64748b">×</button>
+      </div>
+      <p style="font-size:.75rem;color:#94a3b8;margin-bottom:1rem">Selecciona una o varias escuelas para enviar su avance</p>
+      <div style="display:flex;flex-direction:column;gap:.4rem">${btnsTodos}${btnsEsc}</div>
+      <button onclick="document.getElementById('m-rubrica-esc-modal').style.display='none';window.renderTab()" style="width:100%;margin-top:1rem;padding:.75rem;border-radius:10px;border:none;background:#2563eb;color:#fff;font-weight:700;font-size:.875rem;cursor:pointer;font-family:inherit">Aplicar filtro</button>
+    </div>`;
+    modal.style.display='flex';
+    modal.onclick=ev=>{if(ev.target===modal)modal.style.display='none';};
+  };
+
+  window.mSelRubricaEsc=btn=>{
+    const id=btn.dataset.esc;
+    if(id==='__todos__'){
+      estado.filtroRubricaEsc=[];
+    }else{
+      const sel=estado.filtroRubricaEsc||[];
+      if(sel.includes(id)){
+        estado.filtroRubricaEsc=sel.filter(x=>x!==id);
+      }else{
+        estado.filtroRubricaEsc=[...sel,id];
+      }
+    }
+    window.mFiltroRubricaEscModal();
   };
 
   function getTipoMovil(nombre){

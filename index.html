@@ -54,8 +54,13 @@ body.tema-oscuro .tab-btn{color:#94a3b8}
 /* El header azul y las tarjetas de stats de colores NO se tocan (ya tienen buen contraste) */
 /* Clases de refuerzo garantizado (inmunes a como React renderice el color) */
 body.tema-oscuro .card-oscurecible{background:#1e293b!important;border-color:#334155!important}
-body.tema-oscuro .card-oscurecible p,body.tema-oscuro .card-oscurecible span,body.tema-oscuro .card-oscurecible h2,body.tema-oscuro .card-oscurecible h3,body.tema-oscuro .txt-oscurecible{color:#e2e8f0!important}
-body.tema-oscuro .card-oscurecible span[style*="background"]{color:inherit!important}
+body.tema-oscuro .card-oscurecible p,body.tema-oscuro .card-oscurecible h2,body.tema-oscuro .card-oscurecible h3,body.tema-oscuro .txt-oscurecible{color:#e2e8f0!important}
+body.tema-oscuro .card-oscurecible span{color:#e2e8f0!important}
+/* Los badges de color (verde/amarillo/rojo con fondo propio) conservan su texto oscuro para seguir legibles */
+body.tema-oscuro .card-oscurecible span[style*="padding: 2px 8px"],
+body.tema-oscuro .card-oscurecible span[style*="padding:2px 8px"],
+body.tema-oscuro .card-oscurecible span[style*="padding: 2px 12px"],
+body.tema-oscuro .card-oscurecible span[style*="padding:2px 12px"]{color:unset!important}
 /* Selectores ampliados: React puede renderizar con espacio o en rgb */
 body.tema-oscuro [style*="background: rgb(255, 255, 255)"],
 body.tema-oscuro [style*="background-color: rgb(255, 255, 255)"],

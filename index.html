@@ -52,6 +52,17 @@ body.tema-oscuro .modal-overlay{background:rgba(0,0,0,.7)}
 /* Tabs de escritorio */
 body.tema-oscuro .tab-btn{color:#94a3b8}
 /* El header azul y las tarjetas de stats de colores NO se tocan (ya tienen buen contraste) */
+/* Clases de refuerzo garantizado (inmunes a como React renderice el color) */
+body.tema-oscuro .card-oscurecible{background:#1e293b!important;border-color:#334155!important}
+body.tema-oscuro .card-oscurecible p,body.tema-oscuro .card-oscurecible span,body.tema-oscuro .card-oscurecible h2,body.tema-oscuro .card-oscurecible h3,body.tema-oscuro .txt-oscurecible{color:#e2e8f0!important}
+body.tema-oscuro .card-oscurecible span[style*="background"]{color:inherit!important}
+/* Selectores ampliados: React puede renderizar con espacio o en rgb */
+body.tema-oscuro [style*="background: rgb(255, 255, 255)"],
+body.tema-oscuro [style*="background-color: rgb(255, 255, 255)"],
+body.tema-oscuro [style*="background: #fff"]{background:#1e293b!important}
+body.tema-oscuro [style*="color: rgb(15, 23, 42)"],
+body.tema-oscuro [style*="color: rgb(17, 24, 39)"],
+body.tema-oscuro [style*="color: rgb(55, 65, 81)"]{color:#e2e8f0!important}
 .btn-tema{position:fixed;bottom:18px;right:18px;width:52px;height:52px;border-radius:50%;background:#fff;border:1.5px solid #e2e8f0;box-shadow:0 4px 14px rgba(0,0,0,.18);cursor:pointer;font-size:1.3rem;display:flex;align-items:center;justify-content:center;z-index:9998;transition:background .25s,border-color .25s}
 body.tema-oscuro .btn-tema{background:#1e293b!important;border-color:#334155!important}
 /* Modo oscuro para versión móvil */
@@ -1094,13 +1105,13 @@ progs.forEach(p=>{p.documentosRequeridos.forEach(d=>{total++;if(documentos.find(
 const pct=total>0?Math.round((entregados/total)*100):0;
 const completo=pct===100;
 return(
-<div key={e.id} onClick={()=>setDetalle(e)} style={{background:'#fff',borderRadius:'14px',padding:'1.1rem',cursor:'pointer',boxShadow:'0 2px 10px rgba(0,0,0,.06)',border:'1px solid #e8edf3',transition:'box-shadow .2s,transform .15s',position:'relative',overflow:'hidden'}}
+<div key={e.id} onClick={()=>setDetalle(e)} className="card-oscurecible" style={{background:'#fff',borderRadius:'14px',padding:'1.1rem',cursor:'pointer',boxShadow:'0 2px 10px rgba(0,0,0,.06)',border:'1px solid #e8edf3',transition:'box-shadow .2s,transform .15s',position:'relative',overflow:'hidden'}}
 onMouseEnter={ev=>{ev.currentTarget.style.boxShadow='0 8px 24px rgba(37,99,235,.18)';ev.currentTarget.style.transform='translateY(-2px)';}}
 onMouseLeave={ev=>{ev.currentTarget.style.boxShadow='0 2px 10px rgba(0,0,0,.06)';ev.currentTarget.style.transform='translateY(0)';}}>
 <div style={{position:'absolute',top:0,left:0,right:0,height:'3px',background:completo?'linear-gradient(90deg,#10b981,#059669)':'linear-gradient(90deg,#2563eb,#1d4ed8)'}}/>
 <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:'.6rem'}}>
 <div style={{flex:1,minWidth:0}}>
-<p style={{fontWeight:'800',fontSize:'.85rem',color:'#0f172a',margin:0,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{e.nombre}</p>
+<p className="txt-oscurecible" style={{fontWeight:'800',fontSize:'.85rem',color:'#0f172a',margin:0,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{e.nombre}</p>
 <p style={{fontSize:'.7rem',fontFamily:'monospace',color:'#94a3b8',margin:'2px 0 0'}}>{e.cct}</p>
 </div>
 <span style={{fontSize:'.7rem',fontWeight:'800',padding:'2px 8px',borderRadius:'12px',background:completo?'#d1fae5':pct>0?'#fef3c7':'#fee2e2',color:completo?'#065f46':pct>0?'#92400e':'#991b1b',flexShrink:0,marginLeft:'.5rem'}}>{pct}%</span>

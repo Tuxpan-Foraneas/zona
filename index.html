@@ -109,8 +109,12 @@ body.tema-oscuro .dir-layout{background:#0f172a}
 body.tema-oscuro .dir-root,body.tema-oscuro .app-root{background:#0f172a!important}
 body.tema-oscuro .dir-header{background:#1e293b!important;box-shadow:0 4px 20px rgba(0,0,0,.5)!important}
 body.tema-oscuro .dir-foot{background:#162032!important;border-color:#334155!important}
+body.tema-oscuro .dir-bienvenida{background:#162032!important}
+body.tema-oscuro .dir-bienvenida p{color:#e2e8f0!important}
+body.tema-oscuro .dir-bienvenida>div:first-child{background:#0f172a!important}
 body.tema-oscuro .dir-foot button{background:#0f172a!important;border-color:#334155!important}
 body.tema-oscuro .dir-foot button span{color:#e2e8f0!important}
+body.tema-oscuro .dir-foot button>span:last-child{color:#1d4ed8!important}
 /* Modo oscuro para versión móvil */
 body.tema-oscuro #mobile-root{background:#0f172a!important}
 body.tema-oscuro .m-tabs{background:#1e293b!important;border-bottom-color:#334155!important}
@@ -760,7 +764,7 @@ return(<>
 <div className="dir-main-col" style={{flex:1,minWidth:0,display:'flex',flexDirection:'column'}}>
 
 {/* Bienvenida fija */}
-<div style={{background:'linear-gradient(135deg,#eff6ff,#dbeafe)',padding:'.9rem 1.5rem',display:'flex',alignItems:'center',gap:'14px',borderLeft:'4px solid #2563eb',flexShrink:0}}>
+<div className="dir-bienvenida" style={{background:'linear-gradient(135deg,#eff6ff,#dbeafe)',padding:'.9rem 1.5rem',display:'flex',alignItems:'center',gap:'14px',borderLeft:'4px solid #2563eb',flexShrink:0}}>
 <div style={{width:'40px',height:'40px',borderRadius:'10px',background:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'20px',flexShrink:0}}>📋</div>
 <div style={{flex:1,minWidth:0}}>
 <p style={{color:'#1e40af',fontWeight:'800',fontSize:'.92rem',margin:0}}>Bienvenido/a — {escuela.nombre}</p>

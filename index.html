@@ -90,6 +90,22 @@ body.tema-oscuro .dir-sidebar [style*="background:#f8fafc"],body.tema-oscuro .di
 body.tema-oscuro .dir-sidebar [style*="background:#fff"],body.tema-oscuro .dir-sidebar [style*="background: #fff"]{background:#0f172a!important}
 body.tema-oscuro .dir-main-col{background:#0f172a}
 body.tema-oscuro .dir-scroll{background:#0f172a}
+/* Tarjetas de documento entregado (verde claro) -> oscurecer para que el texto se lea */
+body.tema-oscuro .dir-scroll [style*="background:#f0fdf4"],body.tema-oscuro .dir-scroll [style*="background: #f0fdf4"]{background:#14261c!important;border-color:#166534!important}
+/* Tarjetas de documento faltante (rojo claro) -> oscurecer */
+body.tema-oscuro .dir-scroll [style*="background:#fff9f9"],body.tema-oscuro .dir-scroll [style*="background: #fff9f9"]{background:#2a1a1a!important;border-color:#7f1d1d!important}
+/* Programa seleccionado en la barra lateral (azul claro) -> oscurecer */
+body.tema-oscuro .dir-sidebar [style*="background:#eff6ff"],body.tema-oscuro .dir-sidebar [style*="background: #eff6ff"]{background:#1e3a5f!important;border-color:#2563eb!important}
+/* Texto dentro del área central del director: claro y legible */
+body.tema-oscuro .dir-scroll p,body.tema-oscuro .dir-scroll h3{color:#e2e8f0!important}
+body.tema-oscuro .dir-scroll [style*="color:#94a3b8"],body.tema-oscuro .dir-scroll [style*="color: #94a3b8"],body.tema-oscuro .dir-scroll [style*="color:#64748b"],body.tema-oscuro .dir-scroll [style*="color: #64748b"]{color:#94a3b8!important}
+/* Tarjetas de documento (fondo verde/rojo claro) -> fondo oscuro translúcido + texto claro */
+body.tema-oscuro .dir-scroll [style*="background:#f0fdf4"],body.tema-oscuro .dir-scroll [style*="background: #f0fdf4"]{background:#14261c!important}
+body.tema-oscuro .dir-scroll [style*="background:#fff9f9"],body.tema-oscuro .dir-scroll [style*="background: #fff9f9"]{background:#2a1a1a!important}
+body.tema-oscuro .dir-scroll [style*="background:#f0fdf4"] p,body.tema-oscuro .dir-scroll [style*="background: #f0fdf4"] p,body.tema-oscuro .dir-scroll [style*="background:#fff9f9"] p,body.tema-oscuro .dir-scroll [style*="background: #fff9f9"] p{color:#e2e8f0!important}
+/* Fondo raíz del director cubre orillas */
+body.tema-oscuro .dir-layout{background:#0f172a}
+body.tema-oscuro .dir-root{background:#0f172a!important}
 /* Modo oscuro para versión móvil */
 body.tema-oscuro #mobile-root{background:#0f172a!important}
 body.tema-oscuro .m-tabs{background:#1e293b!important;border-bottom-color:#334155!important}
@@ -670,7 +686,7 @@ setDocumentos(documentos.filter(d=>!seleccionados.includes(d.id)));
 setSeleccionados([]);
 };
 return(
-<div style={{minHeight:'100vh',background:'#f0f4f8'}}>
+<div className="dir-root" style={{minHeight:'100vh',background:'#f0f4f8'}}>
 
 {/* ── MODAL VER ARCHIVO ── */}
 {verArchivo&&(<div style={{position:'fixed',inset:0,background:'rgba(15,23,42,.9)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:'1rem'}} onClick={()=>setVerArchivo(null)}><div style={{background:'#fff',borderRadius:'16px',maxWidth:'860px',width:'100%',maxHeight:'90vh',overflow:'hidden',boxShadow:'0 25px 80px rgba(0,0,0,.6)'}} onClick={e=>e.stopPropagation()}><div style={{background:'linear-gradient(135deg,#1e3a8a,#1d4ed8)',padding:'1rem 1.25rem',display:'flex',alignItems:'center',justifyContent:'space-between'}}><span style={{color:'#fff',fontWeight:'700',fontSize:'.9rem',display:'flex',alignItems:'center',gap:'.5rem'}}>👁 {verArchivo.nombre}</span><button onClick={()=>setVerArchivo(null)} style={{background:'rgba(255,255,255,.15)',border:'none',color:'#fff',fontSize:'1.25rem',cursor:'pointer',width:'32px',height:'32px',borderRadius:'8px',display:'flex',alignItems:'center',justifyContent:'center'}}>×</button></div><div style={{padding:'1rem',display:'flex',alignItems:'center',justifyContent:'center',minHeight:'400px',background:'#f8fafc'}}>{verArchivo.tipo==='Imagen'?<img src={verArchivo.url} style={{maxWidth:'100%',maxHeight:'70vh',objectFit:'contain',borderRadius:'8px'}} alt={verArchivo.nombre}/>:verArchivo.tipo==='Excel'?<VisorExcel url={verArchivo.url}/>:<iframe src={`https://docs.google.com/gview?url=${encodeURIComponent(verArchivo.url)}&embedded=true`} style={{width:'100%',height:'70vh',border:'none',borderRadius:'8px'}} title={verArchivo.nombre}/>}</div></div></div>)}

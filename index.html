@@ -108,6 +108,9 @@ body.tema-oscuro .dir-scroll [style*="background:#f0fdf4"] p,body.tema-oscuro .d
 body.tema-oscuro .dir-layout{background:#0f172a}
 body.tema-oscuro .dir-root,body.tema-oscuro .app-root{background:#0f172a!important}
 body.tema-oscuro .dir-header{background:#1e293b!important;box-shadow:0 4px 20px rgba(0,0,0,.5)!important}
+body.tema-oscuro .dir-foot{background:#162032!important;border-color:#334155!important}
+body.tema-oscuro .dir-foot button{background:#0f172a!important;border-color:#334155!important}
+body.tema-oscuro .dir-foot button span{color:#e2e8f0!important}
 /* Modo oscuro para versión móvil */
 body.tema-oscuro #mobile-root{background:#0f172a!important}
 body.tema-oscuro .m-tabs{background:#1e293b!important;border-bottom-color:#334155!important}
@@ -746,7 +749,7 @@ return(<>
 })()}
 </div>
 {(compEscuela.length>0||enlaces.length>0)&&(
-<div style={{flexShrink:0,borderTop:'1px solid #e2e8f0',padding:'.85rem',background:'#f8fafc',display:'flex',flexDirection:'column',gap:'8px'}}>
+<div className="dir-foot" style={{flexShrink:0,borderTop:'1px solid #e2e8f0',padding:'.85rem',background:'#f8fafc',display:'flex',flexDirection:'column',gap:'8px'}}>
 {compEscuela.length>0&&<button onClick={()=>setVistaLateral(vistaLateral==='archivos'?'programas':'archivos')} style={{display:'flex',alignItems:'center',gap:'10px',padding:'.7rem .85rem',borderRadius:'10px',border:vistaLateral==='archivos'?'1.5px solid #bfdbfe':'1.5px solid #e2e8f0',background:'#fff',cursor:'pointer',fontFamily:'inherit',textAlign:'left'}}><span style={{width:'32px',height:'32px',borderRadius:'8px',background:'#eff6ff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'1rem',flexShrink:0}}>📁</span><span style={{flex:1,minWidth:0}}><span style={{fontSize:'.8rem',fontWeight:'700',color:'#0f172a',display:'block'}}>Archivos de Supervisión</span><span style={{fontSize:'.68rem',color:'#64748b'}}>Documentos de la zona</span></span><span style={{fontSize:'.7rem',fontWeight:'800',background:'#eff6ff',color:'#1d4ed8',padding:'2px 9px',borderRadius:'20px',flexShrink:0}}>{compEscuela.length}</span></button>}
 {enlaces.length>0&&<button onClick={()=>setVistaLateral(vistaLateral==='enlaces'?'programas':'enlaces')} style={{display:'flex',alignItems:'center',gap:'10px',padding:'.7rem .85rem',borderRadius:'10px',border:vistaLateral==='enlaces'?'1.5px solid #d8b4fe':'1.5px solid #e2e8f0',background:'#fff',cursor:'pointer',fontFamily:'inherit',textAlign:'left'}}><span style={{width:'32px',height:'32px',borderRadius:'8px',background:'#f3e8ff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'1rem',flexShrink:0}}>🔗</span><span style={{flex:1,minWidth:0}}><span style={{fontSize:'.8rem',fontWeight:'700',color:'#0f172a',display:'block'}}>Enlaces compartidos</span><span style={{fontSize:'.68rem',color:'#64748b'}}>Links útiles</span></span><span style={{fontSize:'.7rem',fontWeight:'800',background:'#f3e8ff',color:'#7c3aed',padding:'2px 9px',borderRadius:'20px',flexShrink:0}}>{enlaces.length}</span></button>}
 </div>

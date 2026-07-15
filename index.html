@@ -106,7 +106,7 @@ body.tema-oscuro .dir-scroll [style*="background:#fff9f9"],body.tema-oscuro .dir
 body.tema-oscuro .dir-scroll [style*="background:#f0fdf4"] p,body.tema-oscuro .dir-scroll [style*="background: #f0fdf4"] p,body.tema-oscuro .dir-scroll [style*="background:#fff9f9"] p,body.tema-oscuro .dir-scroll [style*="background: #fff9f9"] p{color:#e2e8f0!important}
 /* Fondo raíz del director cubre orillas */
 body.tema-oscuro .dir-layout{background:#0f172a}
-body.tema-oscuro .dir-root{background:#0f172a!important}
+body.tema-oscuro .dir-root,body.tema-oscuro .app-root{background:#0f172a!important}
 /* Modo oscuro para versión móvil */
 body.tema-oscuro #mobile-root{background:#0f172a!important}
 body.tema-oscuro .m-tabs{background:#1e293b!important;border-bottom-color:#334155!important}
@@ -532,7 +532,7 @@ if(filtroEscuela)docsFiltrados=docsFiltrados.filter(d=>d.escuelaId===filtroEscue
 if(filtroPrograma)docsFiltrados=docsFiltrados.filter(d=>d.programaId===filtroPrograma);
 
 return(
-<div style={{minHeight:'100vh',background:'#f0f4f8'}}>
+<div className="app-root" style={{minHeight:'100vh',background:'#f0f4f8'}}>
 <header style={{background:'linear-gradient(135deg,#1a56db 0%,#1e3a8a 100%)',boxShadow:'0 4px 20px rgba(30,58,138,.4)',position:'sticky',top:0,zIndex:100}}>
 <div className="container" style={{padding:'.875rem 1.5rem',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
 <div style={{display:'flex',alignItems:'center',gap:'1rem'}}>
